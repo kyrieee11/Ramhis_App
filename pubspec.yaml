@@ -1,0 +1,79 @@
+name: ramhis
+description: RAMHIS clean Flutter project
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: ">=3.0.0 <4.0.0"
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  cupertino_icons: ^1.0.8
+  http: ^1.2.0
+  shared_preferences: ^2.5.3
+  url_launcher: ^6.3.1
+
+  image_picker: ^1.1.2
+  image_cropper: ^9.0.0
+
+  file_picker: ^10.3.3
+
+  
+
+  # 🔥 ADD THIS (REQUIRED FOR DEEP LINK)
+  app_links: ^7.0.0
+
+  # Keep during final migration / connected screens
+  google_fonts: ^6.3.3
+  intl: ^0.20.2
+  cached_network_image: ^3.4.1
+  socket_io_client: ^3.1.4
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^4.0.0
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/fonts/
+    - assets/images/ramhis_logo.png
+    - assets/videos/
+    - assets/audios/
+    - assets/rive_animations/
+    - assets/pdfs/
+    - assets/jsons/
+
+  fonts:
+    - family: NASA
+      fonts:
+        - asset: assets/fonts/Nasalization_Rg.otf
+
+    - family: SF Pro
+      fonts:
+        - asset: assets/fonts/SFPRODISPLAYREGULAR.OTF
+
+    - family: SF PRO MEDIUM
+      fonts:
+        - asset: assets/fonts/SFPRODISPLAYMEDIUM.OTF
+          weight: 500
+
+    - family: SF PRO BOLD
+      fonts:
+        - asset: assets/fonts/SFPRODISPLAYBOLD.OTF
+          weight: 700
+
+    - family: SF COMPACT MEDIUM
+      fonts:
+        - asset: assets/fonts/sf-compact-display-medium-5864711817c30.otf
+          weight: 500
+
+    - family: SF COMPACT THIN
+      fonts:
+        - asset: assets/fonts/sf-compact-display-thin-58646eb43a785.otf
+          weight: 100
