@@ -1,19 +1,15 @@
-import 'package:flutter/material.dart';
-import '../core/auth_token_session_flow.dart';
+// CLEAN ADMIN SHELL (DASHBOARD REMOVED)
 
-import 'admin_dashboard.dart';
+import 'package:flutter/material.dart';
+
 import 'admin_users_management.dart';
 import 'admin_doctors_verification.dart';
-import 'admin_events_management.dart';
 import 'admin_volunteer_management.dart';
+import 'admin_events_management.dart';
 import 'admin_content_management.dart';
-import 'admin_login.dart';
 
 class AdminShellWidget extends StatefulWidget {
-  const AdminShellWidget({
-    super.key,
-    this.initialIndex = 0,
-  });
+  const AdminShellWidget({super.key, this.initialIndex = 0});
 
   final int initialIndex;
 
@@ -27,206 +23,129 @@ class _AdminShellWidgetState extends State<AdminShellWidget> {
   @override
   void initState() {
     super.initState();
-    selectedIndex = widget.initialIndex;
+    selectedIndex = widget.initialIndex.clamp(0, navItems.length - 1);
   }
 
-  List<_AdminNavItem> get navItems => const [
-        _AdminNavItem(
-          label: 'Dashboard',
-          icon: Icons.dashboard_rounded,
-          page: AdminDashboardWidget(),
-        ),
-        _AdminNavItem(
-          label: 'Users',
-          icon: Icons.people_alt_rounded,
-          page: AdminUsersManagementConnectedWidget(),
-        ),
-        _AdminNavItem(
-          label: 'Doctors',
-          icon: Icons.local_hospital_rounded,
-          page: AdminDoctorsVerificationConnectedWidget(),
-        ),
-        _AdminNavItem(
-          label: 'Volunteers',
-          icon: Icons.volunteer_activism_rounded,
-          page: AdminVolunteerManagementConnectedWidget(),
-        ),
-        _AdminNavItem(
-          label: 'Events',
-          icon: Icons.event_rounded,
-          page: AdminEventsManagementConnectedWidget(),
-        ),
-        _AdminNavItem(
-          label: 'Content',
-          icon: Icons.description_rounded,
-          page: AdminContentManagementConnectedWidget(),
-        ),
-      ];
-
-  Future<void> _logout() async {
-    await AuthApi.logout();
-
-    if (!mounted) return;
-
-    Navigator.of(context).pushAndRemoveUntil(
-      MaterialPageRoute(builder: (_) => const AdminLoginWidget()),
-      (route) => false,
-    );
-  }
+  List<_AdminNavItem> get navItems => [
+  const _AdminNavItem(
+    label: 'Users',
+    icon: Icons.people_alt_rounded,
+    page: AdminUsersManagementConnectedWidget(),
+  ),
+  const _AdminNavItem(
+    label: 'Doctors',
+    icon: Icons.local_hospital_rounded,
+    page: AdminDoctorsVerificationConnectedWidget(),
+  ),
+  const _AdminNavItem(
+    label: 'Volunteers',
+    icon: Icons.volunteer_activism_rounded,
+    page: AdminVolunteerManagementConnectedWidget(),
+  ),
+  const _AdminNavItem(
+    label: 'Events',
+    icon: Icons.event_rounded,
+    page: AdminEventsManagementConnectedWidget(),
+  ),
+  const _AdminNavItem(
+    label: 'Content',
+    icon: Icons.description_rounded,
+    page: AdminContentManagementConnectedWidget(),
+  ),
+];
 
   @override
   Widget build(BuildContext context) {
-    return LayoutBuilder(
-      builder: (context, constraints) {
-        final isDesktop = constraints.maxWidth >= 1100;
-
-        if (isDesktop) {
-          return Scaffold(
-            backgroundColor: const Color(0xFFF6F8FC),
-            body: SafeArea(
-              child: Row(
-                children: [
-                  _buildSidebar(compact: false),
-                  Expanded(
-                    child: Column(
-                      children: [
-                        _buildTopBar(showMenu: false),
-                        Expanded(child: navItems[selectedIndex].page),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          );
-        }
-
-        return Scaffold(
-          backgroundColor: const Color(0xFFF6F8FC),
-          drawer: Drawer(
-            child: SafeArea(
-              child: _buildSidebar(compact: true),
-            ),
-          ),
-          body: SafeArea(
-            child: Column(
-              children: [
-                _buildTopBar(showMenu: true),
-                Expanded(child: navItems[selectedIndex].page),
-              ],
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildTopBar({required bool showMenu}) {
-    return Container(
-      height: 72,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      color: Colors.white,
-      child: Row(
+    return Scaffold(
+      body: Row(
         children: [
-          if (showMenu)
-            Builder(
-              builder: (context) => IconButton(
-                onPressed: () => Scaffold.of(context).openDrawer(),
-                icon: const Icon(Icons.menu),
-              ),
-            ),
-          Expanded(
-            child: Text(
-              navItems[selectedIndex].label,
-              style: const TextStyle(
-                fontSize: 20,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B2559),
-              ),
-            ),
-          ),
-          IconButton(
-            onPressed: _logout,
-            icon: const Icon(Icons.logout, color: Colors.red),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSidebar({required bool compact}) {
-    return Container(
-      width: compact ? double.infinity : 260,
-      color: Colors.white,
-      child: ListView(
-        children: [
+          // SIDEBAR
           Container(
-            padding: const EdgeInsets.all(20),
-            decoration: const BoxDecoration(
-              color: Color(0xFF3F5FBE),
-            ),
-            child: const Column(
+            width: 230,
+            color: const Color(0xFF4267D6),
+            child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                CircleAvatar(
-                  radius: 26,
-                  backgroundColor: Colors.white,
-                  child: Icon(
-                    Icons.admin_panel_settings_rounded,
-                    color: Color(0xFF3F5FBE),
-                    size: 28,
-                  ),
+                const SizedBox(height: 28),
+
+Center(
+  child: Image.asset(
+    'assets/images/ramhis_logo.png',
+    width: 82,
+    height: 82,
+    fit: BoxFit.contain,
+  ),
+),
+
+const SizedBox(height: 12),
+
+const Center(
+  child: Text(
+    'RAMHIS Admin',
+    style: TextStyle(
+      color: Colors.white,
+      fontSize: 20,
+      fontWeight: FontWeight.bold,
+    ),
+  ),
+),
+
+const Center(
+  child: Text(
+    'Management Portal',
+    style: TextStyle(
+      color: Colors.white70,
+      fontSize: 12,
+    ),
+  ),
+),
+
+const SizedBox(height: 28),
+
+                ...List.generate(navItems.length, (index) {
+                  final item = navItems[index];
+                  final isSelected = selectedIndex == index;
+
+                  return ListTile(
+                    leading: Icon(item.icon,
+                        color: isSelected ? Colors.white : Colors.white70),
+                    title: Text(
+                      item.label,
+                      style: TextStyle(
+                        color: isSelected ? Colors.white : Colors.white70,
+                        fontWeight:
+                            isSelected ? FontWeight.bold : FontWeight.normal,
+                      ),
+                    ),
+                    selected: isSelected,
+                    selectedTileColor: Colors.white.withValues(alpha: 0.15),
+                    onTap: () {
+                      setState(() {
+                        selectedIndex = index;
+                      });
+                    },
+                  );
+                }),
+
+                const Spacer(),
+
+                ListTile(
+                  leading: const Icon(Icons.logout, color: Colors.white70),
+                  title: const Text('Logout',
+                      style: TextStyle(color: Colors.white70)),
+                  onTap: () {
+                    Navigator.pop(context);
+                  },
                 ),
-                SizedBox(height: 12),
-                Text(
-                  'RAMHIS Admin',
-                  style: TextStyle(
-                    color: Colors.white,
-                    fontSize: 22,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                SizedBox(height: 4),
-                Text(
-                  'Management Portal',
-                  style: TextStyle(color: Color(0xFFE5ECFF)),
-                ),
+                const SizedBox(height: 20),
               ],
             ),
           ),
-          const SizedBox(height: 8),
-          ...List.generate(navItems.length, (index) {
-            final item = navItems[index];
-            final selected = selectedIndex == index;
 
-            return ListTile(
-              leading: Icon(
-                item.icon,
-                color: selected
-                    ? const Color(0xFF3F5FBE)
-                    : const Color(0xFF6B7280),
-              ),
-              title: Text(
-                item.label,
-                style: TextStyle(
-                  color: selected
-                      ? const Color(0xFF3F5FBE)
-                      : const Color(0xFF374151),
-                  fontWeight:
-                      selected ? FontWeight.w700 : FontWeight.w500,
-                ),
-              ),
-              selected: selected,
-              selectedTileColor: const Color(0xFFEFF4FF),
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              onTap: () {
-                setState(() => selectedIndex = index);
-                if (compact) Navigator.pop(context);
-              },
-            );
-          }),
+          // CONTENT
+          Expanded(
+            child: navItems[selectedIndex].page,
+          ),
         ],
       ),
     );
@@ -234,13 +153,13 @@ class _AdminShellWidgetState extends State<AdminShellWidget> {
 }
 
 class _AdminNavItem {
+  final String label;
+  final IconData icon;
+  final Widget page;
+
   const _AdminNavItem({
     required this.label,
     required this.icon,
     required this.page,
   });
-
-  final String label;
-  final IconData icon;
-  final Widget page;
 }

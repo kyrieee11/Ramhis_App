@@ -28,8 +28,8 @@ class _AdminVolunteerManagementConnectedWidgetState
     'All',
     'Active',
     'Pending',
+    'Rejected',
     'Inactive',
-    'Suspended',
   ];
 
   @override
@@ -75,11 +75,8 @@ class _AdminVolunteerManagementConnectedWidgetState
           email.contains(searchQuery) ||
           org.contains(searchQuery);
 
-      final matchesStatus =
-          selectedStatus == 'All' || status == selectedStatus;
-
-      final matchesSkill =
-          selectedSkill == 'All' || skills == selectedSkill;
+      final matchesStatus = selectedStatus == 'All' || status == selectedStatus;
+      final matchesSkill = selectedSkill == 'All' || skills == selectedSkill;
 
       return matchesSearch && matchesStatus && matchesSkill;
     }).toList();
@@ -97,8 +94,7 @@ class _AdminVolunteerManagementConnectedWidgetState
         if (!mounted) return;
 
         setState(() {
-          volunteers =
-              data.map((e) => Map<String, dynamic>.from(e)).toList();
+          volunteers = data.map((e) => Map<String, dynamic>.from(e)).toList();
 
           if (!availableSkills.contains(selectedSkill)) {
             selectedSkill = 'All';
@@ -146,13 +142,13 @@ class _AdminVolunteerManagementConnectedWidgetState
   }
 
   Color _statusColor(String status) {
-    switch (status) {
-      case 'Active':
+    switch (status.toLowerCase()) {
+      case 'active':
         return const Color(0xFF16A34A);
-      case 'Inactive':
-        return const Color(0xFF64748B);
-      case 'Suspended':
+      case 'rejected':
         return const Color(0xFFDC2626);
+      case 'inactive':
+        return const Color(0xFF64748B);
       default:
         return const Color(0xFFD97706);
     }
@@ -160,8 +156,125 @@ class _AdminVolunteerManagementConnectedWidgetState
 
   void _showSnackBar(String message) {
     if (!mounted) return;
-    ScaffoldMessenger.of(context)
-        .showSnackBar(SnackBar(content: Text(message)));
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(message)),
+    );
+  }
+
+  void _showVolunteerDetails(Map<String, dynamic> volunteer) {
+    final userId = (volunteer['user_id'] ?? volunteer['_id'] ?? '').toString();
+
+    showDialog(
+      context: context,
+      builder: (_) {
+        return Dialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(24),
+          ),
+          child: ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 520),
+            child: Padding(
+              padding: const EdgeInsets.all(22),
+              child: SingleChildScrollView(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 26,
+                          backgroundColor: Color(0xFFDBEDFB),
+                          child: Icon(
+                            Icons.volunteer_activism_rounded,
+                            color: Color(0xFF3F5FBE),
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            (volunteer['full_name'] ?? 'Volunteer').toString(),
+                            style: const TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1B2559),
+                            ),
+                          ),
+                        ),
+                        _buildStatusBadge(_displayStatus(volunteer)),
+                      ],
+                    ),
+                    const SizedBox(height: 20),
+                    _detailItem('Email', volunteer['email']),
+                    _detailItem('Contact Number', volunteer['contact_number']),
+                    _detailItem('Birthdate', volunteer['birthdate']),
+                    _detailItem('Organization', volunteer['organization']),
+                    _detailItem('Skills', volunteer['skills']),
+                    _detailItem('Status', _displayStatus(volunteer)),
+                    const SizedBox(height: 18),
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.end,
+                      children: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(context),
+                          child: const Text('Close'),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: isProcessing
+                              ? null
+                              : () {
+                                  Navigator.pop(context);
+                                  updateVolunteerStatus(
+                                    userId: userId,
+                                    status: 'Active',
+                                  );
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFF16A34A),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Approve'),
+                        ),
+                        const SizedBox(width: 8),
+                        ElevatedButton(
+                          onPressed: isProcessing
+                              ? null
+                              : () {
+                                  Navigator.pop(context);
+                                  updateVolunteerStatus(
+                                    userId: userId,
+                                    status: 'Rejected',
+                                  );
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: const Color(0xFFDC2626),
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Reject'),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+    );
+  }
+
+  Widget _detailItem(String label, dynamic value) {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 10),
+      child: Text(
+        '$label: ${(value ?? 'N/A').toString()}',
+        style: const TextStyle(
+          fontSize: 14,
+          color: Color(0xFF374151),
+        ),
+      ),
+    );
   }
 
   Widget _buildHeaderCard() {
@@ -189,7 +302,7 @@ class _AdminVolunteerManagementConnectedWidgetState
           ),
           SizedBox(height: 8),
           Text(
-            'Review volunteer records, organizations, skills, and account statuses in one place.',
+            'Review volunteer records, organizations, skills, and statuses.',
             style: TextStyle(
               color: Color(0xFFE5ECFF),
               fontSize: 14,
@@ -320,10 +433,6 @@ class _AdminVolunteerManagementConnectedWidgetState
                 borderRadius: BorderRadius.circular(16),
                 borderSide: BorderSide.none,
               ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(16),
-                borderSide: BorderSide.none,
-              ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(16),
                 borderSide: const BorderSide(color: Color(0xFF3F5FBE)),
@@ -339,7 +448,7 @@ class _AdminVolunteerManagementConnectedWidgetState
                   value: selectedStatus,
                   items: statuses,
                   onChanged: (value) {
-                    setState(() => selectedStatus = value!);
+                    setState(() => selectedStatus = value ?? 'All');
                   },
                 ),
               ),
@@ -350,7 +459,7 @@ class _AdminVolunteerManagementConnectedWidgetState
                   value: selectedSkill,
                   items: availableSkills,
                   onChanged: (value) {
-                    setState(() => selectedSkill = value!);
+                    setState(() => selectedSkill = value ?? 'All');
                   },
                 ),
               ),
@@ -367,7 +476,8 @@ class _AdminVolunteerManagementConnectedWidgetState
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
       decoration: BoxDecoration(
-color: statusColor.withValues(alpha: 0.12),        borderRadius: BorderRadius.circular(20),
+        color: statusColor.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
         status,
@@ -381,14 +491,13 @@ color: statusColor.withValues(alpha: 0.12),        borderRadius: BorderRadius.ci
   }
 
   Widget _buildVolunteerCard(Map<String, dynamic> volunteer) {
-    final userId =
-        (volunteer['user_id'] ?? volunteer['_id'] ?? '').toString();
+    final userId = (volunteer['user_id'] ?? volunteer['_id'] ?? '').toString();
     final status = _displayStatus(volunteer);
     final skills = (volunteer['skills'] ?? 'General Volunteer').toString();
-    final fullName =
-        (volunteer['full_name'] ?? 'Unknown Volunteer').toString();
+    final fullName = (volunteer['full_name'] ?? 'Unknown Volunteer').toString();
     final email = (volunteer['email'] ?? '').toString();
-    final organization = (volunteer['organization'] ?? 'No organization').toString();
+    final organization =
+        (volunteer['organization'] ?? 'No organization').toString();
 
     return Container(
       margin: const EdgeInsets.only(bottom: 12),
@@ -439,22 +548,16 @@ color: statusColor.withValues(alpha: 0.12),        borderRadius: BorderRadius.ci
             ],
           ),
           const SizedBox(height: 12),
-          Row(
+          Wrap(
+            spacing: 8,
+            runSpacing: 8,
             children: [
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                decoration: BoxDecoration(
-                  color: const Color(0xFFDBEDFB),
-                  borderRadius: BorderRadius.circular(20),
-                ),
-                child: Text(
-                  skills,
-                  style: const TextStyle(
-                    color: Color(0xFF3F5FBE),
-                    fontSize: 12,
-                    fontWeight: FontWeight.w600,
-                  ),
+              Chip(
+                label: Text(skills),
+                backgroundColor: const Color(0xFFDBEDFB),
+                labelStyle: const TextStyle(
+                  color: Color(0xFF3F5FBE),
+                  fontWeight: FontWeight.w600,
                 ),
               ),
             ],
@@ -479,42 +582,46 @@ color: statusColor.withValues(alpha: 0.12),        borderRadius: BorderRadius.ci
               ),
             ],
           ),
-          const SizedBox(height: 12),
-          Align(
-            alignment: Alignment.centerRight,
-            child: PopupMenuButton<String>(
-              onSelected: isProcessing
-                  ? null
-                  : (value) {
-                      updateVolunteerStatus(
-                        userId: userId,
-                        status: value,
-                      );
-                    },
-              itemBuilder: (_) => const [
-                PopupMenuItem(value: 'Active', child: Text('Activate')),
-                PopupMenuItem(value: 'Pending', child: Text('Pending')),
-                PopupMenuItem(value: 'Inactive', child: Text('Inactive')),
-                PopupMenuItem(value: 'Suspended', child: Text('Suspend')),
-              ],
-              child: Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
-                decoration: BoxDecoration(
-                  color: isProcessing
-                      ? Colors.grey.shade200
-                      : const Color(0xFF3F5FBE),
-                  borderRadius: BorderRadius.circular(12),
-                ),
-                child: Text(
-                  isProcessing ? 'Processing...' : 'Update Status',
-                  style: TextStyle(
-                    color: isProcessing ? Colors.black54 : Colors.white,
-                    fontWeight: FontWeight.w600,
+          const SizedBox(height: 14),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              OutlinedButton(
+                onPressed: () => _showVolunteerDetails(volunteer),
+                child: const Text('View'),
+              ),
+              const SizedBox(width: 8),
+              PopupMenuButton<String>(
+                onSelected: isProcessing
+                    ? null
+                    : (value) {
+                        updateVolunteerStatus(userId: userId, status: value);
+                      },
+                itemBuilder: (_) => const [
+                  PopupMenuItem(value: 'Active', child: Text('Approve')),
+                  PopupMenuItem(value: 'Rejected', child: Text('Reject')),
+                  PopupMenuItem(value: 'Pending', child: Text('Set Pending')),
+                  PopupMenuItem(value: 'Inactive', child: Text('Deactivate')),
+                ],
+                child: Container(
+                  padding:
+                      const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                  decoration: BoxDecoration(
+                    color: isProcessing
+                        ? Colors.grey.shade200
+                        : const Color(0xFF3F5FBE),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    isProcessing ? 'Processing...' : 'Update',
+                    style: TextStyle(
+                      color: isProcessing ? Colors.black54 : Colors.white,
+                      fontWeight: FontWeight.w600,
+                    ),
                   ),
                 ),
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -528,8 +635,8 @@ color: statusColor.withValues(alpha: 0.12),        borderRadius: BorderRadius.ci
         volunteers.where((v) => _displayStatus(v) == 'Active').length;
     final pendingCount =
         volunteers.where((v) => _displayStatus(v) == 'Pending').length;
-    final inactiveCount =
-        volunteers.where((v) => _displayStatus(v) == 'Inactive').length;
+    final rejectedCount =
+        volunteers.where((v) => _displayStatus(v) == 'Rejected').length;
 
     return GestureDetector(
       onTap: () {
@@ -541,7 +648,6 @@ color: statusColor.withValues(alpha: 0.12),        borderRadius: BorderRadius.ci
         appBar: AppBar(
           backgroundColor: Colors.white,
           elevation: 0,
-          iconTheme: const IconThemeData(color: Color(0xFF1B2559)),
           title: const Text(
             'Volunteer Management',
             style: TextStyle(
@@ -557,7 +663,6 @@ color: statusColor.withValues(alpha: 0.12),        borderRadius: BorderRadius.ci
                 color: Color(0xFF1B2559),
               ),
             ),
-            const SizedBox(width: 8),
           ],
         ),
         body: SafeArea(
@@ -566,7 +671,6 @@ color: statusColor.withValues(alpha: 0.12),        borderRadius: BorderRadius.ci
               : SingleChildScrollView(
                   padding: const EdgeInsets.all(16),
                   child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       _buildHeaderCard(),
                       const SizedBox(height: 16),
@@ -595,8 +699,8 @@ color: statusColor.withValues(alpha: 0.12),        borderRadius: BorderRadius.ci
                           const SizedBox(width: 12),
                           Expanded(
                             child: _buildMiniStat(
-                              'Inactive',
-                              '$inactiveCount',
+                              'Rejected',
+                              '$rejectedCount',
                             ),
                           ),
                         ],
@@ -611,13 +715,6 @@ color: statusColor.withValues(alpha: 0.12),        borderRadius: BorderRadius.ci
                           decoration: BoxDecoration(
                             color: Colors.white,
                             borderRadius: BorderRadius.circular(22),
-                            boxShadow: const [
-                              BoxShadow(
-                                color: Color(0x14000000),
-                                blurRadius: 10,
-                                offset: Offset(0, 4),
-                              ),
-                            ],
                           ),
                           child: const Column(
                             children: [
