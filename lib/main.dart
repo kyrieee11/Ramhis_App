@@ -1,22 +1,19 @@
 import 'dart:async';
-import 'package:flutter/material.dart';
-import 'package:app_links/app_links.dart';
 
-import 'core/auth_token_session_flow.dart';
-import 'auth/landingpage.dart';
-import 'auth/reset_password.dart';
-import 'user/home.dart';
-import 'admin/admin_shell.dart';
+import 'package:app_links/app_links.dart';
+import 'package:flutter/material.dart';
+
+import 'package:ramhis_app/core/session_manager.dart';
+import 'package:ramhis_app/features/admin/shell/admin_shell.dart';
+import 'package:ramhis_app/features/auth/screens/landing_page.dart';
+import 'package:ramhis_app/features/auth/screens/reset_password_screen.dart';
+import 'package:ramhis_app/features/user/screens/home_screen.dart';
 
 final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
-
-  try {
-    await AuthSession.restoreSession();
-  } catch (_) {}
-
+  await AuthSession.restoreSession();
   runApp(const MyApp());
 }
 
@@ -28,9 +25,7 @@ class MyApp extends StatefulWidget {
 }
 
 class _MyAppState extends State<MyApp> {
-  AppLinks? _appLinks;
-  StreamSubscription<Uri>? _sub;
-  String? _lastHandledToken;
+  StreamSubscription<Uri>? _linkSubscription;
 
   @override
   void initState() {
@@ -38,56 +33,40 @@ class _MyAppState extends State<MyApp> {
     _initDeepLinks();
   }
 
-  Future<void> _initDeepLinks() async {
-    try {
-      _appLinks = AppLinks();
+  void _initDeepLinks() {
+    final appLinks = AppLinks();
 
-      final initialUri = await _appLinks!.getInitialLink();
-      if (initialUri != null) {
-        _handleUri(initialUri);
-      }
-
-      _sub = _appLinks!.uriLinkStream.listen(
-        (uri) {
-          _handleUri(uri);
-        },
-        onError: (_) {},
-      );
-    } catch (e) {
-      debugPrint('Deep link init error: $e');
-    }
-  }
-
-  void _handleUri(Uri uri) {
-    try {
-      if (uri.scheme == 'myapp' && uri.host == 'reset-password') {
+    _linkSubscription = appLinks.uriLinkStream.listen((uri) {
+      if (uri.path.contains('reset-password')) {
         final token = uri.queryParameters['token'];
 
-        if (token == null || token.isEmpty) return;
-        if (_lastHandledToken == token) return;
-
-        _lastHandledToken = token;
-
-        WidgetsBinding.instance.addPostFrameCallback((_) {
-          final nav = navigatorKey.currentState;
-          if (nav == null) return;
-
-          nav.push(
+        if (token != null && token.isNotEmpty) {
+          navigatorKey.currentState?.push(
             MaterialPageRoute(
               builder: (_) => ResetPasswordScreen(token: token),
             ),
           );
-        });
+        }
       }
-    } catch (e) {
-      debugPrint('Deep link handle error: $e');
-    }
+    });
   }
 
   @override
   void dispose() {
-    _sub?.cancel();
+    _linkSubscription?.cancel();
     super.dispose();
+  }
+
+  Widget _startScreen() {
+    if (!AuthSession.isLoggedIn) {
+      return const LandingpageWidget();
+    }
+
+    if (AuthSession.isAdmin) {
+      return const AdminShellWidget();
+    }
+
+    return const HomeWidget();
   }
 
   @override
@@ -95,43 +74,7 @@ class _MyAppState extends State<MyApp> {
     return MaterialApp(
       navigatorKey: navigatorKey,
       debugShowCheckedModeBanner: false,
-      title: 'RAMHIS',
-      theme: ThemeData(
-        primaryColor: const Color(0xFF3F5FBE),
-        scaffoldBackgroundColor: const Color(0xFFF6F8FC),
-        useMaterial3: true,
-      ),
-      home: _buildHome(),
+      home: _startScreen(),
     );
-  }
-
-  Widget _buildHome() {
-    if (!AuthSession.isReady) {
-      return const Scaffold(
-        body: Center(child: CircularProgressIndicator()),
-      );
-    }
-
-    if (!AuthSession.isLoggedIn) {
-      return const LandingpageWidget();
-    }
-
-    final currentUser = AuthSession.user;
-    if (currentUser == null) {
-      return const LandingpageWidget();
-    }
-
-    final role = (currentUser['role'] ?? '').toString();
-    final status = (currentUser['status'] ?? 'active').toString();
-
-    if (status == 'pending' || status == 'suspended') {
-      return const LandingpageWidget();
-    }
-
-    if (role == 'admin') {
-      return const AdminShellWidget();
-    }
-
-    return const HomeWidget();
   }
 }

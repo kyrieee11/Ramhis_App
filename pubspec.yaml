@@ -1,5 +1,5 @@
-name: ramhis
-description: RAMHIS clean Flutter project
+name: ramhis_app
+description: RAMHIS project
 publish_to: 'none'
 
 version: 1.0.0+1
@@ -11,26 +11,27 @@ dependencies:
   flutter:
     sdk: flutter
 
+  # UI
   cupertino_icons: ^1.0.8
-  http: ^1.2.0
-  shared_preferences: ^2.5.3
-  url_launcher: ^6.3.1
+  google_fonts: ^6.3.3
+  cached_network_image: ^3.4.1
 
+  # Networking
+  http: ^1.2.0
+  socket_io_client: ^3.1.4
+
+  # Storage
+  shared_preferences: ^2.5.3
+
+  # Media
   image_picker: ^1.1.2
   image_cropper: ^9.0.0
-
   file_picker: ^10.3.3
 
-  
-
-  # 🔥 ADD THIS (REQUIRED FOR DEEP LINK)
-  app_links: ^7.0.0
-
-  # Keep during final migration / connected screens
-  google_fonts: ^6.3.3
+  # Utilities
+  url_launcher: ^6.3.1
   intl: ^0.20.2
-  cached_network_image: ^3.4.1
-  socket_io_client: ^3.1.4
+  app_links: ^7.0.0
 
 dev_dependencies:
   flutter_test:
