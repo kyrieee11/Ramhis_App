@@ -562,6 +562,7 @@ app.get('/admin/users', authMiddleware, adminOnly, async (req, res) => {
 });
 
 // CHANGE PASSWORD
+// CHANGE PASSWORD
 app.put('/me/change-password', authMiddleware, async (req, res) => {
   try {
     const { currentPassword, newPassword } = req.body;
@@ -586,11 +587,7 @@ app.put('/me/change-password', authMiddleware, async (req, res) => {
       });
     }
 
-    // ✅ Check current password
-    const isMatch = await bcrypt.compare(
-      currentPassword,
-      user.password_hash
-    );
+    const isMatch = await bcrypt.compare(currentPassword, user.password_hash);
 
     if (!isMatch) {
       return res.status(400).json({
@@ -598,14 +595,13 @@ app.put('/me/change-password', authMiddleware, async (req, res) => {
       });
     }
 
-    // ✅ Hash new password
-    const newPasswordHash = await bcrypt.hash(newPassword, 10);
+    const password_hash = await bcrypt.hash(newPassword, 10);
 
     await usersCol().updateOne(
       { _id: user._id },
       {
         $set: {
-          password_hash: newPasswordHash,
+          password_hash,
           updated_at: new Date(),
         },
       }

@@ -47,10 +47,10 @@ class _HomeWidgetState extends State<HomeWidget> {
     socketService.connect();
 
     socketService.listenContentUpdate((data) {
-  if (!mounted || isLoading) return;
-  debugPrint('📡 Homepage updated from admin');
-  _loadHomeData();
-});
+      if (!mounted || isLoading) return;
+      debugPrint('📡 Homepage updated from admin');
+      _loadHomeData();
+    });
 
     Future.microtask(_loadHomeData);
   }
@@ -92,8 +92,9 @@ class _HomeWidgetState extends State<HomeWidget> {
 
       if (user != null) {
         userName = user.fullName.isEmpty ? 'User' : user.fullName;
-        accountType =
-            user.accountType.isEmpty ? 'Volunteer' : _capitalize(user.accountType);
+        accountType = user.accountType.isEmpty
+            ? 'Volunteer'
+            : _capitalize(user.accountType);
       }
 
       if (content != null) {
@@ -128,6 +129,12 @@ class _HomeWidgetState extends State<HomeWidget> {
         title: 'Hypertension Cases',
         color: 'danger',
       ),
+      TopCondition(
+        percent: 18,
+        change: 4,
+        title: 'Gastrointestinal Disorders',
+        color: 'blue',
+      ),
     ];
 
     medicationNeeds = [
@@ -141,11 +148,23 @@ class _HomeWidgetState extends State<HomeWidget> {
         amount: '900 doses',
         risk: 'Medium Risk',
       ),
+      MedicationNeed(
+        name: 'Azithromycin',
+        amount: '600 doses',
+        risk: 'Low Risk',
+      ),
+      MedicationNeed(
+        name: 'Ibuprofen',
+        amount: '450 doses',
+        risk: 'Medium Risk',
+      ),
     ];
 
     keyDrivers = [
       'Increased antibiotic use',
       'Seasonal respiratory cases',
+      'Population density growth',
+      'Frequent weather changes',
     ];
   }
 
@@ -167,7 +186,9 @@ class _HomeWidgetState extends State<HomeWidget> {
   List<String> _filteredDrivers(String query) {
     if (query.isEmpty) return keyDrivers;
 
-    return keyDrivers.where((item) => item.toLowerCase().contains(query)).toList();
+    return keyDrivers
+        .where((item) => item.toLowerCase().contains(query))
+        .toList();
   }
 
   List<TopCondition> _filteredConditions(String query) {
@@ -182,29 +203,82 @@ class _HomeWidgetState extends State<HomeWidget> {
     switch (key.toLowerCase()) {
       case 'red':
       case 'danger':
-        return const Color(0xFFFF6B6B);
+        return const Color(0xFFFFE5E7);
+
+      case 'blue':
+        return const Color(0xFFE7F0FF);
+
       case 'green':
       case 'success':
-        return const Color(0xFF20C997);
-      case 'blue':
-        return const Color(0xFF74C0FC);
+        return const Color(0xFFE8FFF1);
+
       case 'yellow':
       case 'warning':
       default:
-        return const Color(0xFFFFC857);
+        return const Color(0xFFFFF6DD);
+    }
+  }
+
+  Color _conditionAccent(String key) {
+    switch (key.toLowerCase()) {
+      case 'red':
+      case 'danger':
+        return const Color(0xFFE53935);
+
+      case 'blue':
+        return const Color(0xFF1E88E5);
+
+      case 'green':
+      case 'success':
+        return const Color(0xFF22C55E);
+
+      case 'yellow':
+      case 'warning':
+      default:
+        return const Color(0xFFF59E0B);
     }
   }
 
   Color _riskColor(String risk) {
     switch (risk.toLowerCase()) {
       case 'high risk':
-        return const Color(0xFFD94F5C);
+        return const Color(0xFFE53935);
+
       case 'medium risk':
-        return const Color(0xFFFFA62B);
+        return const Color(0xFFF59E0B);
+
       case 'low risk':
       default:
         return const Color(0xFF22C55E);
     }
+  }
+
+  IconData _conditionIcon(String title) {
+    final lower = title.toLowerCase();
+
+    if (lower.contains('respiratory')) {
+      return Icons.air;
+    } else if (lower.contains('hypertension')) {
+      return Icons.favorite;
+    } else if (lower.contains('gastro')) {
+      return Icons.medical_services;
+    }
+
+    return Icons.health_and_safety_rounded;
+  }
+
+  IconData _driverIcon(String title) {
+    final lower = title.toLowerCase();
+
+    if (lower.contains('weather')) {
+      return Icons.cloud;
+    } else if (lower.contains('seasonal')) {
+      return Icons.ac_unit;
+    } else if (lower.contains('population')) {
+      return Icons.groups_rounded;
+    }
+
+    return Icons.trending_up_rounded;
   }
 
   @override
@@ -219,7 +293,7 @@ class _HomeWidgetState extends State<HomeWidget> {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: const Color(0xFF3E5EBE),
+        backgroundColor: const Color(0xFFF6F7FB),
         body: SafeArea(
           child: Column(
             children: <Widget>[
@@ -227,15 +301,18 @@ class _HomeWidgetState extends State<HomeWidget> {
               Expanded(
                 child: isLoading
                     ? const Center(
-                        child: CircularProgressIndicator(color: Colors.white),
+                        child: CircularProgressIndicator(
+                          color: Color(0xFF4766C7),
+                        ),
                       )
                     : RefreshIndicator(
+                        color: const Color(0xFF4766C7),
                         onRefresh: _loadHomeData,
                         child: CustomScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
                           slivers: <Widget>[
                             SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(12, 12, 12, 20),
+                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
                               sliver: SliverToBoxAdapter(
                                 child: Center(
                                   child: ConstrainedBox(
@@ -246,9 +323,9 @@ class _HomeWidgetState extends State<HomeWidget> {
                                           CrossAxisAlignment.stretch,
                                       children: <Widget>[
                                         _buildWelcomeCard(),
-                                        const SizedBox(height: 14),
-                                        _buildSearchBar(),
                                         const SizedBox(height: 18),
+                                        _buildSearchBar(),
+                                        const SizedBox(height: 20),
                                         ValueListenableBuilder<String>(
                                           valueListenable: searchNotifier,
                                           builder: (context, query, _) {
@@ -262,7 +339,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                                                     child:
                                                         _buildConditionsSection(query),
                                                   ),
-                                                  const SizedBox(width: 14),
+                                                  const SizedBox(width: 16),
                                                   Expanded(
                                                     flex: 5,
                                                     child:
@@ -277,13 +354,13 @@ class _HomeWidgetState extends State<HomeWidget> {
                                                   CrossAxisAlignment.stretch,
                                               children: <Widget>[
                                                 _buildConditionsSection(query),
-                                                const SizedBox(height: 14),
+                                                const SizedBox(height: 18),
                                                 _buildMedicationSection(query),
                                               ],
                                             );
                                           },
                                         ),
-                                        const SizedBox(height: 14),
+                                        const SizedBox(height: 18),
                                         ValueListenableBuilder<String>(
                                           valueListenable: searchNotifier,
                                           builder: (context, query, _) {
@@ -311,51 +388,71 @@ class _HomeWidgetState extends State<HomeWidget> {
   Widget _buildTopHeader() {
     return Container(
       width: double.infinity,
-      color: const Color(0xFF4766C7),
-      padding: const EdgeInsets.fromLTRB(16, 12, 16, 12),
+      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF4766C7),
+            Color(0xFF5E7BDA),
+          ],
+        ),
+      ),
       child: Row(
         children: <Widget>[
           Container(
-            width: 46,
-            height: 46,
+            width: 50,
+            height: 50,
             decoration: BoxDecoration(
-              color: const Color(0xFF5B76D1),
-              borderRadius: BorderRadius.circular(14),
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(16),
             ),
             child: ClipRRect(
-              borderRadius: BorderRadius.circular(12),
+              borderRadius: BorderRadius.circular(16),
               child: Image.asset(
                 'assets/images/ramhis_logo.png',
                 fit: BoxFit.cover,
-                cacheWidth: 92,
-                cacheHeight: 92,
+                cacheWidth: 100,
+                cacheHeight: 100,
                 errorBuilder: (context, error, stackTrace) {
                   return const Icon(
                     Icons.health_and_safety_rounded,
                     color: Colors.white,
-                    size: 26,
+                    size: 28,
                   );
                 },
               ),
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 14),
           const Expanded(
-            child: Text(
-              'RAMHIS',
-              style: TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Colors.white,
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  'RAMHIS',
+                  style: TextStyle(
+                    fontSize: 20,
+                    fontWeight: FontWeight.w800,
+                    color: Colors.white,
+                  ),
+                ),
+                SizedBox(height: 2),
+                Text(
+                  'Healthcare Monitoring Dashboard',
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: Color(0xFFE6ECFF),
+                  ),
+                ),
+              ],
             ),
           ),
           Container(
-            width: 42,
-            height: 42,
+            width: 46,
+            height: 46,
             decoration: BoxDecoration(
-              color: const Color(0xFF5B76D1),
-              borderRadius: BorderRadius.circular(12),
+              color: Colors.white.withValues(alpha: 0.16),
+              borderRadius: BorderRadius.circular(14),
             ),
             child: IconButton(
               onPressed: _loadHomeData,
@@ -376,66 +473,68 @@ class _HomeWidgetState extends State<HomeWidget> {
         homepageTitle.trim().isEmpty ? 'Welcome back, $userName' : homepageTitle;
 
     final String body = homepageBody.trim().isEmpty
-        ? 'Signed in as $accountType. This dashboard reads secure profile and admin-managed homepage content.'
+        ? 'Signed in as $accountType. Monitor healthcare predictions and medication demands in real time.'
         : homepageBody;
 
     return Container(
+      padding: const EdgeInsets.all(22),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: <Color>[
+          colors: [
             Color(0xFF4766C7),
-            Color(0xFF5B76D1),
+            Color(0xFF6A82E8),
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(28),
-        boxShadow: const [
+        borderRadius: BorderRadius.circular(30),
+        boxShadow: [
           BoxShadow(
-            color: Color(0x22000000),
-            blurRadius: 8,
-            offset: Offset(0, 4),
+            color: const Color(0xFF4766C7).withValues(alpha: 0.22),
+            blurRadius: 18,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
-      padding: const EdgeInsets.all(18),
       child: Row(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: <Widget>[
           Container(
-            width: 54,
-            height: 54,
+            width: 58,
+            height: 58,
             decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(16),
+              color: Colors.white.withValues(alpha: 0.18),
+              borderRadius: BorderRadius.circular(18),
             ),
             child: const Icon(
               Icons.waving_hand_rounded,
               color: Colors.white,
-              size: 28,
+              size: 30,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 16),
           Expanded(
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
                 Text(
                   title,
-                  maxLines: 1,
+                  maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     fontSize: 24,
-                    fontWeight: FontWeight.bold,
+                    height: 1.2,
+                    fontWeight: FontWeight.w800,
                     color: Colors.white,
                   ),
                 ),
-                const SizedBox(height: 8),
+                const SizedBox(height: 10),
                 Text(
                   body,
                   style: const TextStyle(
+                    fontSize: 14,
+                    height: 1.5,
                     color: Color(0xFFEAF0FF),
-                    height: 1.4,
                   ),
                 ),
               ],
@@ -450,30 +549,62 @@ class _HomeWidgetState extends State<HomeWidget> {
     return ValueListenableBuilder<String>(
       valueListenable: searchNotifier,
       builder: (context, query, _) {
-        return TextFormField(
-          controller: searchController,
-          focusNode: searchFocusNode,
-          style: const TextStyle(color: Color(0xFF1B2559)),
-          decoration: InputDecoration(
-            hintText: 'Search conditions, medicines, or drivers',
-            hintStyle: const TextStyle(color: Color(0xFF8A94B5)),
-            prefixIcon: const Icon(
-              Icons.search_rounded,
-              color: Color(0xFF5B76D1),
+        return Container(
+          decoration: BoxDecoration(
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.04),
+                blurRadius: 14,
+                offset: const Offset(0, 4),
+              ),
+            ],
+          ),
+          child: TextFormField(
+            controller: searchController,
+            focusNode: searchFocusNode,
+            style: const TextStyle(
+              color: Color(0xFF1B2559),
+              fontWeight: FontWeight.w500,
             ),
-            suffixIcon: query.isNotEmpty
-                ? IconButton(
-                    icon: const Icon(Icons.close, color: Color(0xFF5B76D1)),
-                    onPressed: searchController.clear,
-                  )
-                : null,
-            filled: true,
-            fillColor: Colors.white,
-            contentPadding:
-                const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
-            border: OutlineInputBorder(
-              borderRadius: BorderRadius.circular(18),
-              borderSide: BorderSide.none,
+            decoration: InputDecoration(
+              hintText: 'Search conditions, medicines, or drivers',
+              hintStyle: const TextStyle(
+                color: Color(0xFF9AA3B2),
+              ),
+              prefixIcon: const Icon(
+                Icons.search_rounded,
+                color: Color(0xFF4766C7),
+              ),
+              suffixIcon: query.isNotEmpty
+                  ? IconButton(
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: Color(0xFF4766C7),
+                      ),
+                      onPressed: searchController.clear,
+                    )
+                  : null,
+              filled: true,
+              fillColor: Colors.white,
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 18,
+                vertical: 18,
+              ),
+              border: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(22),
+                borderSide: BorderSide.none,
+              ),
+              enabledBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(22),
+                borderSide: BorderSide.none,
+              ),
+              focusedBorder: OutlineInputBorder(
+                borderRadius: BorderRadius.circular(22),
+                borderSide: const BorderSide(
+                  color: Color(0xFF4766C7),
+                  width: 1.5,
+                ),
+              ),
             ),
           ),
         );
@@ -489,49 +620,92 @@ class _HomeWidgetState extends State<HomeWidget> {
       child: conditions.isEmpty
           ? _buildEmptyState('No matching conditions found.')
           : SizedBox(
-              height: 155,
+              height: 250,
               child: ListView.separated(
                 scrollDirection: Axis.horizontal,
                 itemCount: conditions.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 12),
+                separatorBuilder: (_, __) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
                   final item = conditions[index];
 
+                  final Color bg = _conditionColor(item.color);
+                  final Color accent = _conditionAccent(item.color);
+
                   return Container(
-                    width: 180,
-                    padding: const EdgeInsets.all(16),
+                    width: 220,
+                    padding: const EdgeInsets.all(22),
                     decoration: BoxDecoration(
-                      color: _conditionColor(item.color),
-                      borderRadius: BorderRadius.circular(22),
+                      color: bg,
+                      borderRadius: BorderRadius.circular(30),
                     ),
                     child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
+                      children: [
+                        Container(
+                          width: 50,
+                          height: 10,
+                          decoration: const BoxDecoration(
+                            color: Colors.white,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _conditionIcon(item.title),
+                            color: accent,
+                            size: 42,
+                          ),
+                        ),
+                        const Spacer(),
                         Text(
                           '${item.percent}%',
-                          style: const TextStyle(
-                            fontSize: 34,
-                            fontWeight: FontWeight.bold,
-                            color: Colors.black,
+                          style: TextStyle(
+                            fontSize: 48,
+                            fontWeight: FontWeight.w900,
+                            color: accent,
                           ),
                         ),
-                        const SizedBox(height: 4),
-                        Text(
-                          '+${item.change}%',
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                        const SizedBox(height: 10),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 18,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.75),
+                            borderRadius: BorderRadius.circular(22),
+                            border: Border.all(
+                              color: accent.withValues(alpha: 0.18),
+                            ),
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Icon(
+                                Icons.arrow_upward_rounded,
+                                size: 18,
+                                color: accent,
+                              ),
+                              const SizedBox(width: 4),
+                              Text(
+                                '${item.change}%',
+                                style: TextStyle(
+                                  color: accent,
+                                  fontWeight: FontWeight.w700,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ],
                           ),
                         ),
-                        const SizedBox(height: 14),
+                        const Spacer(),
                         Text(
                           item.title,
+                          textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
                           style: const TextStyle(
-                            fontSize: 14,
-                            fontWeight: FontWeight.w600,
-                            color: Colors.black87,
+                            fontSize: 17,
+                            height: 1.35,
+                            fontWeight: FontWeight.w700,
+                            color: Color(0xFF111827),
                           ),
                         ),
                       ],
@@ -544,72 +718,127 @@ class _HomeWidgetState extends State<HomeWidget> {
   }
 
   Widget _buildMedicationSection(String query) {
-    final medicines = _filteredMedicationNeeds(query);
+  final medicines = _filteredMedicationNeeds(query);
 
-    return _buildPanel(
-      title: 'Medication Needs',
-      child: medicines.isEmpty
-          ? _buildEmptyState('No matching medicines found.')
-          : ListView.builder(
-              itemCount: medicines.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              itemBuilder: (context, index) {
-                final item = medicines[index];
+  return _buildPanel(
+    title: 'Medications Needs',
+    child: medicines.isEmpty
+        ? _buildEmptyState('No matching medicines found.')
+        : ListView.separated(
+            shrinkWrap: true,
+            physics: const NeverScrollableScrollPhysics(),
+            itemCount: medicines.length,
+            separatorBuilder: (_, __) => const SizedBox(height: 14),
+            itemBuilder: (context, index) {
+              final item = medicines[index];
 
-                return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Color(0x11000000)),
+              return Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 14,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(22),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.03),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
                     ),
-                  ),
-                  child: Row(
-                    children: <Widget>[
-                      Expanded(
-                        flex: 3,
-                        child: Text(item.name, overflow: TextOverflow.ellipsis),
+                  ],
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.center,
+                  children: [
+                    // ICON
+                    Container(
+                      width: 54,
+                      height: 54,
+                      decoration: BoxDecoration(
+                        color:
+                            _riskColor(item.risk).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      Expanded(
-                        flex: 2,
-                        child: Text(
-                          item.amount,
-                          textAlign: TextAlign.center,
-                          overflow: TextOverflow.ellipsis,
-                        ),
+                      child: Icon(
+                        Icons.medication_rounded,
+                        color: _riskColor(item.risk),
+                        size: 28,
                       ),
-                      Expanded(
-                        flex: 2,
-                        child: Align(
-                          alignment: Alignment.centerRight,
-                          child: Container(
-                            padding: const EdgeInsets.symmetric(
-                              horizontal: 10,
-                              vertical: 6,
-                            ),
-                            decoration: BoxDecoration(
-                              color: _riskColor(item.risk),
-                              borderRadius: BorderRadius.circular(20),
-                            ),
-                            child: Text(
-                              item.risk,
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                                fontWeight: FontWeight.w600,
-                              ),
+                    ),
+
+                    const SizedBox(width: 14),
+
+                    // NAME + AMOUNT
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            item.name,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: Color(0xFF111827),
                             ),
                           ),
+
+                          const SizedBox(height: 4),
+
+                          Text(
+                            item.amount,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w500,
+                              color: Color(0xFF6B7280),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+
+                    const SizedBox(width: 10),
+
+                    // RISK BADGE
+                    Container(
+                      constraints: const BoxConstraints(
+                        minWidth: 82,
+                        maxWidth: 95,
+                      ),
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 10,
+                      ),
+                      decoration: BoxDecoration(
+                        color:
+                            _riskColor(item.risk).withValues(alpha: 0.12),
+                        borderRadius: BorderRadius.circular(16),
+                      ),
+                      child: Text(
+                        item.risk,
+                        textAlign: TextAlign.center,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: TextStyle(
+                          color: _riskColor(item.risk),
+                          fontWeight: FontWeight.w700,
+                          fontSize: 13,
+                          height: 1.2,
                         ),
                       ),
-                    ],
-                  ),
-                );
-              },
-            ),
-    );
-  }
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+  );
+}
 
   Widget _buildDriversSection(String query) {
     final drivers = _filteredDrivers(query);
@@ -618,38 +847,60 @@ class _HomeWidgetState extends State<HomeWidget> {
       title: 'Key Drivers',
       child: drivers.isEmpty
           ? _buildEmptyState('No matching drivers found.')
-          : ListView.builder(
+          : GridView.builder(
               itemCount: drivers.length,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
+              gridDelegate:
+                  const SliverGridDelegateWithFixedCrossAxisCount(
+                crossAxisCount: 2,
+                crossAxisSpacing: 14,
+                mainAxisSpacing: 14,
+                childAspectRatio: 2.8,
+              ),
               itemBuilder: (context, index) {
                 final driver = drivers[index];
 
                 return Container(
-                  padding:
-                      const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
-                  decoration: const BoxDecoration(
-                    border: Border(
-                      bottom: BorderSide(color: Color(0x11000000)),
-                    ),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
+                      ),
+                    ],
                   ),
                   child: Row(
-                    children: <Widget>[
+                    children: [
                       Container(
-                        width: 28,
-                        height: 28,
+                        width: 56,
+                        height: 56,
                         decoration: BoxDecoration(
-                          color: const Color(0xFFDBEDFB),
-                          borderRadius: BorderRadius.circular(10),
+                          color: const Color(0xFFE7F0FF),
+                          borderRadius: BorderRadius.circular(18),
                         ),
-                        child: const Icon(
-                          Icons.arrow_forward_rounded,
-                          color: Color(0xFF3F5FBE),
-                          size: 18,
+                        child: Icon(
+                          _driverIcon(driver),
+                          color: const Color(0xFF2563EB),
+                          size: 30,
                         ),
                       ),
-                      const SizedBox(width: 10),
-                      Expanded(child: Text(driver)),
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Text(
+                          driver,
+                          style: const TextStyle(
+                            fontSize: 16,
+                            height: 1.3,
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF111827),
+                          ),
+                        ),
+                      ),
                     ],
                   ),
                 );
@@ -662,39 +913,37 @@ class _HomeWidgetState extends State<HomeWidget> {
     required String title,
     required Widget child,
   }) {
-    return Material(
-      color: Colors.transparent,
-      elevation: 4,
-      borderRadius: BorderRadius.circular(24),
-      child: Container(
-        width: double.infinity,
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8F0FF),
-          borderRadius: BorderRadius.circular(24),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(20),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF9FAFC),
+        borderRadius: BorderRadius.circular(32),
+        border: Border.all(
+          color: const Color(0xFFE9EDF5),
         ),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: <Widget>[
-            Text(
-              title,
-              style: const TextStyle(
-                fontSize: 16,
-                fontWeight: FontWeight.bold,
-                color: Color(0xFF1B2559),
-              ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: <Widget>[
+          Text(
+            title,
+            style: const TextStyle(
+              fontSize: 22,
+              fontWeight: FontWeight.w800,
+              color: Color(0xFF1B1F3B),
             ),
-            const SizedBox(height: 12),
-            Container(
-              width: double.infinity,
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(18),
-              ),
-              child: child,
-            ),
-          ],
-        ),
+          ),
+          const SizedBox(height: 20),
+          child,
+        ],
       ),
     );
   }
@@ -705,7 +954,10 @@ class _HomeWidgetState extends State<HomeWidget> {
       child: Center(
         child: Text(
           text,
-          style: const TextStyle(color: Color(0xFF6B7280)),
+          style: const TextStyle(
+            fontSize: 15,
+            color: Color(0xFF6B7280),
+          ),
         ),
       ),
     );

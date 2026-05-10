@@ -2,7 +2,7 @@ const { MongoClient, ObjectId } = require('mongodb');
 const bcrypt = require('bcryptjs');
 require('dotenv').config();
 
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017';
+const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://carlonana0213_db_user:LikhaNU2026@ac-yah2vuq-shard-00-00.jucnt4q.mongodb.net:27017,ac-yah2vuq-shard-00-01.jucnt4q.mongodb.net:27017,ac-yah2vuq-shard-00-02.jucnt4q.mongodb.net:27017/?ssl=true&replicaSet=atlas-10fvq0-shard-0&authSource=admin&appName=Cluster0';
 const DB_NAME = process.env.DB_NAME || 'ramhis';
 const ADMIN_EMAIL = process.env.ADMIN_EMAIL || 'admin@ramhis.org';
 const ADMIN_PASSWORD = process.env.ADMIN_PASSWORD || 'admin123456';

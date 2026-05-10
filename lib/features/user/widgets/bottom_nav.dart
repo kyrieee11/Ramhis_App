@@ -44,11 +44,11 @@ class CustomNavBar extends StatelessWidget {
     return SafeArea(
       top: false,
       child: Container(
-        margin: const EdgeInsets.fromLTRB(14, 0, 14, 12),
+        
         padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 10),
         decoration: BoxDecoration(
           color: const Color(0xFF5D74DA),
-          borderRadius: BorderRadius.circular(28),
+          
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha:0.18),
