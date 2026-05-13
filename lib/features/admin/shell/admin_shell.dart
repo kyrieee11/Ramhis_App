@@ -45,7 +45,7 @@ class _AdminShellWidgetState extends State<AdminShellWidget> {
         const _AdminNavItem(
           label: 'Events',
           icon: Icons.event_rounded,
-          page: AdminEventsManagementConnectedWidget(),
+          page: AdminEventsScreen(),
         ),
         const _AdminNavItem(
           label: 'Content',

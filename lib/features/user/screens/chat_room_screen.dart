@@ -60,7 +60,7 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
     try {
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/me'),
-        headers: AuthSession.headers(json: false),
+        headers: AuthSession.headers(),
       );
 
       if (response.statusCode == 200) {
@@ -92,9 +92,13 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
 
       final incoming = ChatMessageModel.fromJson(
         Map<String, dynamic>.from(data),
-      ).copyWith(
-        threadId: widget.threadId,
-      );
+      );ChatMessageModel(
+  id: incoming.id,
+  senderId: incoming.senderId,
+  message: incoming.message,
+  createdAt: incoming.createdAt,
+  threadId: widget.threadId,
+);
 
       final alreadyExists = messages.any(
         (m) =>
@@ -260,7 +264,7 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
                                   ),
                                   const SizedBox(height: 6),
                                   Text(
-                                    _formatTime(msg.createdAt),
+                                   _formatTime(msg.createdAt.toString()),
                                     style: TextStyle(
                                       fontSize: 11,
                                       color: isMine

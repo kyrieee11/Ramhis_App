@@ -1,51 +1,107 @@
-import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
+import '../../core/app_config.dart';
+
 class SocketService {
-  static final SocketService _instance = SocketService._internal();
-  factory SocketService() => _instance;
+  io.Socket? _socket;
 
-  SocketService._internal();
+  io.Socket? get socket => _socket;
 
-  io.Socket? socket;
+  bool get isConnected => _socket?.connected == true;
 
+  // ── Connect ────────────────────────────────────────────────────────────────
   void connect() {
-    if (socket != null && socket!.connected) return; // ✅ prevent duplicate
+    if (_socket != null && _socket!.connected) return;
 
-    socket = io.io(
-      'http://10.0.2.2:5000',
+    _socket = io.io(
+      AppConfig.baseUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
-          .disableAutoConnect() // ✅ use manual connect
+          .disableAutoConnect()
           .build(),
     );
 
-    socket!.connect(); // ✅ single connection
+    _socket!.connect();
+  }
 
-    socket!.onConnect((_) {
-      debugPrint('✅ Connected to socket');
-    });
+  // ── Disconnect ─────────────────────────────────────────────────────────────
+  void disconnect() {
+    _socket?.disconnect();
+    _socket?.dispose();
+    _socket = null;
+  }
 
-    socket!.onDisconnect((_) {
-      debugPrint('❌ Disconnected from socket');
-    });
+  // ── Chat: join_room ────────────────────────────────────────────────────────
+  void joinRoom(String threadId) {
+    if (threadId.isEmpty) return;
 
-    socket!.on('content_updated', (data) {
-      debugPrint('📡 RAW SOCKET EVENT: $data');
+    _socket?.emit('join_room', threadId);
+  }
+
+  // ── Chat: send_message ─────────────────────────────────────────────────────
+  void sendMessage({
+    required String threadId,
+    required String senderId,
+    required String message,
+  }) {
+    if (threadId.isEmpty || message.trim().isEmpty) return;
+
+    _socket?.emit('send_message', {
+      'threadId': threadId,
+      'senderId': senderId,
+      'message': message.trim(),
     });
   }
 
-  void listenContentUpdate(Function(dynamic) callback) {
-    socket?.off('content_updated'); // ✅ prevent duplicate listeners
-    socket?.on('content_updated', callback);
+  // ── Chat: receive_message ──────────────────────────────────────────────────
+  void onReceiveMessage(void Function(Map<String, dynamic> data) callback) {
+    _socket?.off('receive_message');
+
+    _socket?.on('receive_message', (data) {
+      if (data is Map) {
+        callback(Map<String, dynamic>.from(data));
+      }
+    });
   }
 
-  void removeContentUpdateListener() {
-    socket?.off('content_updated');
+  // ── Events: events_updated ─────────────────────────────────────────────────
+  void onEventsUpdated(void Function(Map<String, dynamic> data) callback) {
+    _socket?.off('events_updated');
+
+    _socket?.on('events_updated', (data) {
+      if (data is Map) {
+        callback(Map<String, dynamic>.from(data));
+      }
+    });
   }
 
-  void dispose() {
-    socket?.disconnect(); // safer than dispose
-    socket = null;
+  // ── Content: content_updated ───────────────────────────────────────────────
+  void onContentUpdated(void Function(Map<String, dynamic> data) callback) {
+    _socket?.off('content_updated');
+
+    _socket?.on('content_updated', (data) {
+      if (data is Map) {
+        callback(Map<String, dynamic>.from(data));
+      }
+    });
+  }
+
+  // ── Remove listeners ───────────────────────────────────────────────────────
+  void removeChatListeners() {
+    _socket?.off('receive_message');
+  }
+
+  void removeEventListeners() {
+    _socket?.off('events_updated');
+  }
+
+  void removeContentListeners() {
+    _socket?.off('content_updated');
+  }
+
+  void removeAllListeners() {
+    _socket?.off('receive_message');
+    _socket?.off('events_updated');
+    _socket?.off('content_updated');
   }
 }

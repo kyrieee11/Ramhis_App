@@ -1,7 +1,6 @@
 import 'package:flutter/material.dart';
 
 import 'package:ramhis_app/services/api/auth_service.dart';
-import 'package:ramhis_app/services/api/user_service.dart';
 import 'package:ramhis_app/models/user_model.dart';
 
 import 'package:ramhis_app/features/auth/screens/landing_page.dart';
@@ -13,6 +12,8 @@ import 'package:ramhis_app/features/user/account/acc_privacy_policy.dart';
 import 'package:ramhis_app/features/user/account/acc_termsand_conditions.dart';
 import 'package:ramhis_app/features/user/account/acc_about.dart';
 
+
+
 class AccountWidget extends StatefulWidget {
   const AccountWidget({super.key});
 
@@ -22,9 +23,6 @@ class AccountWidget extends StatefulWidget {
 
 class _AccountWidgetState extends State<AccountWidget> {
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-
-  final UserService _userService = UserService();
-  final AuthService _authService = AuthService();
 
   bool isLoading = true;
   String fullName = 'User';
@@ -44,9 +42,11 @@ class _AccountWidgetState extends State<AccountWidget> {
     setState(() => isLoading = true);
 
     try {
-      final UserModel? user = await _userService.getProfile();
+      final userData = await AuthService.fetchMe();
 
-      if (user != null) {
+final UserModel user = UserModel.fromJson(userData);
+
+      {
         currentUser = user;
 
         fullName = user.fullName.isEmpty
@@ -89,7 +89,7 @@ class _AccountWidgetState extends State<AccountWidget> {
   }
 
   Future<void> _logout() async {
-    await _authService.logout();
+   await AuthService.logout();
 
     if (!mounted) return;
 
@@ -427,7 +427,7 @@ class _AccountWidgetState extends State<AccountWidget> {
               context,
               MaterialPageRoute(
                 builder: (_) =>
-                    const AccChangepassWidget(),
+                    const AccountChangePasswordScreen(),
               ),
             ),
           ),

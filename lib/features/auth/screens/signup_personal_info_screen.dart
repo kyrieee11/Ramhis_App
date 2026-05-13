@@ -29,8 +29,11 @@ class _SignupPersonalInformationWidgetState
   late final TextEditingController _contactController;
   late final TextEditingController _birthdateController;
 
-  String get _accountName =>
-      widget.accountType == 'doctor' ? 'Doctor Account' : 'Volunteer Account';
+  String get _accountName {
+    if (widget.accountType == 'doctor') return 'Doctor Account';
+    if (widget.accountType == 'volunteer') return 'Volunteer Account';
+    return 'User Account';
+  }
 
   @override
   void initState() {
@@ -51,26 +54,32 @@ class _SignupPersonalInformationWidgetState
   }
 
   Future<void> _pickBirthdate() async {
+    final now = DateTime.now();
+
     final picked = await showDatePicker(
       context: context,
-      initialDate: DateTime(2000),
+      initialDate: DateTime(now.year - 18),
       firstDate: DateTime(1900),
-      lastDate: DateTime.now(),
+      lastDate: now,
     );
 
     if (picked == null) return;
 
     setState(() {
       _birthdateController.text =
-          '${picked.month.toString().padLeft(2, '0')}/'
-          '${picked.day.toString().padLeft(2, '0')}/'
-          '${picked.year}';
+          '${picked.year.toString().padLeft(4, '0')}-'
+          '${picked.month.toString().padLeft(2, '0')}-'
+          '${picked.day.toString().padLeft(2, '0')}';
     });
+  }
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
   }
 
   void _goNext() {
     final fullName = _fullNameController.text.trim();
-    final email = _emailController.text.trim();
+    final email = _emailController.text.trim().toLowerCase();
     final contact = _contactController.text.trim();
     final birthdate = _birthdateController.text.trim();
 
@@ -80,6 +89,13 @@ class _SignupPersonalInformationWidgetState
         birthdate.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Please complete all fields.')),
+      );
+      return;
+    }
+
+    if (!_isValidEmail(email)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter a valid email address.')),
       );
       return;
     }
@@ -115,7 +131,6 @@ class _SignupPersonalInformationWidgetState
             icon: Icons.person_outline_rounded,
           ),
           const SizedBox(height: 22),
-
           _buildLabel('Email'),
           _buildTextField(
             controller: _emailController,
@@ -124,7 +139,6 @@ class _SignupPersonalInformationWidgetState
             keyboardType: TextInputType.emailAddress,
           ),
           const SizedBox(height: 22),
-
           _buildLabel('Contact number'),
           _buildTextField(
             controller: _contactController,
@@ -133,7 +147,6 @@ class _SignupPersonalInformationWidgetState
             keyboardType: TextInputType.phone,
           ),
           const SizedBox(height: 22),
-
           _buildLabel('Birthdate'),
           GestureDetector(
             onTap: _pickBirthdate,
@@ -146,9 +159,7 @@ class _SignupPersonalInformationWidgetState
               ),
             ),
           ),
-
           const SizedBox(height: 32),
-
           SizedBox(
             height: 58,
             child: ElevatedButton.icon(
@@ -282,7 +293,7 @@ class _SignupStepScaffold extends StatelessWidget {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+              padding: const EdgeInsets.all(24),
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 430),
                 child: Column(
@@ -297,125 +308,75 @@ class _SignupStepScaffold extends StatelessWidget {
                           width: 54,
                           height: 54,
                           decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.92),
+                            color: Colors.white.withValues(alpha: 0.9),
                             borderRadius: BorderRadius.circular(16),
-                            boxShadow: [
-                              BoxShadow(
-                                color: Colors.black.withValues(alpha: 0.12),
-                                blurRadius: 16,
-                                offset: const Offset(0, 8),
-                              ),
-                            ],
                           ),
                           child: const Icon(
                             Icons.arrow_back_rounded,
                             color: Color(0xFF4267D6),
-                            size: 30,
                           ),
                         ),
                       ),
                     ),
-
-                    const SizedBox(height: 38),
-
+                    const SizedBox(height: 30),
                     const Text(
                       'Create',
                       textAlign: TextAlign.center,
                       style: TextStyle(
                         color: Color(0xFFEAF0FF),
-                        fontSize: 34,
+                        fontSize: 30,
                         fontWeight: FontWeight.w300,
                       ),
                     ),
-
                     const SizedBox(height: 6),
-
                     Text(
                       accountName,
                       textAlign: TextAlign.center,
                       style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 42,
+                        fontSize: 38,
                         fontWeight: FontWeight.w900,
-                        letterSpacing: 0.2,
                       ),
                     ),
-
                     const SizedBox(height: 34),
-
                     ClipRRect(
                       borderRadius: BorderRadius.circular(30),
                       child: LinearProgressIndicator(
                         value: progress,
-                        minHeight: 8,
-                        backgroundColor: Colors.white.withValues(alpha: 0.28),
-                        valueColor: const AlwaysStoppedAnimation(
-                          Color(0xFFF05261),
-                        ),
+                        color: const Color(0xFFF05261),
+                        backgroundColor: Colors.white24,
+                        minHeight: 7,
                       ),
                     ),
-
-                    const SizedBox(height: 28),
-
+                    const SizedBox(height: 18),
                     Row(
                       children: [
-                        Container(
-                          width: 58,
-                          height: 58,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.12),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
-                            Icons.calendar_month_outlined,
+                        const CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.white24,
+                          child: Icon(
+                            Icons.person_outline_rounded,
                             color: Colors.white,
-                            size: 30,
                           ),
                         ),
-                        const SizedBox(width: 16),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Step $currentStep of $totalSteps',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 22,
-                                fontWeight: FontWeight.w900,
-                              ),
-                            ),
-                            const SizedBox(height: 4),
-                            Text(
-                              stepLabel,
-                              style: TextStyle(
-                                color: Colors.white.withValues(alpha: 0.72),
-                                fontSize: 19,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(width: 12),
+                        Text(
+                          'Step $currentStep of $totalSteps\n$stepLabel',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            height: 1.35,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 34),
-
+                    const SizedBox(height: 22),
                     Container(
-                      padding: const EdgeInsets.all(26),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEAF4FF),
-                        borderRadius: BorderRadius.circular(34),
-                        border: Border.all(
-                          color: Colors.white.withValues(alpha: 0.75),
-                          width: 2,
-                        ),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.20),
-                            blurRadius: 28,
-                            offset: const Offset(0, 18),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(30),
                       ),
                       child: child,
                     ),

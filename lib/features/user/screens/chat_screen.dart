@@ -393,7 +393,7 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
 
   Widget _buildChatTile(ChatThreadModel thread) {
     final unread = thread.unread;
-    final timestamp = _formatTime(thread.updatedAt);
+    final timestamp = _formatTime(thread.updatedAt.toString());
 
     return InkWell(
       onTap: () => _openThread(thread),

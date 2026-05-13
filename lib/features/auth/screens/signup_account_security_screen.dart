@@ -36,10 +36,11 @@ class _SignupAccountSecurityWidgetState
   bool _passwordVisible1 = false;
   bool _passwordVisible2 = false;
 
-  String get _accountName =>
-      widget.accountType == 'doctor'
-          ? 'Doctor Account'
-          : 'Volunteer Account';
+  String get _accountName {
+    if (widget.accountType == 'doctor') return 'Doctor Account';
+    if (widget.accountType == 'volunteer') return 'Volunteer Account';
+    return 'User Account';
+  }
 
   @override
   void initState() {
@@ -76,7 +77,9 @@ class _SignupAccountSecurityWidgetState
 
     if (password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please complete both password fields.')),
+        const SnackBar(
+          content: Text('Please complete both password fields.'),
+        ),
       );
       return;
     }
@@ -92,7 +95,9 @@ class _SignupAccountSecurityWidgetState
 
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match.')),
+        const SnackBar(
+          content: Text('Passwords do not match.'),
+        ),
       );
       return;
     }
@@ -106,8 +111,11 @@ class _SignupAccountSecurityWidgetState
           contactNumber: widget.contactNumber,
           birthdate: widget.birthdate,
           password: password,
-          confirmPassword: confirmPassword, 
-          organization: '', 
+          confirmPassword: confirmPassword,
+          prcLicenseNumber: '',
+          specialty: '',
+          hospitalClinic: '',
+          organization: '',
           skills: '',
         ),
       ),
@@ -130,12 +138,11 @@ class _SignupAccountSecurityWidgetState
             controller: _passwordController,
             hintText: 'Password',
             obscureText: !_passwordVisible1,
-            onToggle: () =>
-                setState(() => _passwordVisible1 = !_passwordVisible1),
+            onToggle: () {
+              setState(() => _passwordVisible1 = !_passwordVisible1);
+            },
           ),
-
           const SizedBox(height: 8),
-
           const Text(
             'Use at least 8 characters.',
             style: TextStyle(
@@ -143,20 +150,17 @@ class _SignupAccountSecurityWidgetState
               fontSize: 13,
             ),
           ),
-
           const SizedBox(height: 24),
-
           _buildLabel('Confirm password'),
           _buildPasswordField(
             controller: _confirmPasswordController,
             hintText: 'Confirm password',
             obscureText: !_passwordVisible2,
-            onToggle: () =>
-                setState(() => _passwordVisible2 = !_passwordVisible2),
+            onToggle: () {
+              setState(() => _passwordVisible2 = !_passwordVisible2);
+            },
           ),
-
           const SizedBox(height: 34),
-
           SizedBox(
             height: 58,
             child: ElevatedButton.icon(
@@ -173,7 +177,7 @@ class _SignupAccountSecurityWidgetState
                 backgroundColor: const Color(0xFFF05261),
                 foregroundColor: Colors.white,
                 elevation: 10,
-                shadowColor: Colors.black.withValues(alpha: 0.25),
+                shadowColor: Colors.black26,
                 shape: RoundedRectangleBorder(
                   borderRadius: BorderRadius.circular(32),
                 ),
@@ -228,8 +232,10 @@ class _SignupAccountSecurityWidgetState
                 : Icons.visibility_outlined,
           ),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 18, vertical: 20),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 18,
+          vertical: 20,
+        ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide.none,
@@ -307,9 +313,7 @@ class _SignupStepScaffold extends StatelessWidget {
                         ),
                       ),
                     ),
-
                     const SizedBox(height: 30),
-
                     const Text(
                       'Create',
                       textAlign: TextAlign.center,
@@ -319,9 +323,7 @@ class _SignupStepScaffold extends StatelessWidget {
                         fontWeight: FontWeight.w300,
                       ),
                     ),
-
-                    const SizedBox(height: 4),
-
+                    const SizedBox(height: 6),
                     Text(
                       accountName,
                       textAlign: TextAlign.center,
@@ -331,77 +333,45 @@ class _SignupStepScaffold extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
-
-                    const SizedBox(height: 30),
-
+                    const SizedBox(height: 34),
                     ClipRRect(
                       borderRadius: BorderRadius.circular(30),
                       child: LinearProgressIndicator(
                         value: progress,
-                        minHeight: 8,
-                        backgroundColor:
-                            Colors.white.withValues(alpha: 0.25),
-                        valueColor: const AlwaysStoppedAnimation(
-                          Color(0xFFF05261),
-                        ),
+                        color: const Color(0xFFF05261),
+                        backgroundColor: Colors.white24,
+                        minHeight: 7,
                       ),
                     ),
-
-                    const SizedBox(height: 20),
-
+                    const SizedBox(height: 18),
                     Row(
                       children: [
-                        Container(
-                          width: 52,
-                          height: 52,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.15),
-                            shape: BoxShape.circle,
-                          ),
-                          child: const Icon(
+                        const CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.white24,
+                          child: Icon(
                             Icons.lock_outline_rounded,
                             color: Colors.white,
                           ),
                         ),
-                        const SizedBox(width: 14),
-                        Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              'Step $currentStep of $totalSteps',
-                              style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 18,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                            Text(
-                              stepLabel,
-                              style: TextStyle(
-                                color:
-                                    Colors.white.withValues(alpha: 0.7),
-                                fontSize: 15,
-                              ),
-                            ),
-                          ],
+                        const SizedBox(width: 12),
+                        Text(
+                          'Step $currentStep of $totalSteps\n$stepLabel',
+                          style: const TextStyle(
+                            color: Colors.white,
+                            height: 1.35,
+                            fontWeight: FontWeight.w600,
+                          ),
                         ),
                       ],
                     ),
-
-                    const SizedBox(height: 28),
-
+                    const SizedBox(height: 22),
                     Container(
-                      padding: const EdgeInsets.all(24),
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(20),
                       decoration: BoxDecoration(
                         color: const Color(0xFFEAF4FF),
-                        borderRadius: BorderRadius.circular(32),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.2),
-                            blurRadius: 24,
-                            offset: const Offset(0, 12),
-                          ),
-                        ],
+                        borderRadius: BorderRadius.circular(30),
                       ),
                       child: child,
                     ),

@@ -1,9 +1,7 @@
-import 'dart:convert';
-
 import 'package:flutter/material.dart';
-import 'package:http/http.dart' as http;
 
 import 'package:ramhis_app/features/auth/screens/reset_password_screen.dart';
+import 'package:ramhis_app/services/api/auth_service.dart';
 
 class ForgotPasswordScreen extends StatefulWidget {
   const ForgotPasswordScreen({super.key});
@@ -14,9 +12,8 @@ class ForgotPasswordScreen extends StatefulWidget {
 
 class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
   final TextEditingController emailController = TextEditingController();
-  bool loading = false;
 
-  static const String baseUrl = 'http://10.0.2.2:5000';
+  bool loading = false;
 
   @override
   void dispose() {
@@ -24,98 +21,69 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
     super.dispose();
   }
 
-  Map<String, dynamic>? _tryDecodeMap(String body) {
-    try {
-      if (body.trim().isEmpty) return null;
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
+  }
 
-      final decoded = jsonDecode(body);
-
-      if (decoded is Map<String, dynamic>) {
-        return decoded;
-      }
-
-      if (decoded is Map) {
-        return Map<String, dynamic>.from(decoded);
-      }
-
-      return null;
-    } catch (e) {
-      debugPrint('JSON decode error: $e');
-      return null;
-    }
+  String? _extractTokenFromResetLink(String resetLink) {
+    final uri = Uri.tryParse(resetLink);
+    return uri?.queryParameters['token'];
   }
 
   Future<void> submit() async {
-    final String email = emailController.text.trim();
+    final String email = emailController.text.trim().toLowerCase();
 
     if (email.isEmpty) {
       _show('Please enter your email.');
       return;
     }
 
-    if (!email.contains('@') || !email.contains('.')) {
+    if (!_isValidEmail(email)) {
       _show('Please enter a valid email address.');
       return;
     }
 
-    if (mounted) {
-      setState(() => loading = true);
-    }
+    setState(() => loading = true);
 
     try {
-      final response = await http
-          .post(
-            Uri.parse('$baseUrl/auth/forgot-password'),
-            headers: {'Content-Type': 'application/json'},
-            body: jsonEncode({'email': email}),
-          )
-          .timeout(const Duration(seconds: 15));
-
-      debugPrint('Forgot Password STATUS: ${response.statusCode}');
-      debugPrint('Forgot Password BODY: ${response.body}');
-
-      final Map<String, dynamic>? data = _tryDecodeMap(response.body);
+      final data = await AuthService.forgotPassword(email: email);
 
       if (!mounted) return;
 
-      final String message = (data?['message'] ?? 'Request completed.')
+      final message = (data['message'] ??
+              'If the email exists, a reset link has been sent.')
           .toString();
 
       _show(message);
 
-      if (response.statusCode == 200) {
-        final String resetLink = (data?['resetLink'] ?? '').toString();
+      // Fallback/dev mode: backend may return resetLink directly.
+      final resetLink = (data['resetLink'] ?? '').toString();
 
-        if (resetLink.isNotEmpty) {
-          final Uri? uri = Uri.tryParse(resetLink);
-          final String? token = uri?.queryParameters['token'];
+      if (resetLink.isNotEmpty) {
+        final token = _extractTokenFromResetLink(resetLink);
 
-          if (token != null && token.isNotEmpty) {
-            await Future.delayed(const Duration(milliseconds: 500));
+        if (token != null && token.isNotEmpty) {
+          await Future.delayed(const Duration(milliseconds: 500));
 
-            if (!mounted) return;
+          if (!mounted) return;
 
-            Navigator.push(
-              context,
-              MaterialPageRoute(
-                builder: (_) => ResetPasswordScreen(token: token),
-              ),
-            );
-          }
+          Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (_) => ResetPasswordScreen(token: token),
+            ),
+          );
         }
       }
-    } on http.ClientException catch (e) {
+
+      // SendGrid/prod mode: no resetLink returned.
+      // User should open reset link from email.
+    } catch (error) {
       if (!mounted) return;
-      debugPrint('Client error: $e');
-      _show('Unable to connect to server.');
-    } on FormatException catch (e) {
-      if (!mounted) return;
-      debugPrint('Format error: $e');
-      _show('Invalid server response.');
-    } catch (e) {
-      if (!mounted) return;
-      debugPrint('Forgot password error: $e');
-      _show('Connection error. Please try again.');
+
+      _show(
+        error.toString().replaceFirst('Exception: ', ''),
+      );
     } finally {
       if (mounted) {
         setState(() => loading = false);
@@ -232,6 +200,7 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                       TextField(
                         controller: emailController,
                         keyboardType: TextInputType.emailAddress,
+                        enabled: !loading,
                         style: const TextStyle(
                           color: Color(0xFF334155),
                         ),
@@ -248,27 +217,26 @@ class _ForgotPasswordScreenState extends State<ForgotPasswordScreen> {
                           onPressed: loading ? null : submit,
                           icon: loading
                               ? const SizedBox(
-                                  height: 18,
                                   width: 18,
+                                  height: 18,
                                   child: CircularProgressIndicator(
                                     strokeWidth: 2,
                                     color: Colors.white,
                                   ),
                                 )
-                              : const Icon(Icons.send_rounded, size: 18),
+                              : const Icon(Icons.send_rounded),
                           label: Text(
                             loading ? 'Sending...' : 'Send Reset Link',
                             style: const TextStyle(
-                              fontSize: 15,
-                              fontWeight: FontWeight.w700,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFFD95362),
                             foregroundColor: Colors.white,
-                            elevation: 0,
+                            disabledBackgroundColor: Colors.grey,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(24),
+                              borderRadius: BorderRadius.circular(18),
                             ),
                           ),
                         ),

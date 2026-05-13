@@ -34,7 +34,7 @@ class _EventDetailsWidgetState extends State<EventDetailsWidget> {
     try {
       final res = await http.get(
         Uri.parse('$baseUrl/events/${widget.eventId}/participants'),
-        headers: AuthSession.headers(json: false),
+        headers: AuthSession.headers(),
       );
 
       if (res.statusCode == 200) {

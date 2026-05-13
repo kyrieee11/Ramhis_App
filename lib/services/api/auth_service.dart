@@ -1,44 +1,211 @@
 import 'dart:convert';
+import 'dart:io';
 
-import 'package:ramhis_app/core/session_manager.dart';
-import 'package:ramhis_app/models/user_model.dart';
+import 'package:http/http.dart' as http;
+
+import '../../core/app_config.dart';
+import '../../core/session_manager.dart';
 
 class AuthService {
-  Future<UserModel?> fetchMe() async {
-    final response = await AuthApi.get('/me');
+  static const String baseUrl = AppConfig.baseUrl;
 
-    if (response.statusCode != 200) return null;
+  // ── Signup: POST /signup ───────────────────────────────────────────────────
+  static Future<Map<String, dynamic>> signup({
+    required String fullName,
+    required String email,
+    required String password,
+    required String accountType,
+    String contactNumber = '',
+    String birthdate = '',
+    bool acceptedTerms = false,
+    String prcLicenseNumber = '',
+    String specialty = '',
+    String hospitalClinic = '',
+    String organization = '',
+    String skills = '',
+    File? licenseFile,
+  }) async {
+    final uri = Uri.parse('$baseUrl/signup');
 
-    final data = Map<String, dynamic>.from(jsonDecode(response.body));
-    AuthSession.user = data;
-    return UserModel.fromJson(data);
+    final request = http.MultipartRequest('POST', uri);
+
+    request.fields['full_name'] = fullName;
+    request.fields['email'] = email;
+    request.fields['password'] = password;
+    request.fields['account_type'] = accountType;
+    request.fields['contact_number'] = contactNumber;
+    request.fields['birthdate'] = birthdate;
+    request.fields['accepted_terms'] = acceptedTerms.toString();
+    request.fields['prc_license_number'] = prcLicenseNumber;
+    request.fields['specialty'] = specialty;
+    request.fields['hospital_clinic'] = hospitalClinic;
+    request.fields['organization'] = organization;
+    request.fields['skills'] = skills;
+
+    if (licenseFile != null) {
+      request.files.add(
+        await http.MultipartFile.fromPath(
+          'license_file',
+          licenseFile.path,
+        ),
+      );
+    }
+
+    final streamedResponse = await request.send();
+    final response = await http.Response.fromStream(streamedResponse);
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(data['message'] ?? 'Signup failed.');
+    }
+
+    return data;
   }
 
-  Future<Map<String, dynamic>> login({
+  // ── Login: POST /login ─────────────────────────────────────────────────────
+  static Future<Map<String, dynamic>> login({
     required String email,
     required String password,
   }) async {
-    final result = await AuthApi.login(
-      email: email,
-      password: password,
+    final response = await http.post(
+      Uri.parse('$baseUrl/login'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email,
+        'password': password,
+      }),
     );
 
-    if (result['ok'] == true && result['user'] != null) {
-      return {
-        'ok': true,
-        'accessToken': result['accessToken'],
-        'refreshToken': result['refreshToken'],
-        'user': result['user'],
-      };
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200) {
+      throw Exception(data['message'] ?? 'Login failed.');
     }
 
-    return {
-      'ok': false,
-      'message': (result['message'] ?? 'Login failed.').toString(),
-    };
+    await AuthSession.saveSession(
+      access: data['accessToken'],
+      refresh: data['refreshToken'],
+      user: Map<String, dynamic>.from(data['user']),
+    );
+
+    return data;
   }
 
-  Future<void> logout() async {
-    await AuthApi.logout();
+  // ── Refresh: POST /auth/refresh ─────────────────────────────────────────────
+  static Future<Map<String, dynamic>> refreshToken() async {
+    final refreshToken = AuthSession.refreshToken;
+
+    if (refreshToken == null || refreshToken.isEmpty) {
+      throw Exception('No refresh token found.');
+    }
+
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/refresh'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'refreshToken': refreshToken,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200) {
+      throw Exception(data['message'] ?? 'Token refresh failed.');
+    }
+
+    await AuthSession.updateTokens(
+      access: data['accessToken'],
+      refresh: data['refreshToken'],
+    );
+
+    return data;
   }
+
+  // ── Logout: POST /auth/logout ───────────────────────────────────────────────
+  static Future<void> logout() async {
+    try {
+      await http.post(
+        Uri.parse('$baseUrl/auth/logout'),
+        headers: AuthSession.headers(),
+      );
+    } catch (_) {}
+
+    await AuthSession.clearSession();
+  }
+
+  // ── Forgot Password: POST /auth/forgot-password ─────────────────────────────
+  static Future<Map<String, dynamic>> forgotPassword({
+    required String email,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/forgot-password'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'email': email,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(data['message'] ?? 'Forgot password failed.');
+    }
+
+    return data;
+  }
+
+  // ── Reset Password: POST /auth/reset-password ───────────────────────────────
+  static Future<Map<String, dynamic>> resetPassword({
+    required String token,
+    required String newPassword,
+  }) async {
+    final response = await http.post(
+      Uri.parse('$baseUrl/auth/reset-password'),
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'token': token,
+        'newPassword': newPassword,
+      }),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode < 200 || response.statusCode >= 300) {
+      throw Exception(data['message'] ?? 'Reset password failed.');
+    }
+
+    return data;
+  }
+
+  // ── Get Me ─────────────────────────────────────────────────────────────────
+  static Future<Map<String, dynamic>> fetchMe() async {
+    final response = await http.get(
+      Uri.parse('$baseUrl/me'),
+      headers: AuthSession.headers(),
+    );
+
+    final data = jsonDecode(response.body);
+
+    if (response.statusCode != 200) {
+      throw Exception(data['message'] ?? 'Failed to fetch user.');
+    }
+
+    AuthSession.currentUser = Map<String, dynamic>.from(data);
+
+    return data;
+  }
+
+  // NOTE:
+  // GET /reset-password is intentionally NOT used here.
+  // Your backend serves it as an HTML page for email/deep-link flow,
+  // not as a Flutter API endpoint.
 }

@@ -1,33 +1,20 @@
-import 'dart:convert';
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
 
-import 'package:ramhis_app/core/session_manager.dart';
+import 'package:ramhis_app/models/event_model.dart';
+import 'package:ramhis_app/services/api/event_service.dart';
 
-class AdminEventsManagementConnectedWidget extends StatefulWidget {
-  const AdminEventsManagementConnectedWidget({super.key});
+class AdminEventsScreen extends StatefulWidget {
+  const AdminEventsScreen({super.key});
 
   @override
-  State<AdminEventsManagementConnectedWidget> createState() =>
-      _AdminEventsManagementConnectedWidgetState();
+  State<AdminEventsScreen> createState() => _AdminEventsScreenState();
 }
 
-class _AdminEventsManagementConnectedWidgetState
-    extends State<AdminEventsManagementConnectedWidget> {
+class _AdminEventsScreenState extends State<AdminEventsScreen> {
   bool isLoading = true;
-  bool isSubmitting = false;
+  bool isSaving = false;
 
-  List<Map<String, dynamic>> events = [];
-
-  final titleController = TextEditingController();
-  final descriptionController = TextEditingController();
-  final locationController = TextEditingController();
-  final operationDaysController = TextEditingController();
-  final callTimeController = TextEditingController();
-  final meetingPlaceController = TextEditingController();
-
-  DateTime? missionDate;
-  String? editingEventId;
+  List<EventModel> events = [];
 
   @override
   void initState() {
@@ -35,302 +22,86 @@ class _AdminEventsManagementConnectedWidgetState
     fetchEvents();
   }
 
-  @override
-  void dispose() {
-    titleController.dispose();
-    descriptionController.dispose();
-    locationController.dispose();
-    operationDaysController.dispose();
-    callTimeController.dispose();
-    meetingPlaceController.dispose();
-    super.dispose();
-  }
-
   Future<void> fetchEvents() async {
-    if (mounted) setState(() => isLoading = true);
+    setState(() => isLoading = true);
 
     try {
-      final response = await AuthApi.get('/admin/events');
+      final result = await EventService.adminGetEvents();
 
       if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        setState(() {
-          events = List<Map<String, dynamic>>.from(data);
-          isLoading = false;
-        });
-      } else {
-        setState(() => isLoading = false);
-        final data = AuthApi.tryDecodeMap(response.body);
-        _showSnackBar(
-          (data?['message'] ?? 'Failed to load events.').toString(),
-        );
-      }
-    } catch (_) {
-      if (!mounted) return;
-      setState(() => isLoading = false);
-      _showSnackBar('Connection error.');
-    }
-  }
-
-  void _clearForm() {
-    editingEventId = null;
-    missionDate = null;
-    titleController.clear();
-    descriptionController.clear();
-    locationController.clear();
-    operationDaysController.clear();
-    callTimeController.clear();
-    meetingPlaceController.clear();
-  }
-
-  void _fillForm(Map<String, dynamic> event) {
-    editingEventId = (event['_id'] ?? '').toString();
-    titleController.text = (event['title'] ?? '').toString();
-    descriptionController.text = (event['description'] ?? '').toString();
-    locationController.text = (event['location'] ?? '').toString();
-    operationDaysController.text = (event['operation_days'] ?? '').toString();
-    callTimeController.text = (event['call_time'] ?? '').toString();
-    meetingPlaceController.text = (event['meeting_place'] ?? '').toString();
-
-    final rawMissionDate = event['mission_date'];
-    missionDate = rawMissionDate != null
-        ? DateTime.tryParse(rawMissionDate.toString())
-        : null;
-  }
-
-  Future<void> _pickMissionDate() async {
-    final now = DateTime.now();
-    final picked = await showDatePicker(
-      context: context,
-      initialDate: missionDate ?? now,
-      firstDate: DateTime(now.year, now.month, now.day),
-      lastDate: DateTime(2035),
-    );
-
-    if (picked == null) return;
-
-    missionDate = picked;
-
-    setState(() {
-      operationDaysController.text = DateFormat('MMM dd, yyyy').format(picked);
-    });
-  }
-
-  Future<void> _pickCallTime() async {
-    final selected = await showTimePicker(
-      context: context,
-      initialTime: TimeOfDay.now(),
-    );
-
-    if (selected == null) return;
-
-    final now = DateTime.now();
-    final dateTime = DateTime(
-      now.year,
-      now.month,
-      now.day,
-      selected.hour,
-      selected.minute,
-    );
-
-    setState(() {
-      callTimeController.text = DateFormat('hh:mm a').format(dateTime);
-    });
-  }
-
-  Future<void> createEvent() async {
-    final title = titleController.text.trim();
-    final description = descriptionController.text.trim();
-    final location = locationController.text.trim();
-    final operationDays = operationDaysController.text.trim();
-    final callTime = callTimeController.text.trim();
-    final meetingPlace = meetingPlaceController.text.trim();
-
-    if (title.isEmpty || location.isEmpty) {
-      _showSnackBar('Title and location are required.');
-      return;
-    }
-
-    if (missionDate == null) {
-      _showSnackBar('Please select a mission date.');
-      return;
-    }
-
-    if (callTime.isEmpty) {
-      _showSnackBar('Please select a call time.');
-      return;
-    }
-
-    if (mounted) setState(() => isSubmitting = true);
-
-    try {
-      final response = await AuthApi.post(
-        '/admin/events',
-        body: {
-          'title': title,
-          'description': description,
-          'location': location,
-          'operation_days': operationDays,
-          'call_time': callTime,
-          'meeting_place': meetingPlace,
-          'mission_date': missionDate!.toIso8601String(),
-        },
+      setState(() {
+        events = result;
+      });
+    } catch (error) {
+      _showSnackBar(
+        error.toString().replaceFirst('Exception: ', ''),
       );
+    } finally {
+      if (mounted) {
+        setState(() => isLoading = false);
+      }
+    }
+  }
 
-      if (!mounted) return;
+  Future<void> _saveEvent({
+    EventModel? existingEvent,
+    required String title,
+    required String description,
+    required String location,
+    required String operationDays,
+    required String callTime,
+    required String meetingPlace,
+    required DateTime? missionDate,
+  }) async {
+    setState(() => isSaving = true);
 
-      if (response.statusCode == 200 || response.statusCode == 201) {
-        Navigator.pop(context);
-        _clearForm();
-        await fetchEvents();
+    try {
+      if (existingEvent == null) {
+        await EventService.adminCreateEvent(
+          title: title,
+          description: description,
+          location: location,
+          operationDays: operationDays,
+          callTime: callTime,
+          meetingPlace: meetingPlace,
+          missionDate: missionDate,
+        );
+
         _showSnackBar('Event created successfully.');
       } else {
-        final data = AuthApi.tryDecodeMap(response.body);
-        _showSnackBar(
-          (data?['message'] ?? 'Failed to create event.').toString(),
+        await EventService.adminUpdateEvent(
+          eventId: existingEvent.id,
+          title: title,
+          description: description,
+          location: location,
+          operationDays: operationDays,
+          callTime: callTime,
+          meetingPlace: meetingPlace,
+          missionDate: missionDate,
         );
-      }
-    } catch (_) {
-      _showSnackBar('Connection error.');
-    } finally {
-      if (mounted) setState(() => isSubmitting = false);
-    }
-  }
 
-  Future<void> updateEvent() async {
-    final eventId = editingEventId;
-    final title = titleController.text.trim();
-    final description = descriptionController.text.trim();
-    final location = locationController.text.trim();
-    final operationDays = operationDaysController.text.trim();
-    final callTime = callTimeController.text.trim();
-    final meetingPlace = meetingPlaceController.text.trim();
-
-    if (eventId == null || eventId.isEmpty) {
-      _showSnackBar('Invalid event selected.');
-      return;
-    }
-
-    if (title.isEmpty || location.isEmpty) {
-      _showSnackBar('Title and location are required.');
-      return;
-    }
-
-    if (missionDate == null) {
-      _showSnackBar('Please select a mission date.');
-      return;
-    }
-
-    if (callTime.isEmpty) {
-      _showSnackBar('Please select a call time.');
-      return;
-    }
-
-    if (mounted) setState(() => isSubmitting = true);
-
-    try {
-      final response = await AuthApi.put(
-        '/admin/events/$eventId',
-        body: {
-          'title': title,
-          'description': description,
-          'location': location,
-          'operation_days': operationDays,
-          'call_time': callTime,
-          'meeting_place': meetingPlace,
-          'mission_date': missionDate!.toIso8601String(),
-        },
-      );
-
-      if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        Navigator.pop(context);
-        _clearForm();
-        await fetchEvents();
         _showSnackBar('Event updated successfully.');
-      } else {
-        final data = AuthApi.tryDecodeMap(response.body);
-        _showSnackBar(
-          (data?['message'] ?? 'Failed to update event.').toString(),
-        );
       }
-    } catch (_) {
-      _showSnackBar('Connection error.');
-    } finally {
-      if (mounted) setState(() => isSubmitting = false);
-    }
-  }
 
-  Future<void> deleteEvent(String eventId) async {
-    try {
-      final response = await AuthApi.post(
-        '/admin/events/delete',
-        body: {'eventId': eventId},
+      await fetchEvents();
+    } catch (error) {
+      _showSnackBar(
+        error.toString().replaceFirst('Exception: ', ''),
       );
-
-      if (!mounted) return;
-
-      if (response.statusCode == 200) {
-        await fetchEvents();
-        _showSnackBar('Event deleted successfully.');
-      } else {
-        final data = AuthApi.tryDecodeMap(response.body);
-        _showSnackBar(
-          (data?['message'] ?? 'Failed to delete event.').toString(),
-        );
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
       }
-    } catch (_) {
-      _showSnackBar('Connection error.');
     }
   }
 
-  Future<void> confirmDelete(String eventId) async {
+  Future<void> _deleteEvent(String eventId) async {
     final confirmed = await showDialog<bool>(
       context: context,
-      barrierDismissible: false,
       builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
-        ),
-        contentPadding: const EdgeInsets.fromLTRB(20, 20, 20, 10),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-              width: 60,
-              height: 60,
-              decoration: BoxDecoration(
-                color: Colors.red.withValues(alpha: 0.1),
-                shape: BoxShape.circle,
-              ),
-              child: const Icon(
-                Icons.warning_rounded,
-                color: Colors.red,
-                size: 32,
-              ),
-            ),
-            const SizedBox(height: 16),
-            const Text(
-              'Delete Event?',
-              style: TextStyle(
-                fontSize: 18,
-                fontWeight: FontWeight.w800,
-              ),
-            ),
-            const SizedBox(height: 8),
-            const Text(
-              'This action cannot be undone.\nAre you sure you want to delete this event?',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: Color(0xFF667085),
-                height: 1.4,
-              ),
-            ),
-          ],
-        ),
+        title: const Text('Delete Event'),
+        content: const Text('Are you sure you want to delete this event?'),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
@@ -339,7 +110,7 @@ class _AdminEventsManagementConnectedWidgetState
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
-              backgroundColor: const Color(0xFFD95362),
+              backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
             child: const Text('Delete'),
@@ -348,238 +119,426 @@ class _AdminEventsManagementConnectedWidgetState
       ),
     );
 
-    if (confirmed == true) {
-      await deleteEvent(eventId);
+    if (confirmed != true) return;
+
+    setState(() => isSaving = true);
+
+    try {
+      await EventService.adminDeleteEvent(eventId);
+
+      _showSnackBar('Event deleted successfully.');
+      await fetchEvents();
+    } catch (error) {
+      _showSnackBar(
+        error.toString().replaceFirst('Exception: ', ''),
+      );
+    } finally {
+      if (mounted) {
+        setState(() => isSaving = false);
+      }
     }
   }
 
-  void openCreateDialog() {
-    _clearForm();
-    _openEventDialog(isEdit: false);
-  }
+  void _showEventForm({EventModel? event}) {
+    final titleController = TextEditingController(text: event?.title ?? '');
+    final descriptionController =
+        TextEditingController(text: event?.description ?? '');
+    final locationController =
+        TextEditingController(text: event?.location ?? '');
+    final operationDaysController =
+        TextEditingController(text: event?.operationDays ?? '');
+    final callTimeController =
+        TextEditingController(text: event?.callTime ?? '');
+    final meetingPlaceController =
+        TextEditingController(text: event?.meetingPlace ?? '');
 
-  void openEditDialog(Map<String, dynamic> event) {
-    _fillForm(event);
-    _openEventDialog(isEdit: true);
-  }
+    DateTime? selectedDate = event?.missionDate != null
+    ? DateTime.tryParse(event!.missionDate)
+    : null;
 
-  Widget _statusChip(Map<String, dynamic> event) {
-    final status = (event['status'] ?? 'Upcoming').toString();
-    Color color;
-
-    switch (status.toLowerCase()) {
-      case 'ongoing':
-        color = Colors.orange;
-        break;
-      case 'done':
-        color = Colors.grey;
-        break;
-      default:
-        color = Colors.green;
-    }
-
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(20),
-      ),
-      child: Text(
-        status,
-        style: const TextStyle(
-          color: Colors.white,
-          fontWeight: FontWeight.w700,
-          fontSize: 11,
-        ),
-      ),
-    );
-  }
-
-  void _openEventDialog({required bool isEdit}) {
-    showDialog(
+    showModalBottomSheet(
       context: context,
-      barrierDismissible: !isSubmitting,
-      builder: (_) => AlertDialog(
-        shape: RoundedRectangleBorder(
-          borderRadius: BorderRadius.circular(20),
+      isScrollControlled: true,
+      backgroundColor: const Color(0xFFF6F8FC),
+      shape: const RoundedRectangleBorder(
+        borderRadius: BorderRadius.vertical(top: Radius.circular(26)),
+      ),
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            Future<void> pickDate() async {
+              final now = DateTime.now();
+
+              final picked = await showDatePicker(
+                context: context,
+                initialDate: selectedDate ?? now,
+                firstDate: DateTime(now.year - 1),
+                lastDate: DateTime(now.year + 5),
+              );
+
+              if (picked == null) return;
+
+              setSheetState(() {
+                selectedDate = picked;
+              });
+            }
+
+            Future<void> submit() async {
+              final title = titleController.text.trim();
+              final description = descriptionController.text.trim();
+              final location = locationController.text.trim();
+              final operationDays = operationDaysController.text.trim();
+              final callTime = callTimeController.text.trim();
+              final meetingPlace = meetingPlaceController.text.trim();
+
+              if (title.isEmpty || location.isEmpty) {
+                _showSnackBar('Title and location are required.');
+                return;
+              }
+
+              Navigator.pop(sheetContext);
+
+              await _saveEvent(
+                existingEvent: event,
+                title: title,
+                description: description,
+                location: location,
+                operationDays: operationDays,
+                callTime: callTime,
+                meetingPlace: meetingPlace,
+                missionDate: selectedDate,
+              );
+            }
+
+            return Padding(
+              padding: EdgeInsets.only(
+                left: 18,
+                right: 18,
+                top: 18,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 18,
+              ),
+              child: SingleChildScrollView(
+                child: Column(
+                  children: [
+                    Container(
+                      width: 44,
+                      height: 5,
+                      decoration: BoxDecoration(
+                        color: Colors.grey.shade400,
+                        borderRadius: BorderRadius.circular(20),
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      event == null ? 'Create Event' : 'Edit Event',
+                      style: const TextStyle(
+                        color: Color(0xFF172B5F),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    _input(
+                      controller: titleController,
+                      label: 'Title',
+                      icon: Icons.event_outlined,
+                    ),
+                    const SizedBox(height: 12),
+                    _input(
+                      controller: descriptionController,
+                      label: 'Description',
+                      icon: Icons.description_outlined,
+                      maxLines: 3,
+                    ),
+                    const SizedBox(height: 12),
+                    _input(
+                      controller: locationController,
+                      label: 'Location',
+                      icon: Icons.location_on_outlined,
+                    ),
+                    const SizedBox(height: 12),
+                    _input(
+                      controller: operationDaysController,
+                      label: 'Operation Days',
+                      icon: Icons.calendar_view_week_outlined,
+                    ),
+                    const SizedBox(height: 12),
+                    _input(
+                      controller: callTimeController,
+                      label: 'Call Time',
+                      icon: Icons.access_time_outlined,
+                    ),
+                    const SizedBox(height: 12),
+                    _input(
+                      controller: meetingPlaceController,
+                      label: 'Meeting Place',
+                      icon: Icons.groups_outlined,
+                    ),
+                    const SizedBox(height: 12),
+                    InkWell(
+                      onTap: pickDate,
+                      borderRadius: BorderRadius.circular(18),
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 14,
+                          vertical: 16,
+                        ),
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          borderRadius: BorderRadius.circular(18),
+                        ),
+                        child: Row(
+                          children: [
+                            const Icon(
+                              Icons.date_range_outlined,
+                              color: Color(0xFF4169D8),
+                            ),
+                            const SizedBox(width: 12),
+                            Expanded(
+                              child: Text(
+                                selectedDate == null
+                                    ? 'Select Mission Date'
+                                    : _formatDate(selectedDate!),
+                                style: TextStyle(
+                                  color: selectedDate == null
+                                      ? Colors.grey
+                                      : const Color(0xFF172B5F),
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton.icon(
+                        onPressed: isSaving ? null : submit,
+                        icon: const Icon(Icons.save_outlined),
+                        label: Text(event == null ? 'Create' : 'Update'),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: const Color(0xFFD95362),
+                          foregroundColor: Colors.white,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(24),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            );
+          },
+        );
+      },
+    ).whenComplete(() {
+      titleController.dispose();
+      descriptionController.dispose();
+      locationController.dispose();
+      operationDaysController.dispose();
+      callTimeController.dispose();
+      meetingPlaceController.dispose();
+    });
+  }
+
+  Widget _input({
+    required TextEditingController controller,
+    required String label,
+    required IconData icon,
+    int maxLines = 1,
+  }) {
+    return TextField(
+      controller: controller,
+      maxLines: maxLines,
+      decoration: InputDecoration(
+        labelText: label,
+        prefixIcon: Icon(
+          icon,
+          color: const Color(0xFF4169D8),
         ),
-        title: Text(isEdit ? 'Edit Event' : 'Create Event'),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: titleController,
-                decoration: const InputDecoration(labelText: 'Title'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: descriptionController,
-                decoration: const InputDecoration(labelText: 'Description'),
-                maxLines: 3,
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: locationController,
-                decoration: const InputDecoration(labelText: 'Location'),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: operationDaysController,
-                readOnly: true,
-                onTap: _pickMissionDate,
-                decoration: const InputDecoration(
-                  labelText: 'Mission Date',
-                  hintText: 'Select mission date',
-                  suffixIcon: Icon(Icons.calendar_today_rounded),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: callTimeController,
-                readOnly: true,
-                onTap: _pickCallTime,
-                decoration: const InputDecoration(
-                  labelText: 'Call Time',
-                  hintText: 'Select time',
-                  suffixIcon: Icon(Icons.access_time_rounded),
-                ),
-              ),
-              const SizedBox(height: 10),
-              TextField(
-                controller: meetingPlaceController,
-                decoration: const InputDecoration(
-                  labelText: 'Meeting Place',
-                  hintText: '#2218 Baker St.',
-                ),
-              ),
-            ],
-          ),
+        filled: true,
+        fillColor: Colors.white,
+        border: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: BorderSide.none,
         ),
-        actions: [
-          TextButton(
-            onPressed: isSubmitting ? null : () => Navigator.pop(context),
-            child: const Text('Cancel'),
-          ),
-          ElevatedButton(
-            onPressed: isSubmitting ? null : (isEdit ? updateEvent : createEvent),
-            child: isSubmitting
-                ? const SizedBox(
-                    height: 18,
-                    width: 18,
-                    child: CircularProgressIndicator(strokeWidth: 2),
-                  )
-                : Text(isEdit ? 'Save' : 'Create'),
-          ),
-        ],
       ),
     );
+  }
+
+  String _formatDate(DateTime date) {
+    return '${date.year.toString().padLeft(4, '0')}-'
+        '${date.month.toString().padLeft(2, '0')}-'
+        '${date.day.toString().padLeft(2, '0')}';
   }
 
   void _showSnackBar(String message) {
     if (!mounted) return;
+
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
     );
   }
 
-  String _eventSubtitle(Map<String, dynamic> event) {
-    final location = (event['location'] ?? '').toString();
-    final missionDate = (event['operation_days'] ?? '').toString();
-    final callTime = (event['call_time'] ?? '').toString();
-
-    final parts = <String>[
-      if (location.isNotEmpty) location,
-      if (missionDate.isNotEmpty) missionDate,
-      if (callTime.isNotEmpty) callTime,
-    ];
-
-    return parts.isEmpty ? 'No extra details' : parts.join(' • ');
+  Color _statusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'done':
+        return Colors.grey;
+      case 'ongoing':
+        return Colors.green;
+      case 'upcoming':
+      default:
+        return Colors.orange;
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: const Color(0xFFF6F8FC),
       appBar: AppBar(
-        title: const Text('Events Management'),
+        title: const Text('Admin Events'),
+        backgroundColor: const Color(0xFF4169D8),
+        foregroundColor: Colors.white,
         actions: [
           IconButton(
-            onPressed: fetchEvents,
-            icon: const Icon(Icons.refresh),
-          ),
-          IconButton(
-            onPressed: openCreateDialog,
+            onPressed: isSaving ? null : () => _showEventForm(),
             icon: const Icon(Icons.add),
           ),
         ],
       ),
       body: isLoading
           ? const Center(child: CircularProgressIndicator())
-          : events.isEmpty
-              ? const Center(child: Text('No events found.'))
-              : ListView.builder(
-                  itemCount: events.length,
-                  itemBuilder: (context, index) {
-                    final event = events[index];
-                    final volunteers =
-                        (event['volunteers'] as List?)?.length ?? 0;
-                    final eventId = (event['_id'] ?? '').toString();
-
-                    return Card(
-                      margin: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 6,
-                      ),
-                      child: ListTile(
-                        title: Row(
-                          children: [
-                            Expanded(
-                              child: Text((event['title'] ?? '').toString()),
-                            ),
-                            _statusChip(event),
-                          ],
+          : RefreshIndicator(
+              onRefresh: fetchEvents,
+              child: events.isEmpty
+                  ? const Center(
+                      child: Text(
+                        'No events found.',
+                        style: TextStyle(
+                          color: Color(0xFF172B5F),
+                          fontWeight: FontWeight.w600,
                         ),
-                        subtitle: Text(_eventSubtitle(event)),
-                        trailing: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
+                      ),
+                    )
+                  : ListView.builder(
+                      padding: const EdgeInsets.all(16),
+                      itemCount: events.length,
+                      itemBuilder: (context, index) {
+                        final event = events[index];
+
+                        return Card(
+                          margin: const EdgeInsets.only(bottom: 14),
+                          elevation: 3,
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Padding(
+                            padding: const EdgeInsets.all(16),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                const Icon(Icons.people_alt_outlined, size: 18),
-                                const SizedBox(height: 2),
-                                Text('$volunteers'),
+                                Row(
+                                  children: [
+                                    const CircleAvatar(
+                                      backgroundColor: Color(0xFF4169D8),
+                                      child: Icon(
+                                        Icons.event_outlined,
+                                        color: Colors.white,
+                                      ),
+                                    ),
+                                    const SizedBox(width: 12),
+                                    Expanded(
+                                      child: Text(
+                                        event.title,
+                                        style: const TextStyle(
+                                          fontSize: 17,
+                                          fontWeight: FontWeight.bold,
+                                          color: Color(0xFF172B5F),
+                                        ),
+                                      ),
+                                    ),
+                                    Container(
+                                      padding: const EdgeInsets.symmetric(
+                                        horizontal: 10,
+                                        vertical: 6,
+                                      ),
+                                      decoration: BoxDecoration(
+                                        color: _statusColor(
+                                          event.status,
+                                        ).withValues(alpha: 0.12),
+                                        borderRadius: BorderRadius.circular(20),
+                                      ),
+                                      child: Text(
+                                        event.status,
+                                        style: TextStyle(
+                                          color: _statusColor(event.status),
+                                          fontWeight: FontWeight.bold,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                const SizedBox(height: 12),
+                                if (event.description.isNotEmpty)
+                                  Text(event.description),
+                                const SizedBox(height: 10),
+                                if (event.location.isNotEmpty)
+                                  Text('Location: ${event.location}'),
+                                if (event.operationDays.isNotEmpty)
+                                  Text(
+                                    'Operation Days: ${event.operationDays}',
+                                  ),
+                                if (event.callTime.isNotEmpty)
+                                  Text('Call Time: ${event.callTime}'),
+                                if (event.meetingPlace.isNotEmpty)
+                                  Text(
+                                    'Meeting Place: ${event.meetingPlace}',
+                                  ),
+                               
+                                  Text(
+                                    'Mission Date: ${_formatDate(DateTime.parse(event.missionDate))}',
+                                  ),
+                                const SizedBox(height: 12),
+                                Row(
+                                  children: [
+                                    Expanded(
+                                      child: OutlinedButton.icon(
+                                        onPressed: isSaving
+                                            ? null
+                                            : () =>
+                                                _showEventForm(event: event),
+                                        icon: const Icon(Icons.edit_outlined),
+                                        label: const Text('Edit'),
+                                      ),
+                                    ),
+                                    const SizedBox(width: 10),
+                                    Expanded(
+                                      child: ElevatedButton.icon(
+                                        onPressed: isSaving
+                                            ? null
+                                            : () => _deleteEvent(event.id),
+                                        icon: const Icon(Icons.delete_outline),
+                                        label: const Text('Delete'),
+                                        style: ElevatedButton.styleFrom(
+                                          backgroundColor: Colors.red,
+                                          foregroundColor: Colors.white,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
                               ],
                             ),
-                            const SizedBox(width: 4),
-                            IconButton(
-                              tooltip: 'Edit',
-                              icon: const Icon(
-                                Icons.edit_outlined,
-                                color: Colors.blue,
-                              ),
-                              onPressed: () => openEditDialog(event),
-                            ),
-                            IconButton(
-                              tooltip: 'Delete',
-                              icon: const Icon(
-                                Icons.delete_outline,
-                                color: Colors.red,
-                              ),
-                              onPressed: eventId.isEmpty
-                                  ? null
-                                  : () => confirmDelete(eventId),
-                            ),
-                          ],
-                        ),
-                      ),
-                    );
-                  },
-                ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: openCreateDialog,
-        child: const Icon(Icons.add),
-      ),
+                          ),
+                        );
+                      },
+                    ),
+            ),
     );
   }
 }

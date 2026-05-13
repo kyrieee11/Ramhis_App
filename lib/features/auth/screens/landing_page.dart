@@ -5,6 +5,7 @@ import 'package:ramhis_app/features/user/screens/home_screen.dart';
 import 'package:ramhis_app/features/admin/shell/admin_shell.dart';
 import 'package:ramhis_app/features/auth/screens/welcome_screen.dart';
 import 'package:ramhis_app/features/auth/screens/forgot_password_screen.dart';
+import 'package:ramhis_app/services/api/auth_service.dart';
 
 class LandingpageWidget extends StatefulWidget {
   const LandingpageWidget({super.key});
@@ -41,21 +42,21 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
     }
 
     try {
-      final result = await AuthApi.login(
-        email: email,
-        password: password,
-      );
+      final result = await AuthService.login(
+  email: email,
+  password: password,
+);
 
       if (!mounted) return;
 
       if (result['ok'] == true) {
         try {
-          await AuthApi.fetchMe();
+          await AuthService.fetchMe();
         } catch (e) {
           debugPrint('fetchMe error: $e');
         }
 
-        final Map<String, dynamic>? user = AuthSession.user;
+        final Map<String, dynamic>? user = AuthSession.currentUser;
 
         if (user == null) {
           setState(() => isLoading = false);

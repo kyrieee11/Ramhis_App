@@ -16,7 +16,6 @@ class EventsWidget extends StatefulWidget {
 }
 
 class _EventsWidgetState extends State<EventsWidget> {
-  final EventService _eventService = EventService();
 
   bool isLoading = true;
   List<EventModel> events = [];
@@ -74,7 +73,7 @@ class _EventsWidgetState extends State<EventsWidget> {
     }
 
     try {
-      final data = await _eventService.getEvents();
+      final data = await EventService.getEvents();
 
       if (!mounted) return;
       setState(() {
@@ -91,7 +90,9 @@ class _EventsWidgetState extends State<EventsWidget> {
   }
 
   Future<void> _register(String eventId) async {
-    final success = await _eventService.registerForEvent(eventId);
+    final result = await EventService.registerForEvent(eventId);
+
+final success = result['ok'] == true;
 
     if (!mounted) return;
 
@@ -108,7 +109,9 @@ class _EventsWidgetState extends State<EventsWidget> {
   }
 
   Future<void> _cancelJoin(String eventId) async {
-    final success = await _eventService.cancelEvent(eventId);
+    final result = await EventService.cancelEvent(eventId);
+
+final success = result['ok'] == true;
 
     if (!mounted) return;
 

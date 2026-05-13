@@ -1,13 +1,12 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-
-import 'package:ramhis_app/models/content_model.dart';
 import 'package:ramhis_app/models/user_model.dart';
 import 'package:ramhis_app/services/api/content_service.dart';
-import 'package:ramhis_app/services/api/user_service.dart';
 import 'package:ramhis_app/services/socket/socket_service.dart';
 import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
+
+import 'package:ramhis_app/services/api/auth_service.dart';
 
 class HomeWidget extends StatefulWidget {
   const HomeWidget({super.key});
@@ -20,9 +19,6 @@ class _HomeWidgetState extends State<HomeWidget> {
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController searchController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
-
-  final UserService _userService = UserService();
-  final ContentService _contentService = ContentService();
   final SocketService socketService = SocketService();
 
   final ValueNotifier<String> searchNotifier = ValueNotifier<String>('');
@@ -34,8 +30,8 @@ class _HomeWidgetState extends State<HomeWidget> {
   String homepageTitle = '';
   String homepageBody = '';
 
-  List<TopCondition> topConditions = [];
-  List<MedicationNeed> medicationNeeds = [];
+  List<Map<String, dynamic>> topConditions = [];
+  List<Map<String, dynamic>> medicationNeeds = [];
   List<String> keyDrivers = [];
 
   @override
@@ -45,12 +41,6 @@ class _HomeWidgetState extends State<HomeWidget> {
     searchController.addListener(_onSearchChanged);
 
     socketService.connect();
-
-    socketService.listenContentUpdate((data) {
-      if (!mounted || isLoading) return;
-      debugPrint('📡 Homepage updated from admin');
-      _loadHomeData();
-    });
 
     Future.microtask(_loadHomeData);
   }
@@ -63,7 +53,7 @@ class _HomeWidgetState extends State<HomeWidget> {
     searchFocusNode.dispose();
     searchNotifier.dispose();
 
-    socketService.removeContentUpdateListener();
+
 
     super.dispose();
   }
@@ -83,12 +73,12 @@ class _HomeWidgetState extends State<HomeWidget> {
 
     try {
       final results = await Future.wait<dynamic>([
-        _userService.getProfile(),
-        _contentService.getHomepageContent(),
+        AuthService.fetchMe(),
+        ContentService.getHomepageContent(),
       ]);
 
       final user = results[0] as UserModel?;
-      final content = results[1] as HomepageContentModel?;
+      final content = results[1] as Map<String, dynamic>?;
 
       if (user != null) {
         userName = user.fullName.isEmpty ? 'User' : user.fullName;
@@ -98,11 +88,11 @@ class _HomeWidgetState extends State<HomeWidget> {
       }
 
       if (content != null) {
-        homepageTitle = content.title;
-        homepageBody = content.body;
-        topConditions = content.topConditions;
-        medicationNeeds = content.medicationNeeds;
-        keyDrivers = content.keyDrivers;
+       homepageTitle = content['title'] ?? '';
+homepageBody = content['body'] ?? '';
+topConditions = List<Map<String, dynamic>>.from(content['topConditions'] ?? []);
+medicationNeeds = List<Map<String, dynamic>>.from(content['medicationNeeds'] ?? []);
+keyDrivers = List<String>.from(content['keyDrivers'] ?? []);
       } else {
         _loadFallbackData();
       }
@@ -116,50 +106,49 @@ class _HomeWidgetState extends State<HomeWidget> {
   }
 
   void _loadFallbackData() {
-    topConditions = [
-      TopCondition(
-        percent: 30,
-        change: 10,
-        title: 'Respiratory Infections',
-        color: 'warning',
-      ),
-      TopCondition(
-        percent: 24,
-        change: 6,
-        title: 'Hypertension Cases',
-        color: 'danger',
-      ),
-      TopCondition(
-        percent: 18,
-        change: 4,
-        title: 'Gastrointestinal Disorders',
-        color: 'blue',
-      ),
-    ];
+  topConditions = [
+    {
+      'percent': 30,
+      'change': 10,
+      'title': 'Respiratory Infections',
+      'color': 'warning',
+    },
+    {
+      'percent': 24,
+      'change': 6,
+      'title': 'Hypertension Cases',
+      'color': 'danger',
+    },
+    {
+      'percent': 18,
+      'change': 4,
+      'title': 'Gastrointestinal Disorders',
+      'color': 'blue',
+    },
+  ];
 
-    medicationNeeds = [
-      MedicationNeed(
-        name: 'Amoxicillin',
-        amount: '1,200 doses',
-        risk: 'High Risk',
-      ),
-      MedicationNeed(
-        name: 'Paracetamol',
-        amount: '900 doses',
-        risk: 'Medium Risk',
-      ),
-      MedicationNeed(
-        name: 'Azithromycin',
-        amount: '600 doses',
-        risk: 'Low Risk',
-      ),
-      MedicationNeed(
-        name: 'Ibuprofen',
-        amount: '450 doses',
-        risk: 'Medium Risk',
-      ),
-    ];
-
+  medicationNeeds = [
+    {
+      'name': 'Amoxicillin',
+      'amount': '1,200 doses',
+      'risk': 'High Risk',
+    },
+    {
+      'name': 'Paracetamol',
+      'amount': '900 doses',
+      'risk': 'Medium Risk',
+    },
+    {
+      'name': 'Azithromycin',
+      'amount': '600 doses',
+      'risk': 'Low Risk',
+    },
+    {
+      'name': 'Ibuprofen',
+      'amount': '450 doses',
+      'risk': 'Medium Risk',
+    },
+  ];
     keyDrivers = [
       'Increased antibiotic use',
       'Seasonal respiratory cases',
@@ -173,13 +162,13 @@ class _HomeWidgetState extends State<HomeWidget> {
     return value[0].toUpperCase() + value.substring(1);
   }
 
-  List<MedicationNeed> _filteredMedicationNeeds(String query) {
+ List<Map<String, dynamic>> _filteredMedicationNeeds(String query) {
     if (query.isEmpty) return medicationNeeds;
 
     return medicationNeeds.where((item) {
-      return item.name.toLowerCase().contains(query) ||
-          item.risk.toLowerCase().contains(query) ||
-          item.amount.toLowerCase().contains(query);
+   return (item['name'] ?? '').toString().toLowerCase().contains(query) ||
+    (item['risk'] ?? '').toString().toLowerCase().contains(query) ||
+    (item['amount'] ?? '').toString().toLowerCase().contains(query);
     }).toList();
   }
 
@@ -191,11 +180,14 @@ class _HomeWidgetState extends State<HomeWidget> {
         .toList();
   }
 
-  List<TopCondition> _filteredConditions(String query) {
+ List<Map<String, dynamic>> _filteredConditions(String query) {
     if (query.isEmpty) return topConditions;
 
     return topConditions.where((item) {
-      return item.title.toLowerCase().contains(query);
+      return (item['title'] ?? '')
+    .toString()
+    .toLowerCase()
+    .contains(query);
     }).toList();
   }
 
@@ -628,9 +620,8 @@ class _HomeWidgetState extends State<HomeWidget> {
                 itemBuilder: (context, index) {
                   final item = conditions[index];
 
-                  final Color bg = _conditionColor(item.color);
-                  final Color accent = _conditionAccent(item.color);
-
+                  final Color bg = _conditionColor(item['color']);
+final Color accent = _conditionAccent(item['color']);
                   return Container(
                     width: 220,
                     padding: const EdgeInsets.all(22),
@@ -648,14 +639,14 @@ class _HomeWidgetState extends State<HomeWidget> {
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                            _conditionIcon(item.title),
+                           _conditionIcon(item['title']),
                             color: accent,
                             size: 42,
                           ),
                         ),
                         const Spacer(),
                         Text(
-                          '${item.percent}%',
+                          '${item['percent']}%',
                           style: TextStyle(
                             fontSize: 48,
                             fontWeight: FontWeight.w900,
@@ -685,7 +676,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                               ),
                               const SizedBox(width: 4),
                               Text(
-                                '${item.change}%',
+                               '${item['change']}%',
                                 style: TextStyle(
                                   color: accent,
                                   fontWeight: FontWeight.w700,
@@ -697,7 +688,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                         ),
                         const Spacer(),
                         Text(
-                          item.title,
+                        item['title'],
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -758,12 +749,12 @@ class _HomeWidgetState extends State<HomeWidget> {
                       height: 54,
                       decoration: BoxDecoration(
                         color:
-                            _riskColor(item.risk).withValues(alpha: 0.12),
+                            _riskColor(item['risk']).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Icon(
                         Icons.medication_rounded,
-                        color: _riskColor(item.risk),
+                        color: _riskColor(item['risk']),
                         size: 28,
                       ),
                     ),
@@ -776,7 +767,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
                           Text(
-                            item.name,
+                           item['name'],
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -789,7 +780,7 @@ class _HomeWidgetState extends State<HomeWidget> {
                           const SizedBox(height: 4),
 
                           Text(
-                            item.amount,
+                           item['amount'],
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
@@ -816,16 +807,16 @@ class _HomeWidgetState extends State<HomeWidget> {
                       ),
                       decoration: BoxDecoration(
                         color:
-                            _riskColor(item.risk).withValues(alpha: 0.12),
+                            _riskColor(item['risk']).withValues(alpha: 0.12),
                         borderRadius: BorderRadius.circular(16),
                       ),
                       child: Text(
-                        item.risk,
+                       item['risk'],
                         textAlign: TextAlign.center,
                         maxLines: 2,
                         overflow: TextOverflow.ellipsis,
                         style: TextStyle(
-                          color: _riskColor(item.risk),
+                          color: _riskColor(item['risk']),
                           fontWeight: FontWeight.w700,
                           fontSize: 13,
                           height: 1.2,

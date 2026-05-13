@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 
+import 'package:http/http.dart' as http;
 import 'package:ramhis_app/core/session_manager.dart';
 
 class AdminUsersManagementConnectedWidget extends StatefulWidget {
@@ -83,7 +84,10 @@ class _AdminUsersManagementConnectedWidgetState
     if (mounted) setState(() => isLoading = true);
 
     try {
-      final response = await AuthApi.get('/admin/users');
+     final response = await http.get(
+  Uri.parse('${AuthSession.baseUrl}/admin/users'),
+  headers: AuthSession.headers(),
+);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -113,10 +117,13 @@ class _AdminUsersManagementConnectedWidgetState
     setState(() => isProcessing = true);
 
     try {
-      final response = await AuthApi.put(
-        '/admin/users/$userId/status',
-        body: {'status': status.toLowerCase()},
-      );
+      final response = await http.put(
+  Uri.parse('${AuthSession.baseUrl}/admin/users/$userId/status'),
+  headers: AuthSession.headers(),
+  body: jsonEncode({
+    'status': status.toLowerCase(),
+  }),
+);
 
       if (response.statusCode == 200) {
         _showSnackBar('User updated to $status.');

@@ -4,6 +4,7 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:ramhis_app/core/session_manager.dart';
 
@@ -126,15 +127,16 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
       final bytes = await croppedFile.readAsBytes();
       final base64Image = base64Encode(bytes);
 
-      final response = await AuthApi.put(
-        '/users/$userId/profile-image',
-        body: {
-          'imageBase64': base64Image,
-          'fileName': croppedFile.path.split('/').last,
-        },
-      );
+      final response = await http.put(
+  Uri.parse('${AuthSession.baseUrl}/users/$userId/profile-image'),
+  headers: AuthSession.headers(),
+  body: jsonEncode({
+    'imageBase64': base64Image,
+    'fileName': croppedFile.path.split('/').last,
+  }),
+);
 
-      final data = AuthApi.tryDecodeMap(response.body);
+      final data = jsonDecode(response.body);
 
       if (!mounted) return;
 
@@ -144,9 +146,9 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
         });
 
         if (data['user'] is Map) {
-          await AuthSession.updateUser(
-            Map<String, dynamic>.from(data['user']),
-          );
+         AuthSession.currentUser =
+    Map<String, dynamic>.from(data['user']);
+          
         }
 
         if (!mounted) return;
@@ -202,25 +204,25 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
     setState(() => isSaving = true);
 
     try {
-      final response = await AuthApi.put(
-        '/users/$userId',
-        body: {
-          'full_name': fullNameController.text.trim(),
-          'email': emailController.text.trim(),
-          'contact_number': contactController.text.trim(),
-          'birthdate': birthdateController.text.trim(),
-        },
-      );
+      final response = await http.put(
+  Uri.parse('${AuthSession.baseUrl}/users/$userId'),
+  headers: AuthSession.headers(),
+  body: jsonEncode({
+    'full_name': fullNameController.text.trim(),
+    'email': emailController.text.trim(),
+    'contact_number': contactController.text.trim(),
+    'birthdate': birthdateController.text.trim(),
+  }),
+);
 
-      final data = AuthApi.tryDecodeMap(response.body);
+     final data = jsonDecode(response.body);
 
       if (!mounted) return;
 
       if (response.statusCode == 200) {
         if (data != null && data['user'] is Map) {
-          await AuthSession.updateUser(
-            Map<String, dynamic>.from(data['user']),
-          );
+          AuthSession.currentUser =
+    Map<String, dynamic>.from(data['user']);
         }
 
         if (!mounted) return;

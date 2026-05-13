@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:ramhis_app/core/session_manager.dart';
 
@@ -73,7 +74,10 @@ class _AdminDoctorsVerificationConnectedWidgetState
     setState(() => isLoading = true);
 
     try {
-      final response = await AuthApi.get('/admin/doctors');
+      final response = await http.get(
+  Uri.parse('${AuthSession.baseUrl}/admin/doctors'),
+  headers: AuthSession.headers(),
+);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -114,7 +118,10 @@ class _AdminDoctorsVerificationConnectedWidgetState
     setState(() => isProcessing = true);
 
     try {
-      final response = await AuthApi.put(endpoint);
+      final response = await http.put(
+  Uri.parse('${AuthSession.baseUrl}$endpoint'),
+  headers: AuthSession.headers(),
+);
 
       if (response.statusCode == 200) {
         _showSnackBar(successMessage);
@@ -137,7 +144,7 @@ class _AdminDoctorsVerificationConnectedWidgetState
 
     final fullUrl = url.startsWith('http')
         ? url
-        : '${AuthApi.baseUrl}$url';
+        :'${AuthSession.baseUrl}$url';
 
     final uri = Uri.parse(fullUrl);
 
@@ -298,7 +305,7 @@ class _AdminDoctorsVerificationConnectedWidgetState
 
   final fullUrl = proofUrl.startsWith('http')
       ? proofUrl
-      : '${AuthApi.baseUrl}$proofUrl';
+      : '${AuthSession.baseUrl}$proofUrl';
 
   final isPdf = fullUrl.toLowerCase().endsWith('.pdf');
 

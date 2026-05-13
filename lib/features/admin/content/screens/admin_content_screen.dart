@@ -1,7 +1,9 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 import 'package:ramhis_app/core/session_manager.dart';
+
 
 class AdminContentManagementConnectedWidget extends StatefulWidget {
   const AdminContentManagementConnectedWidget({super.key});
@@ -58,7 +60,10 @@ class _AdminContentManagementConnectedWidgetState
     if (mounted) setState(() => isLoading = true);
 
     try {
-      final response = await AuthApi.get('/admin/content');
+      final response = await http.get(
+  Uri.parse('${AuthSession.baseUrl}/admin/content'),
+  headers: AuthSession.headers(),
+);
 
       if (response.statusCode != 200) {
         _showSnackBar('Failed to load homepage content.');
@@ -240,12 +245,17 @@ class _AdminContentManagementConnectedWidgetState
     };
 
     try {
-      final response = homepageContent == null
-          ? await AuthApi.post('/admin/content', body: payload)
-          : await AuthApi.put(
-              '/admin/content/${homepageContent!['_id']}',
-              body: payload,
-            );
+      final http.Response response = homepageContent == null
+    ? await http.post(
+        Uri.parse('${AuthSession.baseUrl}/admin/content'),
+        headers: AuthSession.headers(),
+        body: jsonEncode(payload),
+      )
+    : await http.put(
+        Uri.parse('${AuthSession.baseUrl}/admin/content/${homepageContent!['_id']}'),
+        headers: AuthSession.headers(),
+        body: jsonEncode(payload),
+      );
 
       final success = response.statusCode == 200 || response.statusCode == 201;
 

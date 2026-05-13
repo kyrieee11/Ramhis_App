@@ -1,6 +1,7 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 
+import 'package:http/http.dart' as http;
 import 'package:ramhis_app/core/session_manager.dart';
 
 class AdminVolunteerManagementConnectedWidget extends StatefulWidget {
@@ -86,7 +87,10 @@ class _AdminVolunteerManagementConnectedWidgetState
     setState(() => isLoading = true);
 
     try {
-      final response = await AuthApi.get('/admin/volunteers');
+     final response = await http.get(
+  Uri.parse('${AuthSession.baseUrl}/admin/volunteers'),
+  headers: AuthSession.headers(),
+);
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);
@@ -117,10 +121,13 @@ class _AdminVolunteerManagementConnectedWidgetState
     setState(() => isProcessing = true);
 
     try {
-      final response = await AuthApi.put(
-        '/admin/volunteers/$userId/status',
-        body: {'status': status.toLowerCase()},
-      );
+      final response = await http.put(
+  Uri.parse('${AuthSession.baseUrl}/admin/volunteers/$userId/status'),
+  headers: AuthSession.headers(),
+  body: jsonEncode({
+    'status': status.toLowerCase(),
+  }),
+);
 
       if (response.statusCode == 200) {
         _showSnackBar('Volunteer updated to $status.');

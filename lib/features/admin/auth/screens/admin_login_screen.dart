@@ -35,14 +35,14 @@ class _AdminLoginWidgetState extends State<AdminLoginWidget> {
     setState(() => isLoading = true);
 
     try {
-      final result = await AuthApi.login(
+      final result = await AuthSession.login(
         email: email,
         password: password,
       );
 
       if (result['ok'] == true) {
         // 🔥 OPTIONAL: ensure user data is synced
-        await AuthApi.fetchMe();
+        await AuthSession.fetchMe();
 
         if (!mounted) return;
 

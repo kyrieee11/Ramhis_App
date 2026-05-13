@@ -52,9 +52,13 @@ class _SignupProfessionalVerificationWidgetState
   String? selectedFileName;
 
   bool get _isDoctor => widget.accountType == 'doctor';
+  bool get _isVolunteer => widget.accountType == 'volunteer';
 
-  String get _accountTitle =>
-      _isDoctor ? 'Doctor Account' : 'Volunteer Account';
+  String get _accountTitle {
+    if (_isDoctor) return 'Doctor Account';
+    if (_isVolunteer) return 'Volunteer Account';
+    return 'User Account';
+  }
 
   @override
   void initState() {
@@ -90,8 +94,11 @@ class _SignupProfessionalVerificationWidgetState
 
     if (file.size > 5 * 1024 * 1024) {
       if (!mounted) return;
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('File must be 5MB or smaller.')),
+        const SnackBar(
+          content: Text('File must be 5MB or smaller.'),
+        ),
       );
       return;
     }
@@ -124,13 +131,15 @@ class _SignupProfessionalVerificationWidgetState
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
             content: Text(
-              'Please complete all fields and upload license proof.',
+              'Please complete all doctor fields and upload license proof.',
             ),
           ),
         );
         return;
       }
-    } else {
+    }
+
+    if (_isVolunteer) {
       if (organization.isEmpty || skills.isEmpty) {
         ScaffoldMessenger.of(context).showSnackBar(
           const SnackBar(
@@ -185,7 +194,6 @@ class _SignupProfessionalVerificationWidgetState
                 child: Column(
                   children: [
                     const SizedBox(height: 82),
-
                     const Text(
                       'Create',
                       style: TextStyle(
@@ -194,7 +202,6 @@ class _SignupProfessionalVerificationWidgetState
                         fontWeight: FontWeight.w300,
                       ),
                     ),
-
                     Text(
                       _accountTitle,
                       textAlign: TextAlign.center,
@@ -204,18 +211,14 @@ class _SignupProfessionalVerificationWidgetState
                         fontWeight: FontWeight.bold,
                       ),
                     ),
-
                     const SizedBox(height: 24),
-
                     const LinearProgressIndicator(
                       value: 3 / 4,
                       color: Color(0xFFF05261),
                       backgroundColor: Colors.white24,
                       minHeight: 6,
                     ),
-
                     const SizedBox(height: 18),
-
                     Row(
                       children: [
                         const CircleAvatar(
@@ -228,7 +231,7 @@ class _SignupProfessionalVerificationWidgetState
                         ),
                         const SizedBox(width: 12),
                         Text(
-                          'Step 3 of 4\n${_isDoctor ? 'Professional Verification' : 'Volunteer Verification'}',
+                          'Step 3 of 4\n${_isDoctor ? 'Professional Verification' : _isVolunteer ? 'Volunteer Verification' : 'Account Verification'}',
                           style: const TextStyle(
                             color: Colors.white,
                             height: 1.35,
@@ -237,9 +240,7 @@ class _SignupProfessionalVerificationWidgetState
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 22),
-
                     Expanded(
                       child: Container(
                         width: double.infinity,
@@ -258,7 +259,9 @@ class _SignupProfessionalVerificationWidgetState
                         child: SingleChildScrollView(
                           child: _isDoctor
                               ? _buildDoctorFields()
-                              : _buildVolunteerFields(),
+                              : _isVolunteer
+                                  ? _buildVolunteerFields()
+                                  : _buildRegularUserFields(),
                         ),
                       ),
                     ),
@@ -267,7 +270,6 @@ class _SignupProfessionalVerificationWidgetState
               ),
             ),
           ),
-
           Positioned(
             top: 58,
             left: 24,
@@ -310,12 +312,9 @@ class _SignupProfessionalVerificationWidgetState
           'Enter PRC license number',
           Icons.badge_outlined,
         ),
-
         const SizedBox(height: 20),
-
         _label('Upload License Proof'),
         const SizedBox(height: 10),
-
         InkWell(
           onTap: _pickFile,
           borderRadius: BorderRadius.circular(20),
@@ -381,7 +380,6 @@ class _SignupProfessionalVerificationWidgetState
                   ),
           ),
         ),
-
         if (selectedFileName != null) ...[
           const SizedBox(height: 8),
           const Text(
@@ -392,27 +390,21 @@ class _SignupProfessionalVerificationWidgetState
             ),
           ),
         ],
-
         const SizedBox(height: 20),
-
         _label('Specialty'),
         _input(
           _specialtyController,
           'Enter medical specialty',
           Icons.medical_services_outlined,
         ),
-
         const SizedBox(height: 20),
-
         _label('Hospital / Clinic'),
         _input(
           _hospitalController,
           'Enter hospital or clinic',
           Icons.local_hospital_outlined,
         ),
-
         const SizedBox(height: 30),
-
         _nextButton(),
       ],
     );
@@ -428,18 +420,33 @@ class _SignupProfessionalVerificationWidgetState
           'Enter organization name',
           Icons.groups_outlined,
         ),
-
         const SizedBox(height: 20),
-
         _label('Skills'),
         _input(
           _skillsController,
           'Ex. logistics, registration, first aid',
           Icons.volunteer_activism_outlined,
         ),
-
         const SizedBox(height: 30),
+        _nextButton(),
+      ],
+    );
+  }
 
+  Widget _buildRegularUserFields() {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.stretch,
+      children: [
+        const Text(
+          'No additional verification is required for regular users.',
+          style: TextStyle(
+            color: Color(0xFF243B73),
+            fontSize: 16,
+            fontWeight: FontWeight.w600,
+            height: 1.4,
+          ),
+        ),
+        const SizedBox(height: 30),
         _nextButton(),
       ],
     );
