@@ -2,10 +2,10 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
+import 'package:ramhis_app/features/user/screens/chat_room_screen.dart';
+import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
 import 'package:ramhis_app/models/chat_thread_model.dart';
 import 'package:ramhis_app/services/api/chat_service.dart';
-import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
-import 'package:ramhis_app/features/user/screens/chat_room_screen.dart';
 
 class ChatCopyWidget extends StatefulWidget {
   const ChatCopyWidget({super.key});
@@ -35,7 +35,7 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
   void initState() {
     super.initState();
     searchController.addListener(_onSearchChanged);
-    _loadThreads();
+    Future.microtask(_loadThreads);
   }
 
   @override
@@ -51,6 +51,7 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
     final query = searchController.text.trim();
 
     if (!mounted) return;
+
     setState(() {
       searchQuery = query;
     });
@@ -65,37 +66,68 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
       return;
     }
 
-    _searchDebounce = Timer(const Duration(milliseconds: 350), () async {
-      if (!mounted) return;
+    _searchDebounce = Timer(
+      const Duration(milliseconds: 350),
+      () async {
+        if (!mounted) return;
 
-      setState(() => isSearchingUsers = true);
+        setState(() => isSearchingUsers = true);
 
-      final users = await _chatService.searchApprovedUsers(query);
+        try {
+          final users = await _chatService.searchApprovedUsers(query);
 
-      if (!mounted) return;
-      setState(() {
-        searchUsers = users;
-        isSearchingUsers = false;
-      });
-    });
+          if (!mounted) return;
+
+          setState(() {
+            searchUsers = users;
+            isSearchingUsers = false;
+          });
+        } catch (error) {
+          debugPrint('❌ Search users failed: $error');
+
+          if (!mounted) return;
+
+          setState(() {
+            searchUsers = [];
+            isSearchingUsers = false;
+          });
+        }
+      },
+    );
   }
 
   Future<void> _loadThreads() async {
     if (!mounted) return;
+
     setState(() => isLoading = true);
 
-    final data = await _chatService.getThreads();
+    try {
+      final data = await _chatService.getThreads();
 
-    if (!mounted) return;
-    setState(() {
-      threads = data;
-      isLoading = false;
-    });
+      if (!mounted) return;
+
+      setState(() {
+        threads = data;
+        isLoading = false;
+      });
+    } catch (error) {
+      debugPrint('❌ Load threads failed: $error');
+
+      if (!mounted) return;
+
+      setState(() {
+        threads = [];
+        isLoading = false;
+      });
+    }
   }
 
   List<ChatThreadModel> get filteredThreads {
     final query = searchQuery.trim().toLowerCase();
-    if (query.isEmpty) return threads;
+
+    if (query.isEmpty) {
+      return threads;
+    }
 
     return threads.where((item) {
       return item.name.toLowerCase().contains(query) ||
@@ -104,47 +136,59 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
   }
 
   Future<void> _startChatWithUser(Map<String, dynamic> user) async {
-    final userId = (user['_id'] ?? '').toString();
-    final fullName = (user['full_name'] ?? 'Chat').toString();
+    final userId = (user['_id'] ?? user['id'] ?? '').toString();
+    final fullName = (user['full_name'] ?? user['name'] ?? 'Chat').toString();
 
     if (userId.isEmpty || isCreatingChat) return;
 
     setState(() => isCreatingChat = true);
 
-    final result = await _chatService.createOrOpenDirectThread(userId);
+    try {
+      final result = await _chatService.createOrOpenDirectThread(userId);
 
-    if (!mounted) return;
-    setState(() => isCreatingChat = false);
+      if (!mounted) return;
 
-    if (result == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Unable to open chat.')),
-      );
-      return;
-    }
+      setState(() => isCreatingChat = false);
 
-    final threadId = (result['id'] ?? '').toString();
-    final threadName = (result['name'] ?? fullName).toString();
+      if (result == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Unable to open chat.')),
+        );
+        return;
+      }
 
-    if (threadId.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Invalid chat thread.')),
-      );
-      return;
-    }
+      final threadId = (result['id'] ?? result['_id'] ?? '').toString();
+      final threadName = (result['name'] ?? fullName).toString();
 
-    await _loadThreads();
+      if (threadId.isEmpty) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Invalid chat thread.')),
+        );
+        return;
+      }
 
-    if (!mounted) return;
+      searchController.clear();
+      await _loadThreads();
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChatRoomWidget(
-          threadId: threadId,
-          threadTitle: threadName,
+      if (!mounted) return;
+
+      Navigator.of(context).push(
+        MaterialPageRoute(
+          builder: (_) => ChatRoomWidget(
+            threadId: threadId,
+            threadTitle: threadName,
+          ),
         ),
-      ),
-    );
+      );
+    } catch (error) {
+      if (!mounted) return;
+
+      setState(() => isCreatingChat = false);
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(error.toString())),
+      );
+    }
   }
 
   void _openThread(ChatThreadModel thread) {
@@ -162,6 +206,7 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
 
   String _formatTime(String raw) {
     if (raw.isEmpty) return '';
+
     try {
       final parsed = DateTime.parse(raw).toLocal();
       final hour = parsed.hour == 0
@@ -171,6 +216,7 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
               : parsed.hour;
       final minute = parsed.minute.toString().padLeft(2, '0');
       final suffix = parsed.hour >= 12 ? 'PM' : 'AM';
+
       return '$hour:$minute $suffix';
     } catch (_) {
       return raw;
@@ -241,8 +287,6 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
                   ),
                 ),
               ),
-
-              /// ✅ REPLACED NAVBAR HERE
               const CustomNavBar(currentIndex: 2),
             ],
           ),
@@ -283,7 +327,10 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
           ),
           IconButton(
             onPressed: _loadThreads,
-            icon: const Icon(Icons.refresh, color: Colors.white),
+            icon: const Icon(
+              Icons.refresh,
+              color: Colors.white,
+            ),
           ),
         ],
       ),
@@ -303,9 +350,7 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
           suffixIcon: searchQuery.isNotEmpty
               ? IconButton(
                   icon: const Icon(Icons.close),
-                  onPressed: () {
-                    searchController.clear();
-                  },
+                  onPressed: searchController.clear,
                 )
               : null,
           filled: true,
@@ -324,7 +369,9 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
           ),
           focusedBorder: OutlineInputBorder(
             borderRadius: BorderRadius.circular(20),
-            borderSide: const BorderSide(color: Color(0xFF5B76D1)),
+            borderSide: const BorderSide(
+              color: Color(0xFF5B76D1),
+            ),
           ),
         ),
       ),
@@ -358,14 +405,19 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
       ),
       child: Column(
         children: searchUsers.map((user) {
-          final fullName = (user['full_name'] ?? 'User').toString();
-          final accountType = (user['account_type'] ?? '').toString();
+          final fullName = (user['full_name'] ?? user['name'] ?? 'User')
+              .toString();
+          final accountType = (user['account_type'] ?? user['role'] ?? '')
+              .toString();
 
           return ListTile(
             enabled: !isCreatingChat,
             leading: const CircleAvatar(
               backgroundColor: Color(0xFF5B76D1),
-              child: Icon(Icons.person, color: Colors.white),
+              child: Icon(
+                Icons.person,
+                color: Colors.white,
+              ),
             ),
             title: Text(
               fullName,
@@ -383,7 +435,10 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
                     height: 18,
                     child: CircularProgressIndicator(strokeWidth: 2),
                   )
-                : const Icon(Icons.arrow_forward_ios, size: 16),
+                : const Icon(
+                    Icons.arrow_forward_ios,
+                    size: 16,
+                  ),
             onTap: () => _startChatWithUser(user),
           );
         }).toList(),
@@ -396,6 +451,7 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
     final timestamp = _formatTime(thread.updatedAt.toString());
 
     return InkWell(
+      borderRadius: BorderRadius.circular(20),
       onTap: () => _openThread(thread),
       child: Container(
         padding: const EdgeInsets.all(14),
@@ -407,7 +463,10 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
           children: [
             const CircleAvatar(
               backgroundColor: Color(0xFF5B76D1),
-              child: Icon(Icons.person, color: Colors.white),
+              child: Icon(
+                Icons.person,
+                color: Colors.white,
+              ),
             ),
             const SizedBox(width: 12),
             Expanded(
@@ -436,10 +495,14 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
                   ),
                   const SizedBox(height: 4),
                   Text(
-                    thread.lastMessage,
+                    thread.lastMessage.isEmpty
+                        ? 'No messages yet'
+                        : thread.lastMessage,
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(color: Color(0xFF475467)),
+                    style: const TextStyle(
+                      color: Color(0xFF475467),
+                    ),
                   ),
                 ],
               ),
@@ -475,7 +538,11 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
         Center(
           child: Text(
             'No chats found',
-            style: TextStyle(color: Colors.white),
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
           ),
         ),
       ],

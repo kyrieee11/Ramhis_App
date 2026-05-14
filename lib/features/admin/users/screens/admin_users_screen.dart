@@ -84,10 +84,15 @@ class _AdminUsersManagementConnectedWidgetState
     if (mounted) setState(() => isLoading = true);
 
     try {
+      debugPrint('ACCESS TOKEN BEFORE ADMIN USERS: ${AuthSession.accessToken}');
+debugPrint('HEADERS BEFORE ADMIN USERS: ${AuthSession.headers()}');
+
      final response = await http.get(
   Uri.parse('${AuthSession.baseUrl}/admin/users'),
   headers: AuthSession.headers(),
 );
+debugPrint('ADMIN USERS STATUS: ${response.statusCode}');
+debugPrint('ADMIN USERS BODY: ${response.body}');
 
       if (response.statusCode == 200) {
         final List<dynamic> data = jsonDecode(response.body);

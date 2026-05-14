@@ -5,10 +5,11 @@
 
 
     <application
-        android:label="Complete Login UI"
-        tools:replace="android:label"
-        android:icon="@mipmap/ic_launcher"
-        android:requestLegacyExternalStorage="true">
+    android:label="Complete Login UI"
+    tools:replace="android:label"
+    android:icon="@mipmap/ic_launcher"
+    android:requestLegacyExternalStorage="true"
+    android:usesCleartextTraffic="true">
 
         <activity
             android:name=".MainActivity"

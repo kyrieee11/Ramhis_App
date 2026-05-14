@@ -71,7 +71,15 @@ class _AdminContentManagementConnectedWidgetState
       }
 
       final decoded = jsonDecode(response.body);
-      final data = List<Map<String, dynamic>>.from(decoded);
+
+final List<dynamic> rawList =
+    decoded is List
+        ? decoded
+        : decoded['contents'] ?? [];
+
+final data = rawList
+    .map((e) => Map<String, dynamic>.from(e))
+    .toList();
 
       final item = data.cast<Map<String, dynamic>?>().firstWhere(
             (content) => content?['slug'] == 'homepage_content',
@@ -87,9 +95,9 @@ class _AdminContentManagementConnectedWidgetState
               'sections': {},
             },
       );
-    } catch (_) {
-      _showSnackBar('Connection error while loading content.');
-    } finally {
+    } catch (error) {
+  debugPrint(error.toString());
+} finally {
       if (mounted) setState(() => isLoading = false);
     }
   }

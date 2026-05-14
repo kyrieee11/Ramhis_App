@@ -9,6 +9,7 @@ const JWT_SECRET = process.env.JWT_SECRET;
 async function authMiddleware(req, res, next) {
   try {
     const authHeader = String(req.headers.authorization || '');
+    console.log('AUTH HEADER:', authHeader);
     const token = authHeader.startsWith('Bearer ')
       ? authHeader.substring(7)
       : '';
@@ -22,11 +23,14 @@ async function authMiddleware(req, res, next) {
     let decoded;
     try {
       decoded = jwt.verify(token, JWT_SECRET);
-    } catch (_) {
-      return res.status(401).json({
-        message: 'Invalid or expired token.',
-      });
-    }
+    } catch (error) {
+  console.log('JWT VERIFY ERROR:', error.message);
+  console.log('JWT_SECRET EXISTS:', !!JWT_SECRET);
+
+  return res.status(401).json({
+    message: 'Invalid or expired token.',
+  });
+}
 
     const user = await usersCol().findOne({
       _id: new ObjectId(decoded.id),

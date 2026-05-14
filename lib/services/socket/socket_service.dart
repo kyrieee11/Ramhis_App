@@ -1,107 +1,259 @@
-import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:flutter/foundation.dart';
+import 'package:socket_io_client/socket_io_client.dart'
+    as io;
 
 import '../../core/app_config.dart';
 
 class SocketService {
+  SocketService._internal();
+
+  static final SocketService _instance =
+      SocketService._internal();
+
+  factory SocketService() => _instance;
+
   io.Socket? _socket;
 
   io.Socket? get socket => _socket;
 
-  bool get isConnected => _socket?.connected == true;
+  bool get isConnected =>
+      _socket?.connected == true;
 
-  // ── Connect ────────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // CONNECT
+  // ─────────────────────────────────────────────────────────────
+
   void connect() {
-    if (_socket != null && _socket!.connected) return;
+    if (_socket != null &&
+        _socket!.connected) {
+      return;
+    }
 
     _socket = io.io(
       AppConfig.baseUrl,
       io.OptionBuilder()
-          .setTransports(['websocket'])
+          .setTransports([
+            'websocket',
+          ])
+          .enableReconnection()
+          .setReconnectionAttempts(10)
+          .setReconnectionDelay(1000)
           .disableAutoConnect()
           .build(),
     );
 
-    _socket!.connect();
+    _socket?.connect();
+
+    _socket?.onConnect((_) {
+      debugPrint(
+        '✅ Socket connected',
+      );
+    });
+
+    _socket?.onDisconnect((_) {
+      debugPrint(
+        '❌ Socket disconnected',
+      );
+    });
+
+    _socket?.onConnectError((error) {
+      debugPrint(
+        '❌ Socket connect error: $error',
+      );
+    });
+
+    _socket?.onError((error) {
+      debugPrint(
+        '❌ Socket error: $error',
+      );
+    });
+
+    _socket?.onReconnect((_) {
+      debugPrint(
+        '🔄 Socket reconnected',
+      );
+    });
   }
 
-  // ── Disconnect ─────────────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // DISCONNECT
+  // ─────────────────────────────────────────────────────────────
+
   void disconnect() {
+    removeAllListeners();
+
     _socket?.disconnect();
     _socket?.dispose();
+
     _socket = null;
   }
 
-  // ── Chat: join_room ────────────────────────────────────────────────────────
-  void joinRoom(String threadId) {
-    if (threadId.isEmpty) return;
+  // ─────────────────────────────────────────────────────────────
+  // CHAT: JOIN ROOM
+  // ─────────────────────────────────────────────────────────────
 
-    _socket?.emit('join_room', threadId);
+  void joinRoom(String threadId) {
+    if (threadId.trim().isEmpty) {
+      return;
+    }
+
+    _socket?.emit(
+      'join_room',
+      threadId,
+    );
+
+    debugPrint(
+      '📥 Joined room: $threadId',
+    );
   }
 
-  // ── Chat: send_message ─────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // CHAT: SEND MESSAGE
+  // ─────────────────────────────────────────────────────────────
+
   void sendMessage({
     required String threadId,
     required String senderId,
     required String message,
   }) {
-    if (threadId.isEmpty || message.trim().isEmpty) return;
+    final trimmed =
+        message.trim();
 
-    _socket?.emit('send_message', {
+    if (threadId.isEmpty ||
+        senderId.isEmpty ||
+        trimmed.isEmpty) {
+      return;
+    }
+
+    final payload = {
       'threadId': threadId,
       'senderId': senderId,
-      'message': message.trim(),
-    });
+      'message': trimmed,
+    };
+
+    _socket?.emit(
+      'send_message',
+      payload,
+    );
+
+    debugPrint(
+      '📤 Sent message: $payload',
+    );
   }
 
-  // ── Chat: receive_message ──────────────────────────────────────────────────
-  void onReceiveMessage(void Function(Map<String, dynamic> data) callback) {
-    _socket?.off('receive_message');
+  // ─────────────────────────────────────────────────────────────
+  // CHAT: RECEIVE MESSAGE
+  // ─────────────────────────────────────────────────────────────
 
-    _socket?.on('receive_message', (data) {
-      if (data is Map) {
-        callback(Map<String, dynamic>.from(data));
-      }
-    });
+  void onReceiveMessage(
+    void Function(
+      Map<String, dynamic> data,
+    )
+        callback,
+  ) {
+    _socket?.off(
+      'receive_message',
+    );
+
+    _socket?.on(
+      'receive_message',
+      (data) {
+        if (data is Map) {
+          callback(
+            Map<String, dynamic>.from(
+              data,
+            ),
+          );
+        }
+      },
+    );
   }
 
-  // ── Events: events_updated ─────────────────────────────────────────────────
-  void onEventsUpdated(void Function(Map<String, dynamic> data) callback) {
-    _socket?.off('events_updated');
+  // ─────────────────────────────────────────────────────────────
+  // EVENTS: EVENTS UPDATED
+  // ─────────────────────────────────────────────────────────────
 
-    _socket?.on('events_updated', (data) {
-      if (data is Map) {
-        callback(Map<String, dynamic>.from(data));
-      }
-    });
+  void onEventsUpdated(
+    void Function(
+      Map<String, dynamic> data,
+    )
+        callback,
+  ) {
+    _socket?.off(
+      'events_updated',
+    );
+
+    _socket?.on(
+      'events_updated',
+      (data) {
+        if (data is Map) {
+          callback(
+            Map<String, dynamic>.from(
+              data,
+            ),
+          );
+        } else {
+          callback({});
+        }
+      },
+    );
   }
 
-  // ── Content: content_updated ───────────────────────────────────────────────
-  void onContentUpdated(void Function(Map<String, dynamic> data) callback) {
-    _socket?.off('content_updated');
+  // ─────────────────────────────────────────────────────────────
+  // CONTENT: CONTENT UPDATED
+  // ─────────────────────────────────────────────────────────────
 
-    _socket?.on('content_updated', (data) {
-      if (data is Map) {
-        callback(Map<String, dynamic>.from(data));
-      }
-    });
+  void onContentUpdated(
+    void Function(
+      Map<String, dynamic> data,
+    )
+        callback,
+  ) {
+    _socket?.off(
+      'content_updated',
+    );
+
+    _socket?.on(
+      'content_updated',
+      (data) {
+        if (data is Map) {
+          callback(
+            Map<String, dynamic>.from(
+              data,
+            ),
+          );
+        } else {
+          callback({});
+        }
+      },
+    );
   }
 
-  // ── Remove listeners ───────────────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────
+  // REMOVE LISTENERS
+  // ─────────────────────────────────────────────────────────────
+
   void removeChatListeners() {
-    _socket?.off('receive_message');
+    _socket?.off(
+      'receive_message',
+    );
   }
 
   void removeEventListeners() {
-    _socket?.off('events_updated');
+    _socket?.off(
+      'events_updated',
+    );
   }
 
   void removeContentListeners() {
-    _socket?.off('content_updated');
+    _socket?.off(
+      'content_updated',
+    );
   }
 
   void removeAllListeners() {
-    _socket?.off('receive_message');
-    _socket?.off('events_updated');
-    _socket?.off('content_updated');
+    removeChatListeners();
+    removeEventListeners();
+    removeContentListeners();
   }
 }

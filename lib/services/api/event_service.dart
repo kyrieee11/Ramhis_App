@@ -1,5 +1,6 @@
 import 'dart:convert';
 
+import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
 import '../../core/app_config.dart';
@@ -9,52 +10,120 @@ import '../../models/event_model.dart';
 class EventService {
   static const String baseUrl = AppConfig.baseUrl;
 
-  // ── Helpers ────────────────────────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
+  // Helpers
+  // ────────────────────────────────────────────────────────────────────────────
+
   static Map<String, dynamic> _decodeObject(http.Response response) {
     final decoded = jsonDecode(response.body);
-    return decoded is Map<String, dynamic> ? decoded : {};
+
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+
+    return {};
   }
 
   static List<dynamic> _decodeList(http.Response response) {
     final decoded = jsonDecode(response.body);
-    return decoded is List ? decoded : [];
-  }
 
-  static void _throwIfFailed(http.Response response, String fallbackMessage) {
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      final data = _decodeObject(response);
-      throw Exception(data['message'] ?? fallbackMessage);
+    if (decoded is List) {
+      return decoded;
     }
+
+    return [];
   }
 
-  // ── User: GET /events ──────────────────────────────────────────────────────
+  static void _throwIfFailed(
+    http.Response response,
+    String fallbackMessage,
+  ) {
+    if (response.statusCode >= 200 &&
+        response.statusCode < 300) {
+      return;
+    }
+
+    final data = _decodeObject(response);
+
+    throw Exception(
+      data['message']?.toString() ?? fallbackMessage,
+    );
+  }
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // USER: GET /events
+  // ────────────────────────────────────────────────────────────────────────────
+
   static Future<List<EventModel>> getEvents() async {
-    final response = await http.get(
+  Future<http.Response> requestEvents() {
+    return http.get(
       Uri.parse('$baseUrl/events'),
       headers: AuthSession.headers(),
     );
-
-    _throwIfFailed(response, 'Failed to fetch events.');
-
-    return _decodeList(response)
-        .map((item) => EventModel.fromJson(Map<String, dynamic>.from(item)))
-        .toList();
   }
 
-  // ── User: POST /events/:id/register ────────────────────────────────────────
-  static Future<Map<String, dynamic>> registerForEvent(String eventId) async {
+  var response = await requestEvents();
+
+  debugPrint('USER EVENTS STATUS BEFORE REFRESH: ${response.statusCode}');
+  debugPrint('USER EVENTS BODY BEFORE REFRESH: ${response.body}');
+
+  if (response.statusCode == 401) {
+    final refreshed = await AuthSession.refreshSession();
+
+    debugPrint('USER EVENTS REFRESHED: $refreshed');
+
+    if (refreshed) {
+      response = await requestEvents();
+
+      debugPrint('USER EVENTS STATUS AFTER REFRESH: ${response.statusCode}');
+      debugPrint('USER EVENTS BODY AFTER REFRESH: ${response.body}');
+    }
+  }
+
+  _throwIfFailed(
+    response,
+    'Failed to fetch events.',
+  );
+
+  final data = _decodeList(response);
+
+  return data
+      .map(
+        (item) => EventModel.fromJson(
+          Map<String, dynamic>.from(item),
+        ),
+      )
+      .toList();
+}
+
+  // ────────────────────────────────────────────────────────────────────────────
+  // USER: POST /events/:id/register
+  // ────────────────────────────────────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> registerForEvent(
+    String eventId,
+  ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/events/$eventId/register'),
       headers: AuthSession.headers(),
     );
 
-    _throwIfFailed(response, 'Failed to register for event.');
+    _throwIfFailed(
+      response,
+      'Failed to register for event.',
+    );
 
     return _decodeObject(response);
   }
 
-  // ── User: POST /events/cancel body { eventId } ─────────────────────────────
-  static Future<Map<String, dynamic>> cancelEvent(String eventId) async {
+  // ────────────────────────────────────────────────────────────────────────────
+  // USER: POST /events/cancel
+  // Body: { eventId }
+  // ────────────────────────────────────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> cancelEvent(
+    String eventId,
+  ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/events/cancel'),
       headers: AuthSession.headers(),
@@ -63,38 +132,64 @@ class EventService {
       }),
     );
 
-    _throwIfFailed(response, 'Failed to cancel event.');
+    _throwIfFailed(
+      response,
+      'Failed to cancel event.',
+    );
 
     return _decodeObject(response);
   }
 
-  // ── User: GET /events/:id/participants ─────────────────────────────────────
-  static Future<List<dynamic>> getParticipants(String eventId) async {
+  // ────────────────────────────────────────────────────────────────────────────
+  // USER: GET /events/:id/participants
+  // ────────────────────────────────────────────────────────────────────────────
+
+  static Future<List<dynamic>> getParticipants(
+    String eventId,
+  ) async {
     final response = await http.get(
       Uri.parse('$baseUrl/events/$eventId/participants'),
       headers: AuthSession.headers(),
     );
 
-    _throwIfFailed(response, 'Failed to fetch participants.');
+    _throwIfFailed(
+      response,
+      'Failed to fetch participants.',
+    );
 
     return _decodeList(response);
   }
 
-  // ── Admin: GET /admin/events ───────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
+  // ADMIN: GET /admin/events
+  // ────────────────────────────────────────────────────────────────────────────
+
   static Future<List<EventModel>> adminGetEvents() async {
     final response = await http.get(
       Uri.parse('$baseUrl/admin/events'),
       headers: AuthSession.headers(),
     );
 
-    _throwIfFailed(response, 'Failed to fetch admin events.');
+    _throwIfFailed(
+      response,
+      'Failed to fetch admin events.',
+    );
 
-    return _decodeList(response)
-        .map((item) => EventModel.fromJson(Map<String, dynamic>.from(item)))
+    final data = _decodeList(response);
+
+    return data
+        .map(
+          (item) => EventModel.fromJson(
+            Map<String, dynamic>.from(item),
+          ),
+        )
         .toList();
   }
 
-  // ── Admin: POST /admin/events ──────────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
+  // ADMIN: POST /admin/events
+  // ────────────────────────────────────────────────────────────────────────────
+
   static Future<Map<String, dynamic>> adminCreateEvent({
     required String title,
     required String description,
@@ -118,12 +213,18 @@ class EventService {
       }),
     );
 
-    _throwIfFailed(response, 'Failed to create event.');
+    _throwIfFailed(
+      response,
+      'Failed to create event.',
+    );
 
     return _decodeObject(response);
   }
 
-  // ── Admin: PUT /admin/events/:id ───────────────────────────────────────────
+  // ────────────────────────────────────────────────────────────────────────────
+  // ADMIN: PUT /admin/events/:id
+  // ────────────────────────────────────────────────────────────────────────────
+
   static Future<Map<String, dynamic>> adminUpdateEvent({
     required String eventId,
     required String title,
@@ -148,13 +249,22 @@ class EventService {
       }),
     );
 
-    _throwIfFailed(response, 'Failed to update event.');
+    _throwIfFailed(
+      response,
+      'Failed to update event.',
+    );
 
     return _decodeObject(response);
   }
 
-  // ── Admin: POST /admin/events/delete body { eventId } ──────────────────────
-  static Future<Map<String, dynamic>> adminDeleteEvent(String eventId) async {
+  // ────────────────────────────────────────────────────────────────────────────
+  // ADMIN: POST /admin/events/delete
+  // Body: { eventId }
+  // ────────────────────────────────────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> adminDeleteEvent(
+    String eventId,
+  ) async {
     final response = await http.post(
       Uri.parse('$baseUrl/admin/events/delete'),
       headers: AuthSession.headers(),
@@ -163,7 +273,10 @@ class EventService {
       }),
     );
 
-    _throwIfFailed(response, 'Failed to delete event.');
+    _throwIfFailed(
+      response,
+      'Failed to delete event.',
+    );
 
     return _decodeObject(response);
   }

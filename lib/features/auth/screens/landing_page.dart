@@ -29,82 +29,94 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
   }
 
   Future<void> _handleLogin() async {
-    final String email = emailController.text.trim();
-    final String password = passwordController.text;
+  final String email = emailController.text.trim();
+  final String password = passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
-      _showSnackBar('Please enter your email and password.');
+  if (email.isEmpty || password.isEmpty) {
+    _showSnackBar('Please enter your email and password.');
+    return;
+  }
+
+  if (mounted) {
+    setState(() => isLoading = true);
+  }
+
+  try {
+    final result = await AuthService.login(
+      email: email,
+      password: password,
+    );
+
+    debugPrint('LOGIN RESULT: $result');
+    debugPrint('SESSION USER AFTER LOGIN: ${AuthSession.currentUser}');
+
+    if (!mounted) return;
+
+    final bool loginSuccess =
+        result['ok'] == true ||
+        result['accessToken'] != null ||
+        result['access_token'] != null ||
+        result['token'] != null ||
+        result['user'] != null;
+
+    if (!loginSuccess) {
+      setState(() => isLoading = false);
+      _showSnackBar((result['message'] ?? 'Login failed.').toString());
       return;
     }
 
-    if (mounted) {
-      setState(() => isLoading = true);
-    }
-
     try {
-      final result = await AuthService.login(
-  email: email,
-  password: password,
-);
-
-      if (!mounted) return;
-
-      if (result['ok'] == true) {
-        try {
-          await AuthService.fetchMe();
-        } catch (e) {
-          debugPrint('fetchMe error: $e');
-        }
-
-        final Map<String, dynamic>? user = AuthSession.currentUser;
-
-        if (user == null) {
-          setState(() => isLoading = false);
-          _showSnackBar('Failed to load user session.');
-          return;
-        }
-
-        final String role =
-            (user['role'] ?? user['account_type'] ?? '').toString().toLowerCase();
-        final String status =
-            (user['status'] ?? 'active').toString().toLowerCase();
-
-        setState(() => isLoading = false);
-
-        if (status == 'pending') {
-          _showSnackBar('Your account is pending admin approval.');
-          return;
-        }
-
-        if (status == 'suspended') {
-          _showSnackBar('Your account is suspended. Please contact support.');
-          return;
-        }
-
-        if (role == 'admin') {
-  if (!mounted) return;
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (_) => const AdminShellWidget()),
-  );
-} else {
-  if (!mounted) return;
-  Navigator.pushReplacement(
-    context,
-    MaterialPageRoute(builder: (_) => const HomeWidget()),
-  );
-}
-      } else {
-        setState(() => isLoading = false);
-        _showSnackBar((result['message'] ?? 'Login failed.').toString());
-      }
+      await AuthService.fetchMe();
+      debugPrint('SESSION USER AFTER FETCH ME: ${AuthSession.currentUser}');
     } catch (e) {
-      if (!mounted) return;
-      setState(() => isLoading = false);
-      debugPrint('Login error: $e');
-      _showSnackBar('Connection error. Please try again.');
+      debugPrint('fetchMe error: $e');
     }
+
+    final Map<String, dynamic>? user =
+        AuthSession.currentUser ??
+        (result['user'] is Map<String, dynamic>
+            ? Map<String, dynamic>.from(result['user'])
+            : null);
+
+    if (user == null) {
+      setState(() => isLoading = false);
+      _showSnackBar('Failed to load user session.');
+      return;
+    }
+
+    final String role =
+        (user['role'] ?? user['account_type'] ?? '').toString().toLowerCase();
+
+    final String status =
+        (user['status'] ?? 'active').toString().toLowerCase();
+
+    setState(() => isLoading = false);
+
+    if (status == 'pending') {
+      _showSnackBar('Your account is pending admin approval.');
+      return;
+    }
+
+    if (status == 'suspended') {
+      _showSnackBar('Your account is suspended. Please contact support.');
+      return;
+    }
+
+    if (!mounted) return;
+
+    final Widget nextPage =
+        role == 'admin' ? const AdminShellWidget() : const HomeWidget();
+
+    Navigator.of(context).pushReplacement(
+      MaterialPageRoute(builder: (_) => nextPage),
+    );
+  } catch (e) {
+    if (!mounted) return;
+    setState(() => isLoading = false);
+    debugPrint('Login error: $e');
+    _showSnackBar('Connection error. Please try again.');
   }
+}
 
   void _showSnackBar(String message) {
     if (!mounted) return;

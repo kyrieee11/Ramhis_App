@@ -11,7 +11,7 @@ class ChatService {
     try {
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/chat/threads'),
-        headers: AuthSession.headers(json: false),
+        headers: AuthSession.headers(),
       );
 
       if (response.statusCode != 200) return [];
@@ -30,7 +30,7 @@ class ChatService {
     try {
       final response = await http.get(
         Uri.parse('${AppConfig.baseUrl}/chat/threads/$threadId/messages'),
-        headers: AuthSession.headers(json: false),
+        headers: AuthSession.headers(),
       );
 
       if (response.statusCode != 200) return [];
@@ -68,7 +68,7 @@ class ChatService {
         Uri.parse(
           '${AppConfig.baseUrl}/users/approved?q=${Uri.encodeQueryComponent(query)}',
         ),
-        headers: AuthSession.headers(json: false),
+        headers: AuthSession.headers(),
       );
 
       if (response.statusCode != 200) return [];

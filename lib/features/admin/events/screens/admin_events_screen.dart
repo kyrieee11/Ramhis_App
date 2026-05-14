@@ -500,9 +500,10 @@ class _AdminEventsScreenState extends State<AdminEventsScreen> {
                                     'Meeting Place: ${event.meetingPlace}',
                                   ),
                                
-                                  Text(
-                                    'Mission Date: ${_formatDate(DateTime.parse(event.missionDate))}',
-                                  ),
+                                 if (event.missionDate.isNotEmpty)
+  Text(
+    'Mission Date: ${_formatDate(DateTime.parse(event.missionDate))}',
+  ),
                                 const SizedBox(height: 12),
                                 Row(
                                   children: [

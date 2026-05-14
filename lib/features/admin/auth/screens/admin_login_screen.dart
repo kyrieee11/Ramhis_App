@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:ramhis_app/core/session_manager.dart';
 import 'package:ramhis_app/features/admin/shell/admin_shell.dart';
 
+import 'package:ramhis_app/services/api/auth_service.dart';
+
 class AdminLoginWidget extends StatefulWidget {
   const AdminLoginWidget({super.key});
 
@@ -35,10 +37,10 @@ class _AdminLoginWidgetState extends State<AdminLoginWidget> {
     setState(() => isLoading = true);
 
     try {
-      final result = await AuthSession.login(
-        email: email,
-        password: password,
-      );
+      final result = await AuthService.login(
+  email: email,
+  password: password,
+);
 
       if (result['ok'] == true) {
         // 🔥 OPTIONAL: ensure user data is synced

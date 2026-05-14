@@ -13,7 +13,23 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
+
   await AuthSession.restoreSession();
+
+  if (AuthSession.isLoggedIn) {
+    final user = await AuthSession.fetchMe();
+
+    if (user == null) {
+      final refreshed = await AuthSession.refreshSession();
+
+      if (refreshed) {
+        await AuthSession.fetchMe();
+      } else {
+        await AuthSession.clearSession();
+      }
+    }
+  }
+
   runApp(const MyApp());
 }
 
@@ -62,7 +78,7 @@ class _MyAppState extends State<MyApp> {
       return const LandingpageWidget();
     }
 
-    if (AuthSession.isAdmin) {
+    if (AuthSession.currentUser?['role'] == 'admin') {
       return const AdminShellWidget();
     }
 

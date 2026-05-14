@@ -3,10 +3,11 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
+import 'package:ramhis_app/core/app_config.dart';
+import 'package:ramhis_app/features/user/screens/event_details_screen.dart';
+import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
 import 'package:ramhis_app/models/event_model.dart';
 import 'package:ramhis_app/services/api/event_service.dart';
-import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
-import 'package:ramhis_app/features/user/screens/event_details_screen.dart';
 
 class EventsWidget extends StatefulWidget {
   const EventsWidget({super.key});
@@ -16,7 +17,6 @@ class EventsWidget extends StatefulWidget {
 }
 
 class _EventsWidgetState extends State<EventsWidget> {
-
   bool isLoading = true;
   List<EventModel> events = [];
   final Map<String, bool> acceptedTerms = {};
@@ -30,58 +30,65 @@ class _EventsWidgetState extends State<EventsWidget> {
     _loadEvents();
     _connectSocket();
 
-    _statusTimer = Timer.periodic(const Duration(minutes: 1), (_) {
-      _loadEvents();
-    });
+    _statusTimer = Timer.periodic(
+      const Duration(minutes: 1),
+      (_) => _loadEvents(),
+    );
   }
 
   @override
   void dispose() {
     _statusTimer?.cancel();
+    _socket?.off('events_updated');
+    _socket?.disconnect();
     _socket?.dispose();
     super.dispose();
   }
 
   void _connectSocket() {
     _socket = io.io(
-      'http://10.0.2.2:5000',
+      AppConfig.baseUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()
           .build(),
     );
 
-    _socket!.connect();
+    _socket?.connect();
 
-    _socket!.onConnect((_) {
-      debugPrint('Connected to events socket');
+    _socket?.onConnect((_) {
+      debugPrint('✅ Connected to events socket');
     });
 
-    _socket!.on('events_updated', (_) async {
+    _socket?.on('events_updated', (_) async {
       if (!mounted) return;
       await _loadEvents();
     });
 
-    _socket!.onDisconnect((_) {
-      debugPrint('Disconnected from events socket');
+    _socket?.onDisconnect((_) {
+      debugPrint('❌ Disconnected from events socket');
     });
   }
 
   Future<void> _loadEvents() async {
-    if (mounted) {
-      setState(() => isLoading = true);
-    }
+    if (!mounted) return;
+
+    setState(() => isLoading = true);
 
     try {
       final data = await EventService.getEvents();
 
       if (!mounted) return;
+
       setState(() {
         events = data;
         isLoading = false;
       });
-    } catch (_) {
+    } catch (error) {
+      debugPrint('❌ Failed to load events: $error');
+
       if (!mounted) return;
+
       setState(() {
         events = [];
         isLoading = false;
@@ -89,46 +96,80 @@ class _EventsWidgetState extends State<EventsWidget> {
     }
   }
 
+  bool _isSuccess(Map<String, dynamic> result) {
+    return result['ok'] == true ||
+        result['success'] == true ||
+        result['message'] != null;
+  }
+
   Future<void> _register(String eventId) async {
-    final result = await EventService.registerForEvent(eventId);
+    try {
+      final result = await EventService.registerForEvent(eventId);
+      final success = _isSuccess(result);
 
-final success = result['ok'] == true;
+      if (!mounted) return;
 
-    if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? 'Joined successfully'
+                : (result['message'] ?? 'Join failed').toString(),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(success ? 'Joined successfully' : 'Join failed'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      if (success) {
+        await _loadEvents();
+      }
+    } catch (error) {
+      if (!mounted) return;
 
-    if (success) {
-      await _loadEvents();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString()),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   Future<void> _cancelJoin(String eventId) async {
-    final result = await EventService.cancelEvent(eventId);
+    try {
+      final result = await EventService.cancelEvent(eventId);
+      final success = _isSuccess(result);
 
-final success = result['ok'] == true;
+      if (!mounted) return;
 
-    if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            success
+                ? 'Cancelled successfully'
+                : (result['message'] ?? 'Cancel failed').toString(),
+          ),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(success ? 'Cancelled successfully' : 'Cancel failed'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
+      if (success) {
+        await _loadEvents();
+      }
+    } catch (error) {
+      if (!mounted) return;
 
-    if (success) {
-      await _loadEvents();
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(error.toString()),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
   }
 
   Future<void> _confirmCancelJoin(String eventId) async {
-    final bool? confirmed = await showDialog<bool>(
+    final confirmed = await showDialog<bool>(
       context: context,
       barrierDismissible: true,
       builder: (context) {
@@ -346,6 +387,7 @@ final success = result['ok'] == true;
     final accepted = acceptedTerms[event.id] ?? false;
     final isDone = event.status.toLowerCase() == 'done';
     final isRegistrationClosed = !event.registrationOpen;
+
     final canJoin = accepted &&
         !event.alreadyJoined &&
         !isDone &&
@@ -509,40 +551,37 @@ final success = result['ok'] == true;
           ),
           Padding(
             padding: const EdgeInsets.fromLTRB(14, 12, 14, 0),
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.center,
-                children: [
-                  Checkbox(
-                    value: accepted,
-                    activeColor: const Color(0xFF5A48B3),
-                    onChanged: (event.alreadyJoined || isDone || isRegistrationClosed)
-                        ? null
-                        : (value) {
-                            setState(() {
-                              acceptedTerms[event.id] = value ?? false;
-                            });
-                          },
-                  ),
-                  Expanded(
-                    child: Text(
-                      event.alreadyJoined
-                          ? 'You already joined this mission'
-                          : isDone
-                              ? 'This mission is already done'
-                              : isRegistrationClosed
-                                  ? 'Registration is closed'
-                                  : 'I agree to Terms and Conditions',
-                      style: const TextStyle(
-                        fontSize: 12,
-                        color: Color(0xFF1B2559),
-                        fontWeight: FontWeight.w500,
-                      ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                Checkbox(
+                  value: accepted,
+                  activeColor: const Color(0xFF5A48B3),
+                  onChanged: event.alreadyJoined || isDone || isRegistrationClosed
+                      ? null
+                      : (value) {
+                          setState(() {
+                            acceptedTerms[event.id] = value ?? false;
+                          });
+                        },
+                ),
+                Expanded(
+                  child: Text(
+                    event.alreadyJoined
+                        ? 'You already joined this mission'
+                        : isDone
+                            ? 'This mission is already done'
+                            : isRegistrationClosed
+                                ? 'Registration is closed'
+                                : 'I agree to Terms and Conditions',
+                    style: const TextStyle(
+                      fontSize: 12,
+                      color: Color(0xFF1B2559),
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
           Padding(
@@ -555,10 +594,7 @@ final success = result['ok'] == true;
                       onPressed: isDone
                           ? null
                           : () => _confirmCancelJoin(event.id),
-                      icon: const Icon(
-                        Icons.cancel_rounded,
-                        color: Colors.white,
-                      ),
+                      icon: const Icon(Icons.cancel_rounded),
                       label: const Text(
                         'Cancel Join',
                         style: TextStyle(

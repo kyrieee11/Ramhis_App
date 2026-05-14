@@ -14,7 +14,7 @@ const {
 const { authMiddleware, adminOnly } = require('../middleware/auth');
 
 // ── Admin guard — applied to all routes in this file ──────────────────────────
-router.use(authMiddleware, adminOnly);
+router.use('/admin', authMiddleware, adminOnly);
 
 // ── User management routes ────────────────────────────────────────────────────
 router.get('/admin/users', getAllUsers);

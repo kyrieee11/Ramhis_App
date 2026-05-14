@@ -1,12 +1,11 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
-import 'package:ramhis_app/models/user_model.dart';
-import 'package:ramhis_app/services/api/content_service.dart';
-import 'package:ramhis_app/services/socket/socket_service.dart';
 import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
-
+import 'package:ramhis_app/models/user_model.dart';
 import 'package:ramhis_app/services/api/auth_service.dart';
+import 'package:ramhis_app/services/api/content_service.dart';
+import 'package:ramhis_app/core/session_manager.dart';
 
 class HomeWidget extends StatefulWidget {
   const HomeWidget({super.key});
@@ -19,7 +18,6 @@ class _HomeWidgetState extends State<HomeWidget> {
   final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
   final TextEditingController searchController = TextEditingController();
   final FocusNode searchFocusNode = FocusNode();
-  final SocketService socketService = SocketService();
 
   final ValueNotifier<String> searchNotifier = ValueNotifier<String>('');
   Timer? _searchDebounce;
@@ -37,11 +35,7 @@ class _HomeWidgetState extends State<HomeWidget> {
   @override
   void initState() {
     super.initState();
-
     searchController.addListener(_onSearchChanged);
-
-    socketService.connect();
-
     Future.microtask(_loadHomeData);
   }
 
@@ -52,9 +46,6 @@ class _HomeWidgetState extends State<HomeWidget> {
     searchController.dispose();
     searchFocusNode.dispose();
     searchNotifier.dispose();
-
-
-
     super.dispose();
   }
 
@@ -66,36 +57,57 @@ class _HomeWidgetState extends State<HomeWidget> {
       searchNotifier.value = searchController.text.trim().toLowerCase();
     });
   }
-
+  
+  
   Future<void> _loadHomeData() async {
-    if (!mounted) return;
-    setState(() => isLoading = true);
+  debugPrint('HOME ACCESS TOKEN: ${AuthSession.accessToken}');
+  debugPrint('HOME HEADERS: ${AuthSession.headers()}');
+
+    
 
     try {
-      final results = await Future.wait<dynamic>([
-        AuthService.fetchMe(),
-        ContentService.getHomepageContent(),
-      ]);
+      debugPrint('HOME: starting fetchMe...');
+final userData = await AuthService.fetchMe();
+debugPrint('HOME: fetchMe success: $userData');
 
-      final user = results[0] as UserModel?;
-      final content = results[1] as Map<String, dynamic>?;
+debugPrint('HOME: starting homepage content...');
 
-      if (user != null) {
-        userName = user.fullName.isEmpty ? 'User' : user.fullName;
-        accountType = user.accountType.isEmpty
-            ? 'Volunteer'
-            : _capitalize(user.accountType);
-      }
+final content = await ContentService.getHomepageContent();
 
-      if (content != null) {
-       homepageTitle = content['title'] ?? '';
-homepageBody = content['body'] ?? '';
-topConditions = List<Map<String, dynamic>>.from(content['topConditions'] ?? []);
-medicationNeeds = List<Map<String, dynamic>>.from(content['medicationNeeds'] ?? []);
-keyDrivers = List<String>.from(content['keyDrivers'] ?? []);
-      } else {
-        _loadFallbackData();
-      }
+debugPrint('HOME: homepage content success: $content');
+
+final UserModel user = UserModel.fromJson(userData);
+
+userName = user.fullName.isEmpty ? 'User' : user.fullName;
+accountType =
+    user.accountType.isEmpty ? 'Volunteer' : _capitalize(user.accountType);
+
+if (content != null) {
+  homepageTitle = content.title;
+  homepageBody = content.body;
+
+  final sections = content.sections;
+
+  topConditions = List<Map<String, dynamic>>.from(
+    sections['topConditions'] ?? [],
+  );
+
+  medicationNeeds = List<Map<String, dynamic>>.from(
+    sections['medicationNeeds'] ?? [],
+  );
+
+  keyDrivers = List<String>.from(
+    sections['keyDrivers'] ?? [],
+  );
+
+  if (topConditions.isEmpty &&
+      medicationNeeds.isEmpty &&
+      keyDrivers.isEmpty) {
+    _loadFallbackData();
+  }
+} else {
+  _loadFallbackData();
+}
     } catch (error) {
       debugPrint('❌ Home load error: $error');
       _loadFallbackData();
@@ -106,49 +118,50 @@ keyDrivers = List<String>.from(content['keyDrivers'] ?? []);
   }
 
   void _loadFallbackData() {
-  topConditions = [
-    {
-      'percent': 30,
-      'change': 10,
-      'title': 'Respiratory Infections',
-      'color': 'warning',
-    },
-    {
-      'percent': 24,
-      'change': 6,
-      'title': 'Hypertension Cases',
-      'color': 'danger',
-    },
-    {
-      'percent': 18,
-      'change': 4,
-      'title': 'Gastrointestinal Disorders',
-      'color': 'blue',
-    },
-  ];
+    topConditions = [
+      {
+        'percent': 30,
+        'change': 10,
+        'title': 'Respiratory Infections',
+        'color': 'warning',
+      },
+      {
+        'percent': 24,
+        'change': 6,
+        'title': 'Hypertension Cases',
+        'color': 'danger',
+      },
+      {
+        'percent': 18,
+        'change': 4,
+        'title': 'Gastrointestinal Disorders',
+        'color': 'blue',
+      },
+    ];
 
-  medicationNeeds = [
-    {
-      'name': 'Amoxicillin',
-      'amount': '1,200 doses',
-      'risk': 'High Risk',
-    },
-    {
-      'name': 'Paracetamol',
-      'amount': '900 doses',
-      'risk': 'Medium Risk',
-    },
-    {
-      'name': 'Azithromycin',
-      'amount': '600 doses',
-      'risk': 'Low Risk',
-    },
-    {
-      'name': 'Ibuprofen',
-      'amount': '450 doses',
-      'risk': 'Medium Risk',
-    },
-  ];
+    medicationNeeds = [
+      {
+        'name': 'Amoxicillin',
+        'amount': '1,200 doses',
+        'risk': 'High Risk',
+      },
+      {
+        'name': 'Paracetamol',
+        'amount': '900 doses',
+        'risk': 'Medium Risk',
+      },
+      {
+        'name': 'Azithromycin',
+        'amount': '600 doses',
+        'risk': 'Low Risk',
+      },
+      {
+        'name': 'Ibuprofen',
+        'amount': '450 doses',
+        'risk': 'Medium Risk',
+      },
+    ];
+
     keyDrivers = [
       'Increased antibiotic use',
       'Seasonal respiratory cases',
@@ -162,13 +175,13 @@ keyDrivers = List<String>.from(content['keyDrivers'] ?? []);
     return value[0].toUpperCase() + value.substring(1);
   }
 
- List<Map<String, dynamic>> _filteredMedicationNeeds(String query) {
+  List<Map<String, dynamic>> _filteredMedicationNeeds(String query) {
     if (query.isEmpty) return medicationNeeds;
 
     return medicationNeeds.where((item) {
-   return (item['name'] ?? '').toString().toLowerCase().contains(query) ||
-    (item['risk'] ?? '').toString().toLowerCase().contains(query) ||
-    (item['amount'] ?? '').toString().toLowerCase().contains(query);
+      return (item['name'] ?? '').toString().toLowerCase().contains(query) ||
+          (item['risk'] ?? '').toString().toLowerCase().contains(query) ||
+          (item['amount'] ?? '').toString().toLowerCase().contains(query);
     }).toList();
   }
 
@@ -180,14 +193,11 @@ keyDrivers = List<String>.from(content['keyDrivers'] ?? []);
         .toList();
   }
 
- List<Map<String, dynamic>> _filteredConditions(String query) {
+  List<Map<String, dynamic>> _filteredConditions(String query) {
     if (query.isEmpty) return topConditions;
 
     return topConditions.where((item) {
-      return (item['title'] ?? '')
-    .toString()
-    .toLowerCase()
-    .contains(query);
+      return (item['title'] ?? '').toString().toLowerCase().contains(query);
     }).toList();
   }
 
@@ -196,14 +206,11 @@ keyDrivers = List<String>.from(content['keyDrivers'] ?? []);
       case 'red':
       case 'danger':
         return const Color(0xFFFFE5E7);
-
       case 'blue':
         return const Color(0xFFE7F0FF);
-
       case 'green':
       case 'success':
         return const Color(0xFFE8FFF1);
-
       case 'yellow':
       case 'warning':
       default:
@@ -216,14 +223,11 @@ keyDrivers = List<String>.from(content['keyDrivers'] ?? []);
       case 'red':
       case 'danger':
         return const Color(0xFFE53935);
-
       case 'blue':
         return const Color(0xFF1E88E5);
-
       case 'green':
       case 'success':
         return const Color(0xFF22C55E);
-
       case 'yellow':
       case 'warning':
       default:
@@ -235,10 +239,8 @@ keyDrivers = List<String>.from(content['keyDrivers'] ?? []);
     switch (risk.toLowerCase()) {
       case 'high risk':
         return const Color(0xFFE53935);
-
       case 'medium risk':
         return const Color(0xFFF59E0B);
-
       case 'low risk':
       default:
         return const Color(0xFF22C55E);
@@ -329,13 +331,15 @@ keyDrivers = List<String>.from(content['keyDrivers'] ?? []);
                                                   Expanded(
                                                     flex: 6,
                                                     child:
-                                                        _buildConditionsSection(query),
+                                                        _buildConditionsSection(
+                                                            query),
                                                   ),
                                                   const SizedBox(width: 16),
                                                   Expanded(
                                                     flex: 5,
                                                     child:
-                                                        _buildMedicationSection(query),
+                                                        _buildMedicationSection(
+                                                            query),
                                                   ),
                                                 ],
                                               );
@@ -619,9 +623,14 @@ keyDrivers = List<String>.from(content['keyDrivers'] ?? []);
                 separatorBuilder: (_, __) => const SizedBox(width: 10),
                 itemBuilder: (context, index) {
                   final item = conditions[index];
+                  final color = (item['color'] ?? 'warning').toString();
+                  final title = (item['title'] ?? '').toString();
+                  final percent = (item['percent'] ?? 0).toString();
+                  final change = (item['change'] ?? 0).toString();
 
-                  final Color bg = _conditionColor(item['color']);
-final Color accent = _conditionAccent(item['color']);
+                  final Color bg = _conditionColor(color);
+                  final Color accent = _conditionAccent(color);
+
                   return Container(
                     width: 220,
                     padding: const EdgeInsets.all(22),
@@ -633,20 +642,20 @@ final Color accent = _conditionAccent(item['color']);
                       children: [
                         Container(
                           width: 50,
-                          height: 10,
+                          height: 50,
                           decoration: const BoxDecoration(
                             color: Colors.white,
                             shape: BoxShape.circle,
                           ),
                           child: Icon(
-                           _conditionIcon(item['title']),
+                            _conditionIcon(title),
                             color: accent,
-                            size: 42,
+                            size: 32,
                           ),
                         ),
                         const Spacer(),
                         Text(
-                          '${item['percent']}%',
+                          '$percent%',
                           style: TextStyle(
                             fontSize: 48,
                             fontWeight: FontWeight.w900,
@@ -676,7 +685,7 @@ final Color accent = _conditionAccent(item['color']);
                               ),
                               const SizedBox(width: 4),
                               Text(
-                               '${item['change']}%',
+                                '$change%',
                                 style: TextStyle(
                                   color: accent,
                                   fontWeight: FontWeight.w700,
@@ -688,7 +697,7 @@ final Color accent = _conditionAccent(item['color']);
                         ),
                         const Spacer(),
                         Text(
-                        item['title'],
+                          title,
                           textAlign: TextAlign.center,
                           maxLines: 2,
                           overflow: TextOverflow.ellipsis,
@@ -709,127 +718,120 @@ final Color accent = _conditionAccent(item['color']);
   }
 
   Widget _buildMedicationSection(String query) {
-  final medicines = _filteredMedicationNeeds(query);
+    final medicines = _filteredMedicationNeeds(query);
 
-  return _buildPanel(
-    title: 'Medications Needs',
-    child: medicines.isEmpty
-        ? _buildEmptyState('No matching medicines found.')
-        : ListView.separated(
-            shrinkWrap: true,
-            physics: const NeverScrollableScrollPhysics(),
-            itemCount: medicines.length,
-            separatorBuilder: (_, __) => const SizedBox(height: 14),
-            itemBuilder: (context, index) {
-              final item = medicines[index];
+    return _buildPanel(
+      title: 'Medication Needs',
+      child: medicines.isEmpty
+          ? _buildEmptyState('No matching medicines found.')
+          : ListView.separated(
+              shrinkWrap: true,
+              physics: const NeverScrollableScrollPhysics(),
+              itemCount: medicines.length,
+              separatorBuilder: (_, __) => const SizedBox(height: 14),
+              itemBuilder: (context, index) {
+                final item = medicines[index];
+                final name = (item['name'] ?? '').toString();
+                final amount = (item['amount'] ?? '').toString();
+                final risk = (item['risk'] ?? '').toString();
+                final riskColor = _riskColor(risk);
 
-              return Container(
-                width: double.infinity,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 14,
-                  vertical: 14,
-                ),
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(22),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.03),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Row(
-                  crossAxisAlignment: CrossAxisAlignment.center,
-                  children: [
-                    // ICON
-                    Container(
-                      width: 54,
-                      height: 54,
-                      decoration: BoxDecoration(
-                        color:
-                            _riskColor(item['risk']).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(16),
+                return Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 14,
+                    vertical: 14,
+                  ),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(22),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.03),
+                        blurRadius: 10,
+                        offset: const Offset(0, 4),
                       ),
-                      child: Icon(
-                        Icons.medication_rounded,
-                        color: _riskColor(item['risk']),
-                        size: 28,
-                      ),
-                    ),
-
-                    const SizedBox(width: 14),
-
-                    // NAME + AMOUNT
-                    Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                           item['name'],
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 16,
-                              fontWeight: FontWeight.w700,
-                              color: Color(0xFF111827),
-                            ),
-                          ),
-
-                          const SizedBox(height: 4),
-
-                          Text(
-                           item['amount'],
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w500,
-                              color: Color(0xFF6B7280),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-
-                    const SizedBox(width: 10),
-
-                    // RISK BADGE
-                    Container(
-                      constraints: const BoxConstraints(
-                        minWidth: 82,
-                        maxWidth: 95,
-                      ),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 12,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color:
-                            _riskColor(item['risk']).withValues(alpha: 0.12),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: Text(
-                       item['risk'],
-                        textAlign: TextAlign.center,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: TextStyle(
-                          color: _riskColor(item['risk']),
-                          fontWeight: FontWeight.w700,
-                          fontSize: 13,
-                          height: 1.2,
+                    ],
+                  ),
+                  child: Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      Container(
+                        width: 54,
+                        height: 54,
+                        decoration: BoxDecoration(
+                          color: riskColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Icon(
+                          Icons.medication_rounded,
+                          color: riskColor,
+                          size: 28,
                         ),
                       ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-  );
-}
+                      const SizedBox(width: 14),
+                      Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              name,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 16,
+                                fontWeight: FontWeight.w700,
+                                color: Color(0xFF111827),
+                              ),
+                            ),
+                            const SizedBox(height: 4),
+                            Text(
+                              amount,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: const TextStyle(
+                                fontSize: 13,
+                                fontWeight: FontWeight.w500,
+                                color: Color(0xFF6B7280),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Container(
+                        constraints: const BoxConstraints(
+                          minWidth: 82,
+                          maxWidth: 95,
+                        ),
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 10,
+                        ),
+                        decoration: BoxDecoration(
+                          color: riskColor.withValues(alpha: 0.12),
+                          borderRadius: BorderRadius.circular(16),
+                        ),
+                        child: Text(
+                          risk,
+                          textAlign: TextAlign.center,
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            color: riskColor,
+                            fontWeight: FontWeight.w700,
+                            fontSize: 13,
+                            height: 1.2,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                );
+              },
+            ),
+    );
+  }
 
   Widget _buildDriversSection(String query) {
     final drivers = _filteredDrivers(query);
@@ -842,8 +844,7 @@ final Color accent = _conditionAccent(item['color']);
               itemCount: drivers.length,
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
-              gridDelegate:
-                  const SliverGridDelegateWithFixedCrossAxisCount(
+              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
                 crossAxisCount: 2,
                 crossAxisSpacing: 14,
                 mainAxisSpacing: 14,
