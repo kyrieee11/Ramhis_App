@@ -111,8 +111,8 @@ final data = rawList
     final sections = Map<String, dynamic>.from(item['sections'] ?? {});
 
     final topList = List<Map<String, dynamic>>.from(
-      sections['top_conditions'] ?? [],
-    );
+  sections['topConditions'] ?? sections['top_conditions'] ?? [],
+);
     for (final condition in topList) {
       topConditions.add(
         _TopConditionForm(
@@ -125,8 +125,8 @@ final data = rawList
     }
 
     final medList = List<Map<String, dynamic>>.from(
-      sections['medication_needs'] ?? [],
-    );
+  sections['medicationNeeds'] ?? sections['medication_needs'] ?? [],
+);
     for (final medication in medList) {
       medicationNeeds.add(
         _MedicationForm(
@@ -138,7 +138,9 @@ final data = rawList
       );
     }
 
-    final drivers = List.from(sections['key_drivers'] ?? []);
+    final drivers = List.from(
+  sections['keyDrivers'] ?? sections['key_drivers'] ?? [],
+);
     for (final driver in drivers) {
       keyDrivers.add(TextEditingController(text: driver.toString()));
     }
@@ -243,25 +245,31 @@ final data = rawList
       'title': title,
       'body': body,
       'sections': {
-        'top_conditions': topConditions.map((item) => item.toJson()).toList(),
-        'medication_needs': medicationNeeds.map((item) => item.toJson()).toList(),
-        'key_drivers': keyDrivers
-            .map((controller) => controller.text.trim())
-            .where((text) => text.isNotEmpty)
-            .toList(),
-      },
+  'topConditions': topConditions.map((item) => item.toJson()).toList(),
+  'medicationNeeds': medicationNeeds.map((item) => item.toJson()).toList(),
+  'keyDrivers': keyDrivers
+      .map((controller) => controller.text.trim())
+      .where((text) => text.isNotEmpty)
+      .toList(),
+},
     };
 
     try {
       final http.Response response = homepageContent == null
     ? await http.post(
         Uri.parse('${AuthSession.baseUrl}/admin/content'),
-        headers: AuthSession.headers(),
+        headers: {
+  ...AuthSession.headers(),
+  'Content-Type': 'application/json',
+},
         body: jsonEncode(payload),
       )
     : await http.put(
         Uri.parse('${AuthSession.baseUrl}/admin/content/${homepageContent!['_id']}'),
-        headers: AuthSession.headers(),
+        headers: {
+  ...AuthSession.headers(),
+  'Content-Type': 'application/json',
+},
         body: jsonEncode(payload),
       );
 

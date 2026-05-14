@@ -172,14 +172,17 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
 
       if (!mounted) return;
 
-      Navigator.of(context).push(
-        MaterialPageRoute(
-          builder: (_) => ChatRoomWidget(
-            threadId: threadId,
-            threadTitle: threadName,
-          ),
-        ),
-      );
+      await Navigator.of(context).push(
+  MaterialPageRoute(
+    builder: (_) => ChatRoomWidget(
+      threadId: threadId,
+      threadTitle: threadName,
+    ),
+  ),
+);
+
+if (!mounted) return;
+await _loadThreads();
     } catch (error) {
       if (!mounted) return;
 
@@ -191,18 +194,21 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
     }
   }
 
-  void _openThread(ChatThreadModel thread) {
-    if (thread.id.isEmpty) return;
+  Future<void> _openThread(ChatThreadModel thread) async {
+  if (thread.id.isEmpty) return;
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => ChatRoomWidget(
-          threadId: thread.id,
-          threadTitle: thread.name,
-        ),
+  await Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) => ChatRoomWidget(
+        threadId: thread.id,
+        threadTitle: thread.name,
       ),
-    );
-  }
+    ),
+  );
+
+  if (!mounted) return;
+  await _loadThreads();
+}
 
   String _formatTime(String raw) {
     if (raw.isEmpty) return '';

@@ -94,7 +94,7 @@ class _ChatRoomWidgetState
 
   void _initSocket() {
     socket = io.io(
-      AppConfig.baseUrl,
+  AppConfig.socketBaseUrl,
       io.OptionBuilder()
           .setTransports(['websocket'])
           .disableAutoConnect()

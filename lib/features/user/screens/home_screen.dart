@@ -6,6 +6,8 @@ import 'package:ramhis_app/models/user_model.dart';
 import 'package:ramhis_app/services/api/auth_service.dart';
 import 'package:ramhis_app/services/api/content_service.dart';
 import 'package:ramhis_app/core/session_manager.dart';
+import 'package:ramhis_app/features/user/screens/medication.view.dart';
+import 'package:ramhis_app/features/user/screens/keydrivers.view.dart';
 
 class HomeWidget extends StatefulWidget {
   const HomeWidget({super.key});
@@ -32,6 +34,13 @@ class _HomeWidgetState extends State<HomeWidget> {
   List<Map<String, dynamic>> medicationNeeds = [];
   List<String> keyDrivers = [];
 
+  static const Color primaryBlue = Color(0xFF0B6BFF);
+  static const Color deepNavy = Color(0xFF071A4D);
+  static const Color pageBg = Color(0xFFF7FAFF);
+  static const Color softBlue = Color(0xFFEAF3FF);
+  static const Color borderColor = Color(0xFFE1EAF6);
+  static const Color mutedText = Color(0xFF667085);
+
   @override
   void initState() {
     super.initState();
@@ -57,57 +66,52 @@ class _HomeWidgetState extends State<HomeWidget> {
       searchNotifier.value = searchController.text.trim().toLowerCase();
     });
   }
-  
-  
-  Future<void> _loadHomeData() async {
-  debugPrint('HOME ACCESS TOKEN: ${AuthSession.accessToken}');
-  debugPrint('HOME HEADERS: ${AuthSession.headers()}');
 
-    
+  Future<void> _loadHomeData() async {
+    debugPrint('HOME ACCESS TOKEN: ${AuthSession.accessToken}');
+    debugPrint('HOME HEADERS: ${AuthSession.headers()}');
 
     try {
       debugPrint('HOME: starting fetchMe...');
-final userData = await AuthService.fetchMe();
-debugPrint('HOME: fetchMe success: $userData');
+      final userData = await AuthService.fetchMe();
+      debugPrint('HOME: fetchMe success: $userData');
 
-debugPrint('HOME: starting homepage content...');
+      debugPrint('HOME: starting homepage content...');
+      final content = await ContentService.getHomepageContent();
+      debugPrint('HOME: homepage content success: $content');
 
-final content = await ContentService.getHomepageContent();
+      final UserModel user = UserModel.fromJson(userData);
 
-debugPrint('HOME: homepage content success: $content');
+      userName = user.fullName.isEmpty ? 'User' : user.fullName;
+      accountType =
+          user.accountType.isEmpty ? 'Volunteer' : _capitalize(user.accountType);
 
-final UserModel user = UserModel.fromJson(userData);
+      if (content != null) {
+        homepageTitle = content.title;
+        homepageBody = content.body;
 
-userName = user.fullName.isEmpty ? 'User' : user.fullName;
-accountType =
-    user.accountType.isEmpty ? 'Volunteer' : _capitalize(user.accountType);
+        final sections = content.sections;
 
-if (content != null) {
-  homepageTitle = content.title;
-  homepageBody = content.body;
+        topConditions = List<Map<String, dynamic>>.from(
+          sections['topConditions'] ?? [],
+        );
 
-  final sections = content.sections;
+        medicationNeeds = List<Map<String, dynamic>>.from(
+          sections['medicationNeeds'] ?? [],
+        );
 
-  topConditions = List<Map<String, dynamic>>.from(
-    sections['topConditions'] ?? [],
-  );
+        keyDrivers = List<String>.from(
+          sections['keyDrivers'] ?? [],
+        );
 
-  medicationNeeds = List<Map<String, dynamic>>.from(
-    sections['medicationNeeds'] ?? [],
-  );
-
-  keyDrivers = List<String>.from(
-    sections['keyDrivers'] ?? [],
-  );
-
-  if (topConditions.isEmpty &&
-      medicationNeeds.isEmpty &&
-      keyDrivers.isEmpty) {
-    _loadFallbackData();
-  }
-} else {
-  _loadFallbackData();
-}
+        if (topConditions.isEmpty &&
+            medicationNeeds.isEmpty &&
+            keyDrivers.isEmpty) {
+          _loadFallbackData();
+        }
+      } else {
+        _loadFallbackData();
+      }
     } catch (error) {
       debugPrint('❌ Home load error: $error');
       _loadFallbackData();
@@ -205,16 +209,16 @@ if (content != null) {
     switch (key.toLowerCase()) {
       case 'red':
       case 'danger':
-        return const Color(0xFFFFE5E7);
+        return const Color(0xFFFFEEF1);
       case 'blue':
-        return const Color(0xFFE7F0FF);
+        return const Color(0xFFEAF3FF);
       case 'green':
       case 'success':
-        return const Color(0xFFE8FFF1);
+        return const Color(0xFFE9FFF3);
       case 'yellow':
       case 'warning':
       default:
-        return const Color(0xFFFFF6DD);
+        return const Color(0xFFFFF5E6);
     }
   }
 
@@ -222,28 +226,28 @@ if (content != null) {
     switch (key.toLowerCase()) {
       case 'red':
       case 'danger':
-        return const Color(0xFFE53935);
+        return const Color(0xFFFF3B4E);
       case 'blue':
-        return const Color(0xFF1E88E5);
+        return primaryBlue;
       case 'green':
       case 'success':
-        return const Color(0xFF22C55E);
+        return const Color(0xFF16B364);
       case 'yellow':
       case 'warning':
       default:
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFFF8A00);
     }
   }
 
   Color _riskColor(String risk) {
     switch (risk.toLowerCase()) {
       case 'high risk':
-        return const Color(0xFFE53935);
+        return const Color(0xFFFF2F45);
       case 'medium risk':
-        return const Color(0xFFF59E0B);
+        return const Color(0xFFFF8A00);
       case 'low risk':
       default:
-        return const Color(0xFF22C55E);
+        return const Color(0xFF16B364);
     }
   }
 
@@ -251,11 +255,11 @@ if (content != null) {
     final lower = title.toLowerCase();
 
     if (lower.contains('respiratory')) {
-      return Icons.air;
+      return Icons.air_rounded;
     } else if (lower.contains('hypertension')) {
-      return Icons.favorite;
+      return Icons.favorite_rounded;
     } else if (lower.contains('gastro')) {
-      return Icons.medical_services;
+      return Icons.medical_services_rounded;
     }
 
     return Icons.health_and_safety_rounded;
@@ -265,11 +269,13 @@ if (content != null) {
     final lower = title.toLowerCase();
 
     if (lower.contains('weather')) {
-      return Icons.cloud;
+      return Icons.cloud_rounded;
     } else if (lower.contains('seasonal')) {
-      return Icons.ac_unit;
+      return Icons.air_rounded;
     } else if (lower.contains('population')) {
       return Icons.groups_rounded;
+    } else if (lower.contains('antibiotic')) {
+      return Icons.vaccines_rounded;
     }
 
     return Icons.trending_up_rounded;
@@ -287,7 +293,7 @@ if (content != null) {
       },
       child: Scaffold(
         key: scaffoldKey,
-        backgroundColor: const Color(0xFFF6F7FB),
+        backgroundColor: pageBg,
         body: SafeArea(
           child: Column(
             children: <Widget>[
@@ -296,11 +302,13 @@ if (content != null) {
                 child: isLoading
                     ? const Center(
                         child: CircularProgressIndicator(
-                          color: Color(0xFF4766C7),
+                          color: primaryBlue,
+                          strokeWidth: 3,
                         ),
                       )
                     : RefreshIndicator(
-                        color: const Color(0xFF4766C7),
+                        color: primaryBlue,
+                        backgroundColor: Colors.white,
                         onRefresh: _loadHomeData,
                         child: CustomScrollView(
                           physics: const AlwaysScrollableScrollPhysics(),
@@ -384,80 +392,127 @@ if (content != null) {
   Widget _buildTopHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 16, 18, 16),
+      padding: const EdgeInsets.fromLTRB(22, 18, 22, 22),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFF4766C7),
-            Color(0xFF5E7BDA),
+            Color(0xFF005CFF),
+            Color(0xFF0B7CFF),
           ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
-      child: Row(
-        children: <Widget>[
-          Container(
-            width: 50,
-            height: 50,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(16),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -50,
+            top: -55,
+            child: Container(
+              width: 180,
+              height: 180,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.07),
+              ),
             ),
-            child: ClipRRect(
-              borderRadius: BorderRadius.circular(16),
-              child: Image.asset(
-                'assets/images/ramhis_logo.png',
-                fit: BoxFit.cover,
-                cacheWidth: 100,
-                cacheHeight: 100,
-                errorBuilder: (context, error, stackTrace) {
-                  return const Icon(
-                    Icons.health_and_safety_rounded,
+          ),
+          Positioned(
+            right: 35,
+            bottom: -60,
+            child: Container(
+              width: 140,
+              height: 140,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: Colors.white.withValues(alpha: 0.05),
+              ),
+            ),
+          ),
+          Row(
+            children: <Widget>[
+              Container(
+                width: 56,
+                height: 56,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(18),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 18,
+                      offset: const Offset(0, 8),
+                    ),
+                  ],
+                ),
+                child: ClipRRect(
+                  borderRadius: BorderRadius.circular(18),
+                  child: Image.asset(
+                    'assets/images/ramhis_logo.png',
+                    fit: BoxFit.cover,
+                    cacheWidth: 112,
+                    cacheHeight: 112,
+                    errorBuilder: (context, error, stackTrace) {
+                      return const Icon(
+                        Icons.health_and_safety_rounded,
+                        color: primaryBlue,
+                        size: 32,
+                      );
+                    },
+                  ),
+                ),
+              ),
+              const SizedBox(width: 16),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'RAMHIS',
+                      style: TextStyle(
+                        fontSize: 30,
+                        height: 1,
+                        letterSpacing: 1.2,
+                        fontWeight: FontWeight.w900,
+                        color: Colors.white,
+                      ),
+                    ),
+                    SizedBox(height: 6),
+                    Text(
+                      'Real-time Community Health Intelligence',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w500,
+                        color: Color(0xFFE9F2FF),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(width: 12),
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  color: Colors.white.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: IconButton(
+                  onPressed: _loadHomeData,
+                  tooltip: 'Refresh',
+                  icon: const Icon(
+                    Icons.refresh_rounded,
                     color: Colors.white,
                     size: 28,
-                  );
-                },
-              ),
-            ),
-          ),
-          const SizedBox(width: 14),
-          const Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  'RAMHIS',
-                  style: TextStyle(
-                    fontSize: 20,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
                   ),
                 ),
-                SizedBox(height: 2),
-                Text(
-                  'Healthcare Monitoring Dashboard',
-                  style: TextStyle(
-                    fontSize: 12,
-                    color: Color(0xFFE6ECFF),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          Container(
-            width: 46,
-            height: 46,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.16),
-              borderRadius: BorderRadius.circular(14),
-            ),
-            child: IconButton(
-              onPressed: _loadHomeData,
-              icon: const Icon(
-                Icons.refresh_rounded,
-                color: Colors.white,
-                size: 22,
               ),
-            ),
+            ],
           ),
         ],
       ),
@@ -466,50 +521,33 @@ if (content != null) {
 
   Widget _buildWelcomeCard() {
     final String title =
-        homepageTitle.trim().isEmpty ? 'Welcome back, $userName' : homepageTitle;
+        homepageTitle.trim().isEmpty ? 'Hello, $userName 👋' : homepageTitle;
 
     final String body = homepageBody.trim().isEmpty
-        ? 'Signed in as $accountType. Monitor healthcare predictions and medication demands in real time.'
+        ? 'Your real-time community health intelligence dashboard. Stay informed. Take action. Save lives.'
         : homepageBody;
 
     return Container(
-      padding: const EdgeInsets.all(22),
+      padding: const EdgeInsets.fromLTRB(22, 24, 18, 24),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [
-            Color(0xFF4766C7),
-            Color(0xFF6A82E8),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(30),
+        border: Border.all(
+          color: const Color(0xFFDCE7F7),
+        ),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF4766C7).withValues(alpha: 0.22),
-            blurRadius: 18,
-            offset: const Offset(0, 10),
+            color: const Color(0xFF155EEF).withValues(alpha: 0.10),
+            blurRadius: 26,
+            offset: const Offset(0, 12),
           ),
         ],
       ),
       child: Row(
-        crossAxisAlignment: CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: <Widget>[
-          Container(
-            width: 58,
-            height: 58,
-            decoration: BoxDecoration(
-              color: Colors.white.withValues(alpha: 0.18),
-              borderRadius: BorderRadius.circular(18),
-            ),
-            child: const Icon(
-              Icons.waving_hand_rounded,
-              color: Colors.white,
-              size: 30,
-            ),
-          ),
-          const SizedBox(width: 16),
           Expanded(
+            flex: 6,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: <Widget>[
@@ -518,25 +556,231 @@ if (content != null) {
                   maxLines: 2,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 24,
-                    height: 1.2,
-                    fontWeight: FontWeight.w800,
-                    color: Colors.white,
+                    fontSize: 28,
+                    height: 1.15,
+                    fontWeight: FontWeight.w900,
+                    color: deepNavy,
                   ),
                 ),
-                const SizedBox(height: 10),
+                const SizedBox(height: 8),
+                Text(
+                  homepageTitle.trim().isEmpty ? 'Welcome to RAMHIS' : accountType,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w600,
+                    color: Color(0xFF697188),
+                  ),
+                ),
+                const SizedBox(height: 20),
                 Text(
                   body,
+                  maxLines: 4,
+                  overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
-                    fontSize: 14,
-                    height: 1.5,
-                    color: Color(0xFFEAF0FF),
+                    fontSize: 15.5,
+                    height: 1.55,
+                    fontWeight: FontWeight.w500,
+                    color: Color(0xFF4B587C),
                   ),
                 ),
               ],
             ),
           ),
+          const SizedBox(width: 10),
+          Expanded(
+            flex: 5,
+            child: _buildWelcomeIllustration(),
+          ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildWelcomeIllustration() {
+    return SizedBox(
+      height: 180,
+      child: Stack(
+        alignment: Alignment.center,
+        children: [
+          Positioned(
+            top: 8,
+            right: 8,
+            child: Container(
+              width: 116,
+              height: 116,
+              decoration: const BoxDecoration(
+                shape: BoxShape.circle,
+                color: softBlue,
+              ),
+            ),
+          ),
+          Positioned(
+            bottom: 8,
+            left: 6,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                _buildMiniBar(42, const Color(0xFF3B82F6)),
+                const SizedBox(width: 8),
+                _buildMiniBar(66, const Color(0xFF12B76A)),
+                const SizedBox(width: 8),
+                _buildMiniBar(92, const Color(0xFFFFA726)),
+              ],
+            ),
+          ),
+          Positioned(
+            top: 16,
+            right: 8,
+            child: Container(
+              width: 132,
+              height: 96,
+              padding: const EdgeInsets.all(10),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: const Color(0xFFD7E4FA)),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.08),
+                    blurRadius: 18,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Column(
+                children: [
+                  Row(
+                    children: [
+                      _buildDot(),
+                      const SizedBox(width: 4),
+                      _buildDot(),
+                      const SizedBox(width: 4),
+                      _buildDot(),
+                    ],
+                  ),
+                  const Spacer(),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.end,
+                    children: [
+                      _buildLinePoint(18),
+                      _buildLinePoint(34),
+                      _buildLinePoint(25),
+                      _buildLinePoint(44),
+                    ],
+                  ),
+                  const Spacer(),
+                ],
+              ),
+            ),
+          ),
+          Positioned(
+            right: 0,
+            bottom: 18,
+            child: Container(
+              width: 70,
+              height: 82,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    Color(0xFF0B6BFF),
+                    Color(0xFF064ED0),
+                  ],
+                  begin: Alignment.topCenter,
+                  end: Alignment.bottomCenter,
+                ),
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryBlue.withValues(alpha: 0.28),
+                    blurRadius: 18,
+                    offset: const Offset(0, 10),
+                  ),
+                ],
+              ),
+              child: const Icon(
+                Icons.add_rounded,
+                color: Colors.white,
+                size: 42,
+              ),
+            ),
+          ),
+          Positioned(
+            left: 12,
+            top: 46,
+            child: Container(
+              width: 64,
+              height: 64,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                gradient: const SweepGradient(
+                  colors: [
+                    Color(0xFF0B6BFF),
+                    Color(0xFF13C2C2),
+                    Color(0xFFFF8A00),
+                    Color(0xFF0B6BFF),
+                  ],
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryBlue.withValues(alpha: 0.18),
+                    blurRadius: 14,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
+              ),
+              child: Center(
+                child: Container(
+                  width: 34,
+                  height: 34,
+                  decoration: const BoxDecoration(
+                    color: Colors.white,
+                    shape: BoxShape.circle,
+                  ),
+                ),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildMiniBar(double height, Color color) {
+    return Container(
+      width: 18,
+      height: height,
+      decoration: BoxDecoration(
+        color: color,
+        borderRadius: BorderRadius.circular(8),
+      ),
+    );
+  }
+
+  Widget _buildDot() {
+    return Container(
+      width: 6,
+      height: 6,
+      decoration: const BoxDecoration(
+        color: primaryBlue,
+        shape: BoxShape.circle,
+      ),
+    );
+  }
+
+  Widget _buildLinePoint(double height) {
+    return Expanded(
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          height: height,
+          width: 4,
+          decoration: BoxDecoration(
+            color: primaryBlue.withValues(alpha: 0.72),
+            borderRadius: BorderRadius.circular(99),
+          ),
+        ),
       ),
     );
   }
@@ -547,11 +791,12 @@ if (content != null) {
       builder: (context, query, _) {
         return Container(
           decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.04),
-                blurRadius: 14,
-                offset: const Offset(0, 4),
+                color: const Color(0xFF101828).withValues(alpha: 0.06),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
@@ -559,45 +804,62 @@ if (content != null) {
             controller: searchController,
             focusNode: searchFocusNode,
             style: const TextStyle(
-              color: Color(0xFF1B2559),
-              fontWeight: FontWeight.w500,
+              color: deepNavy,
+              fontWeight: FontWeight.w600,
+              fontSize: 15,
             ),
             decoration: InputDecoration(
-              hintText: 'Search conditions, medicines, or drivers',
+              hintText: 'Search medications, risks, conditions...',
               hintStyle: const TextStyle(
-                color: Color(0xFF9AA3B2),
+                color: Color(0xFF8B95A7),
+                fontWeight: FontWeight.w500,
               ),
               prefixIcon: const Icon(
                 Icons.search_rounded,
-                color: Color(0xFF4766C7),
+                color: Color(0xFF667085),
+                size: 28,
               ),
               suffixIcon: query.isNotEmpty
                   ? IconButton(
                       icon: const Icon(
                         Icons.close_rounded,
-                        color: Color(0xFF4766C7),
+                        color: primaryBlue,
                       ),
                       onPressed: searchController.clear,
                     )
-                  : null,
+                  : Container(
+                      width: 54,
+                      margin: const EdgeInsets.only(right: 6),
+                      decoration: const BoxDecoration(
+                        border: Border(
+                          left: BorderSide(
+                            color: Color(0xFFE7ECF4),
+                          ),
+                        ),
+                      ),
+                      child: const Icon(
+                        Icons.tune_rounded,
+                        color: Color(0xFF667085),
+                      ),
+                    ),
               filled: true,
               fillColor: Colors.white,
               contentPadding: const EdgeInsets.symmetric(
                 horizontal: 18,
-                vertical: 18,
+                vertical: 20,
               ),
               border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(22),
-                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(24),
+                borderSide: const BorderSide(color: borderColor),
               ),
               enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(22),
-                borderSide: BorderSide.none,
+                borderRadius: BorderRadius.circular(24),
+                borderSide: const BorderSide(color: borderColor),
               ),
               focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(22),
+                borderRadius: BorderRadius.circular(24),
                 borderSide: const BorderSide(
-                  color: Color(0xFF4766C7),
+                  color: primaryBlue,
                   width: 1.5,
                 ),
               ),
@@ -612,123 +874,148 @@ if (content != null) {
     final conditions = _filteredConditions(query);
 
     return _buildPanel(
-      title: 'Top Conditions Predicted',
-      child: conditions.isEmpty
-          ? _buildEmptyState('No matching conditions found.')
-          : SizedBox(
-              height: 250,
-              child: ListView.separated(
-                scrollDirection: Axis.horizontal,
-                itemCount: conditions.length,
-                separatorBuilder: (_, __) => const SizedBox(width: 10),
-                itemBuilder: (context, index) {
-                  final item = conditions[index];
-                  final color = (item['color'] ?? 'warning').toString();
-                  final title = (item['title'] ?? '').toString();
-                  final percent = (item['percent'] ?? 0).toString();
-                  final change = (item['change'] ?? 0).toString();
+  icon: Icons.monitor_heart_rounded,
+  title: 'Top Conditions Predicted',
+  showViewAll: false,
+  child: conditions.isEmpty
+      ? _buildEmptyState('No matching conditions found.')
+      : SizedBox(
+          height: 190,
+          child: ListView.separated(
+            scrollDirection: Axis.horizontal,
+            itemCount: conditions.length,
+            separatorBuilder: (_, __) => const SizedBox(width: 14),
+            itemBuilder: (context, index) {
+              final item = conditions[index];
+              final color = (item['color'] ?? 'warning').toString();
+              final title = (item['title'] ?? '').toString();
+              final percent = (item['percent'] ?? 0).toString();
+              final change = (item['change'] ?? 0).toString();
 
-                  final Color bg = _conditionColor(color);
-                  final Color accent = _conditionAccent(color);
+              final Color bg = _conditionColor(color);
+              final Color accent = _conditionAccent(color);
 
-                  return Container(
-                    width: 220,
-                    padding: const EdgeInsets.all(22),
-                    decoration: BoxDecoration(
-                      color: bg,
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: Column(
-                      children: [
-                        Container(
-                          width: 50,
-                          height: 50,
-                          decoration: const BoxDecoration(
-                            color: Colors.white,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _conditionIcon(title),
-                            color: accent,
-                            size: 32,
-                          ),
+              return Container(
+                width: 185,
+                padding: const EdgeInsets.all(18),
+                decoration: BoxDecoration(
+                  color: bg,
+                  borderRadius: BorderRadius.circular(24),
+                  border: Border.all(
+                    color: accent.withValues(alpha: 0.18),
+                  ),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Container(
+                      width: 58,
+                      height: 58,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.72),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: accent.withValues(alpha: 0.18),
                         ),
-                        const Spacer(),
+                      ),
+                      child: Icon(
+                        _conditionIcon(title),
+                        color: accent,
+                        size: 32,
+                      ),
+                    ),
+                    const Spacer(),
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.end,
+                      children: [
                         Text(
                           '$percent%',
                           style: TextStyle(
-                            fontSize: 48,
+                            fontSize: 31,
+                            height: 1,
                             fontWeight: FontWeight.w900,
                             color: accent,
                           ),
                         ),
-                        const SizedBox(height: 10),
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 18,
-                            vertical: 10,
-                          ),
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.75),
-                            borderRadius: BorderRadius.circular(22),
-                            border: Border.all(
-                              color: accent.withValues(alpha: 0.18),
-                            ),
-                          ),
+                        const SizedBox(width: 8),
+                        Padding(
+                          padding: const EdgeInsets.only(bottom: 3),
                           child: Row(
-                            mainAxisSize: MainAxisSize.min,
                             children: [
                               Icon(
                                 Icons.arrow_upward_rounded,
-                                size: 18,
+                                size: 16,
                                 color: accent,
                               ),
-                              const SizedBox(width: 4),
                               Text(
                                 '$change%',
                                 style: TextStyle(
                                   color: accent,
-                                  fontWeight: FontWeight.w700,
-                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 14,
                                 ),
                               ),
                             ],
                           ),
                         ),
-                        const Spacer(),
-                        Text(
-                          title,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontSize: 17,
-                            height: 1.35,
-                            fontWeight: FontWeight.w700,
-                            color: Color(0xFF111827),
-                          ),
-                        ),
                       ],
                     ),
-                  );
-                },
-              ),
-            ),
-    );
+                    const SizedBox(height: 14),
+                    Text(
+                      title,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 15.5,
+                        height: 1.28,
+                        fontWeight: FontWeight.w800,
+                        color: deepNavy,
+                      ),
+                    ),
+                  ],
+                ),
+              );
+            },
+          ),
+        ),
+);
   }
 
   Widget _buildMedicationSection(String query) {
-    final medicines = _filteredMedicationNeeds(query);
+  final medicines = _filteredMedicationNeeds(query);
 
-    return _buildPanel(
-      title: 'Medication Needs',
-      child: medicines.isEmpty
-          ? _buildEmptyState('No matching medicines found.')
-          : ListView.separated(
+  return _buildPanel(
+    icon: Icons.medication_liquid_rounded,
+    title: 'Medication Needs',
+    onViewAll: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => MedicationNeedsViewAllScreen(
+            medicines: medicationNeeds,
+          ),
+        ),
+      );
+    },
+    child: medicines.isEmpty
+        ? _buildEmptyState('No matching medicines found.')
+        : Container(
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(24),
+              border: Border.all(color: borderColor),
+            ),
+            child: ListView.separated(
               shrinkWrap: true,
               physics: const NeverScrollableScrollPhysics(),
+              padding: const EdgeInsets.symmetric(vertical: 8),
               itemCount: medicines.length,
-              separatorBuilder: (_, __) => const SizedBox(height: 14),
+              separatorBuilder: (_, __) => const Divider(
+                height: 1,
+                indent: 74,
+                endIndent: 14,
+                color: Color(0xFFE9EEF6),
+              ),
               itemBuilder: (context, index) {
                 final item = medicines[index];
                 final name = (item['name'] ?? '').toString();
@@ -736,37 +1023,28 @@ if (content != null) {
                 final risk = (item['risk'] ?? '').toString();
                 final riskColor = _riskColor(risk);
 
-                return Container(
-                  width: double.infinity,
+                return Padding(
                   padding: const EdgeInsets.symmetric(
                     horizontal: 14,
-                    vertical: 14,
-                  ),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(22),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
+                    vertical: 12,
                   ),
                   child: Row(
                     crossAxisAlignment: CrossAxisAlignment.center,
                     children: [
                       Container(
-                        width: 54,
-                        height: 54,
+                        width: 48,
+                        height: 48,
                         decoration: BoxDecoration(
-                          color: riskColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(16),
+                          color: riskColor.withValues(alpha: 0.10),
+                          shape: BoxShape.circle,
+                          border: Border.all(
+                            color: riskColor.withValues(alpha: 0.12),
+                          ),
                         ),
                         child: Icon(
                           Icons.medication_rounded,
                           color: riskColor,
-                          size: 28,
+                          size: 25,
                         ),
                       ),
                       const SizedBox(width: 14),
@@ -779,9 +1057,9 @@ if (content != null) {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.w700,
-                                color: Color(0xFF111827),
+                                fontSize: 15.5,
+                                fontWeight: FontWeight.w800,
+                                color: deepNavy,
                               ),
                             ),
                             const SizedBox(height: 4),
@@ -790,9 +1068,9 @@ if (content != null) {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 13,
+                                fontSize: 13.5,
                                 fontWeight: FontWeight.w500,
-                                color: Color(0xFF6B7280),
+                                color: mutedText,
                               ),
                             ),
                           ],
@@ -801,28 +1079,42 @@ if (content != null) {
                       const SizedBox(width: 10),
                       Container(
                         constraints: const BoxConstraints(
-                          minWidth: 82,
-                          maxWidth: 95,
+                          minWidth: 96,
+                          maxWidth: 112,
                         ),
                         padding: const EdgeInsets.symmetric(
                           horizontal: 12,
-                          vertical: 10,
+                          vertical: 11,
                         ),
                         decoration: BoxDecoration(
-                          color: riskColor.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: Text(
-                          risk,
-                          textAlign: TextAlign.center,
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            color: riskColor,
-                            fontWeight: FontWeight.w700,
-                            fontSize: 13,
-                            height: 1.2,
+                          color: riskColor.withValues(alpha: 0.09),
+                          borderRadius: BorderRadius.circular(14),
+                          border: Border.all(
+                            color: riskColor.withValues(alpha: 0.10),
                           ),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Expanded(
+                              child: Text(
+                                risk,
+                                textAlign: TextAlign.center,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: riskColor,
+                                  fontWeight: FontWeight.w800,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            Icon(
+                              Icons.chevron_right_rounded,
+                              color: riskColor.withValues(alpha: 0.75),
+                              size: 18,
+                            ),
+                          ],
                         ),
                       ),
                     ],
@@ -830,125 +1122,221 @@ if (content != null) {
                 );
               },
             ),
-    );
-  }
+          ),
+  );
+}
 
-  Widget _buildDriversSection(String query) {
-    final drivers = _filteredDrivers(query);
+ Widget _buildDriversSection(String query) {
+  final drivers = _filteredDrivers(query);
 
-    return _buildPanel(
-      title: 'Key Drivers',
-      child: drivers.isEmpty
-          ? _buildEmptyState('No matching drivers found.')
-          : GridView.builder(
-              itemCount: drivers.length,
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                crossAxisCount: 2,
-                crossAxisSpacing: 14,
-                mainAxisSpacing: 14,
-                childAspectRatio: 2.8,
-              ),
-              itemBuilder: (context, index) {
-                final driver = drivers[index];
+  return _buildPanel(
+    icon: Icons.trending_up_rounded,
+    title: 'Key Drivers',
+    onViewAll: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => KeyDriversViewAllScreen(
+            drivers: keyDrivers,
+          ),
+        ),
+      );
+    },
+    child: drivers.isEmpty
+        ? _buildEmptyState('No matching drivers found.')
+        : LayoutBuilder(
+            builder: (context, constraints) {
+              final bool twoColumns = constraints.maxWidth >= 520;
 
-                return Container(
-                  padding: const EdgeInsets.all(14),
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(24),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.03),
-                        blurRadius: 10,
-                        offset: const Offset(0, 4),
-                      ),
-                    ],
-                  ),
-                  child: Row(
-                    children: [
-                      Container(
-                        width: 56,
-                        height: 56,
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFE7F0FF),
-                          borderRadius: BorderRadius.circular(18),
-                        ),
-                        child: Icon(
-                          _driverIcon(driver),
-                          color: const Color(0xFF2563EB),
-                          size: 30,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Text(
-                          driver,
-                          style: const TextStyle(
-                            fontSize: 16,
-                            height: 1.3,
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF111827),
+              return GridView.builder(
+                itemCount: drivers.length,
+                shrinkWrap: true,
+                physics: const NeverScrollableScrollPhysics(),
+                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
+                  crossAxisCount: twoColumns ? 2 : 1,
+                  crossAxisSpacing: 14,
+                  mainAxisSpacing: 12,
+                  childAspectRatio: twoColumns ? 3.45 : 5.2,
+                ),
+                itemBuilder: (context, index) {
+                  final driver = drivers[index];
+
+                  return Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 10,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: borderColor),
+                    ),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 48,
+                          height: 48,
+                          decoration: const BoxDecoration(
+                            color: softBlue,
+                            shape: BoxShape.circle,
+                          ),
+                          child: Icon(
+                            _driverIcon(driver),
+                            color: primaryBlue,
+                            size: 26,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                );
-              },
-            ),
-    );
-  }
+                        const SizedBox(width: 14),
+                        Expanded(
+                          child: Text(
+                            driver,
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              fontSize: 14.5,
+                              height: 1.28,
+                              fontWeight: FontWeight.w700,
+                              color: deepNavy,
+                            ),
+                          ),
+                        ),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: Color(0xFF98A2B3),
+                        ),
+                      ],
+                    ),
+                  );
+                },
+              );
+            },
+          ),
+  );
+}
+
 
   Widget _buildPanel({
-    required String title,
-    required Widget child,
-  }) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(20),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF9FAFC),
-        borderRadius: BorderRadius.circular(32),
-        border: Border.all(
-          color: const Color(0xFFE9EDF5),
+  required IconData icon,
+  required String title,
+  required Widget child,
+  VoidCallback? onViewAll,
+  bool showViewAll = true,
+}) {
+  return Container(
+    width: double.infinity,
+    padding: const EdgeInsets.all(18),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(28),
+      border: Border.all(color: borderColor),
+      boxShadow: [
+        BoxShadow(
+          color: const Color(0xFF101828).withValues(alpha: 0.06),
+          blurRadius: 24,
+          offset: const Offset(0, 10),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: <Widget>[
-          Text(
-            title,
-            style: const TextStyle(
-              fontSize: 22,
-              fontWeight: FontWeight.w800,
-              color: Color(0xFF1B1F3B),
+      ],
+    ),
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: <Widget>[
+        Row(
+          children: [
+            Container(
+              width: 38,
+              height: 38,
+              decoration: BoxDecoration(
+                gradient: const LinearGradient(
+                  colors: [
+                    primaryBlue,
+                    Color(0xFF075EE5),
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
+                ),
+                shape: BoxShape.circle,
+                boxShadow: [
+                  BoxShadow(
+                    color: primaryBlue.withValues(alpha: 0.22),
+                    blurRadius: 12,
+                    offset: const Offset(0, 6),
+                  ),
+                ],
+              ),
+              child: Icon(
+                icon,
+                color: Colors.white,
+                size: 21,
+              ),
             ),
-          ),
-          const SizedBox(height: 20),
-          child,
-        ],
-      ),
-    );
-  }
+            const SizedBox(width: 10),
+            Expanded(
+              child: Text(
+                title,
+                maxLines: 1,
+                overflow: TextOverflow.visible,
+                softWrap: false,
+                style: const TextStyle(
+                  fontSize: 18,
+                  height: 1.1,
+                  fontWeight: FontWeight.w900,
+                  color: deepNavy,
+                ),
+              ),
+            ),
+
+            if (showViewAll && onViewAll != null)
+              TextButton(
+                onPressed: onViewAll,
+                style: TextButton.styleFrom(
+                  foregroundColor: primaryBlue,
+                  padding: const EdgeInsets.symmetric(horizontal: 4),
+                  minimumSize: Size.zero,
+                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                ),
+                child: const Row(
+                  children: [
+                    Text(
+                      'View all',
+                      style: TextStyle(
+                        fontSize: 13,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(width: 2),
+                    Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                    ),
+                  ],
+                ),
+              ),
+          ],
+        ),
+        const SizedBox(height: 18),
+        child,
+      ],
+    ),
+  );
+}
 
   Widget _buildEmptyState(String text) {
-    return Padding(
+    return Container(
+      width: double.infinity,
       padding: const EdgeInsets.all(24),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8FAFF),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: borderColor),
+      ),
       child: Center(
         child: Text(
           text,
+          textAlign: TextAlign.center,
           style: const TextStyle(
             fontSize: 15,
-            color: Color(0xFF6B7280),
+            fontWeight: FontWeight.w600,
+            color: mutedText,
           ),
         ),
       ),
