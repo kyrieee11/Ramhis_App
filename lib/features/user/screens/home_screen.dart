@@ -1,745 +1,733 @@
-import 'dart:async';
-
 import 'package:flutter/material.dart';
-import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
-import 'package:ramhis_app/models/user_model.dart';
-import 'package:ramhis_app/services/api/auth_service.dart';
-import 'package:ramhis_app/services/api/content_service.dart';
-import 'package:ramhis_app/core/session_manager.dart';
-import 'package:ramhis_app/features/user/screens/medication.view.dart';
-import 'package:ramhis_app/features/user/screens/keydrivers.view.dart';
 
-class HomeWidget extends StatefulWidget {
-  const HomeWidget({super.key});
+import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
+
+import 'package:ramhis_app/services/api/analytics_service.dart';
+
+class HomeScreen extends StatefulWidget {
+  const HomeScreen({super.key});
 
   @override
-  State<HomeWidget> createState() => _HomeWidgetState();
+  State<HomeScreen> createState() => _HomeScreenState();
 }
 
-class _HomeWidgetState extends State<HomeWidget> {
-  final GlobalKey<ScaffoldState> scaffoldKey = GlobalKey<ScaffoldState>();
-  final TextEditingController searchController = TextEditingController();
-  final FocusNode searchFocusNode = FocusNode();
-
-  final ValueNotifier<String> searchNotifier = ValueNotifier<String>('');
-  Timer? _searchDebounce;
-
+class _HomeScreenState extends State<HomeScreen> {
   bool isLoading = true;
-  String userName = 'User';
-  String accountType = 'Volunteer';
-  String homepageTitle = '';
-  String homepageBody = '';
+  String? errorMessage;
 
-  List<Map<String, dynamic>> topConditions = [];
-  List<Map<String, dynamic>> medicationNeeds = [];
-  List<String> keyDrivers = [];
+  Map<String, dynamic>? summary;
 
-  static const Color primaryBlue = Color(0xFF0B6BFF);
-  static const Color deepNavy = Color(0xFF071A4D);
-  static const Color pageBg = Color(0xFFF7FAFF);
-  static const Color softBlue = Color(0xFFEAF3FF);
-  static const Color borderColor = Color(0xFFE1EAF6);
-  static const Color mutedText = Color(0xFF667085);
+  List<Map<String, dynamic>> patientsPerClinic = [];
+  List<Map<String, dynamic>> mostUsedMedicines = [];
+  List<Map<String, dynamic>> keyDrivers = [];
+  
+  Color? get kBg => null;
 
   @override
   void initState() {
     super.initState();
-    searchController.addListener(_onSearchChanged);
-    Future.microtask(_loadHomeData);
+    _loadHomeAnalytics();
   }
 
-  @override
-  void dispose() {
-    _searchDebounce?.cancel();
-    searchController.removeListener(_onSearchChanged);
-    searchController.dispose();
-    searchFocusNode.dispose();
-    searchNotifier.dispose();
-    super.dispose();
-  }
+  num _readNumber(Map<String, dynamic>? map, List<String> keys) {
+    if (map == null) return 0;
 
-  void _onSearchChanged() {
-    _searchDebounce?.cancel();
+    for (final key in keys) {
+      final value = map[key];
 
-    _searchDebounce = Timer(const Duration(milliseconds: 300), () {
-      if (!mounted) return;
-      searchNotifier.value = searchController.text.trim().toLowerCase();
-    });
-  }
+      if (value is num) return value;
 
-  Future<void> _loadHomeData() async {
-    debugPrint('HOME ACCESS TOKEN: ${AuthSession.accessToken}');
-    debugPrint('HOME HEADERS: ${AuthSession.headers()}');
-
-    try {
-      debugPrint('HOME: starting fetchMe...');
-      final userData = await AuthService.fetchMe();
-      debugPrint('HOME: fetchMe success: $userData');
-
-      debugPrint('HOME: starting homepage content...');
-      final content = await ContentService.getHomepageContent();
-      debugPrint('HOME: homepage content success: $content');
-
-      final UserModel user = UserModel.fromJson(userData);
-
-      userName = user.fullName.isEmpty ? 'User' : user.fullName;
-      accountType =
-          user.accountType.isEmpty ? 'Volunteer' : _capitalize(user.accountType);
-
-      if (content != null) {
-        homepageTitle = content.title;
-        homepageBody = content.body;
-
-        final sections = content.sections;
-
-        topConditions = List<Map<String, dynamic>>.from(
-          sections['topConditions'] ?? [],
-        );
-
-        medicationNeeds = List<Map<String, dynamic>>.from(
-          sections['medicationNeeds'] ?? [],
-        );
-
-        keyDrivers = List<String>.from(
-          sections['keyDrivers'] ?? [],
-        );
-
-        if (topConditions.isEmpty &&
-            medicationNeeds.isEmpty &&
-            keyDrivers.isEmpty) {
-          _loadFallbackData();
-        }
-      } else {
-        _loadFallbackData();
+      if (value is String) {
+        return num.tryParse(value) ?? 0;
       }
-    } catch (error) {
-      debugPrint('❌ Home load error: $error');
-      _loadFallbackData();
     }
 
-    if (!mounted) return;
-    setState(() => isLoading = false);
+    return 0;
+  }
+
+  String _readString(Map<String, dynamic>? map, List<String> keys) {
+    if (map == null) return '';
+
+    for (final key in keys) {
+      final value = map[key];
+
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString();
+      }
+    }
+
+    return '';
+  }
+
+  List<Map<String, dynamic>> _extractList(
+    Map<String, dynamic>? response,
+    List<String> keys,
+  ) {
+    if (response == null) return [];
+
+    for (final key in keys) {
+      final value = response[key];
+
+      if (value is List) {
+        return value
+            .whereType<Map>()
+            .map((item) => Map<String, dynamic>.from(item))
+            .toList();
+      }
+    }
+
+    final data = response['data'];
+
+    if (data is List) {
+      return data
+          .whereType<Map>()
+          .map((item) => Map<String, dynamic>.from(item))
+          .toList();
+    }
+
+    if (data is Map) {
+      for (final key in keys) {
+        final value = data[key];
+
+        if (value is List) {
+          return value
+              .whereType<Map>()
+              .map((item) => Map<String, dynamic>.from(item))
+              .toList();
+        }
+      }
+    }
+
+    return [];
+  }
+
+  Future<void> _loadHomeAnalytics() async {
+    setState(() {
+      isLoading = true;
+      errorMessage = null;
+    });
+
+    try {
+      final responses = await Future.wait<Map<String, dynamic>?>([
+        AnalyticsService.getDashboardSummary(),
+        AnalyticsService.getPatientTrends(),
+        AnalyticsService.getDiagnosisDistribution(),
+        AnalyticsService.getTopMedicines(),
+      ]);
+
+      final dashboardSummary = responses[0];
+      final patientTrends = responses[1];
+      final diagnosisDistribution = responses[2];
+      final topMedicines = responses[3];
+
+      if (dashboardSummary == null &&
+          patientTrends == null &&
+          diagnosisDistribution == null &&
+          topMedicines == null) {
+        _loadFallbackData();
+        return;
+      }
+
+      final dashboardData = dashboardSummary?['data'] is Map
+          ? Map<String, dynamic>.from(dashboardSummary?['data'])
+          : dashboardSummary;
+
+      final totalPatients = _readNumber(
+        dashboardData,
+        [
+          'totalPatients',
+          'patients',
+          'patientCount',
+          'totalPatientCount',
+        ],
+      );
+
+      final prescriptionVolume = _readNumber(
+        dashboardData,
+        [
+          'prescriptionVolume',
+          'totalPrescriptions',
+          'prescriptions',
+          'prescriptionCount',
+        ],
+      );
+
+      final healthAlert = _readString(
+        dashboardData,
+        [
+          'healthAlert',
+          'alert',
+          'message',
+        ],
+      );
+
+      final clinicRaw = _extractList(
+        patientTrends,
+        [
+          'patientsPerClinic',
+          'clinicDistribution',
+          'trends',
+          'patientTrends',
+        ],
+      );
+
+      final totalClinicCount = clinicRaw.fold<num>(
+        0,
+        (sum, item) =>
+            sum +
+            _readNumber(
+              item,
+              ['count', 'patients', 'total', 'value'],
+            ),
+      );
+
+      patientsPerClinic = clinicRaw.map((item) {
+        final count = _readNumber(
+          item,
+          ['count', 'patients', 'total', 'value'],
+        );
+
+        final percentage = _readNumber(
+          item,
+          ['percentage', 'percent'],
+        );
+
+        return {
+          'clinic': _readString(
+                item,
+                ['clinic', 'name', 'label', 'department'],
+              ).isNotEmpty
+              ? _readString(
+                  item,
+                  ['clinic', 'name', 'label', 'department'],
+                )
+              : 'General Medicine',
+          'count': count,
+          'percentage': percentage > 0
+              ? percentage
+              : totalClinicCount > 0
+                  ? ((count / totalClinicCount) * 100).round()
+                  : 0,
+        };
+      }).toList();
+
+      final diagnosisRaw = _extractList(
+        diagnosisDistribution,
+        [
+          'keyDrivers',
+          'diagnosisDistribution',
+          'diagnoses',
+          'data',
+        ],
+      );
+
+      diagnosisRaw.sort((a, b) {
+        final aCount = _readNumber(a, ['count', 'value', 'total']);
+        final bCount = _readNumber(b, ['count', 'value', 'total']);
+        return bCount.compareTo(aCount);
+      });
+
+      final topDiagnosis = diagnosisRaw.isNotEmpty ? diagnosisRaw.first : null;
+
+      final topDiagnosisName = _readString(
+        topDiagnosis,
+        ['name', 'diagnosis', 'label'],
+      );
+
+      final topDiagnosisCount = _readNumber(
+        topDiagnosis,
+        ['count', 'value', 'total'],
+      );
+
+      final topDiagnosisPercentage = _readNumber(
+        topDiagnosis,
+        ['percentage', 'percent'],
+      );
+
+      keyDrivers = [
+        {
+          'label': 'Total Patients',
+          'value': totalPatients,
+          'detail': 'Registered patients',
+        },
+        {
+          'label': 'Most Common Diagnosis',
+          'value': topDiagnosisName.isNotEmpty ? topDiagnosisName : 'No data',
+          'detail':
+              '${topDiagnosisPercentage > 0 ? topDiagnosisPercentage : topDiagnosisCount}% of records',
+        },
+        {
+          'label': 'Prescription Volume',
+          'value': prescriptionVolume,
+          'detail': 'Total prescriptions',
+        },
+        {
+          'label': 'Health Alert',
+          'value': healthAlert.isNotEmpty ? healthAlert : 'No major alert',
+          'detail': 'Monitor and prepare resources',
+        },
+      ];
+
+      final medicinesRaw = _extractList(
+        topMedicines,
+        [
+          'mostUsedMedicines',
+          'topMedicines',
+          'medicines',
+          'data',
+        ],
+      );
+
+      mostUsedMedicines = medicinesRaw.map((item) {
+        final count = _readNumber(
+          item,
+          ['count', 'total', 'value', 'quantity'],
+        );
+
+        return {
+          'name': _readString(
+                item,
+                ['name', 'medicine', 'medicineName', 'label'],
+              ).isNotEmpty
+              ? _readString(
+                  item,
+                  ['name', 'medicine', 'medicineName', 'label'],
+                )
+              : 'Unknown medicine',
+          'count': count,
+          'demand': _readString(item, ['demand', 'level']).isNotEmpty
+              ? _readString(item, ['demand', 'level'])
+              : count >= 50
+                  ? 'High'
+                  : count >= 25
+                      ? 'Moderate'
+                      : 'Stable',
+        };
+      }).toList();
+
+      setState(() {
+        summary = {
+          'totalPatients': totalPatients,
+          'prescriptionVolume': prescriptionVolume,
+          'healthAlert':
+              healthAlert.isNotEmpty ? healthAlert : 'No major health alert',
+          'topDiagnosis': {
+            'name': topDiagnosisName.isNotEmpty ? topDiagnosisName : 'No data',
+            'count': topDiagnosisCount,
+            'percentage': topDiagnosisPercentage,
+          },
+        };
+
+        isLoading = false;
+      });
+    } catch (e) {
+      _loadFallbackData();
+    }
   }
 
   void _loadFallbackData() {
-    topConditions = [
-      {
-        'percent': 30,
-        'change': 10,
-        'title': 'Respiratory Infections',
-        'color': 'warning',
-      },
-      {
-        'percent': 24,
-        'change': 6,
-        'title': 'Hypertension Cases',
-        'color': 'danger',
-      },
-      {
-        'percent': 18,
-        'change': 4,
-        'title': 'Gastrointestinal Disorders',
-        'color': 'blue',
-      },
-    ];
+    setState(() {
+      summary = {
+        'totalPatients': 0,
+        'prescriptionVolume': 0,
+        'healthAlert': 'No data available',
+        'topProvince': {'name': 'No data', 'count': 0},
+        'topDiagnosis': {'name': 'No data', 'count': 0},
+      };
 
-    medicationNeeds = [
-      {
-        'name': 'Amoxicillin',
-        'amount': '1,200 doses',
-        'risk': 'High Risk',
-      },
-      {
-        'name': 'Paracetamol',
-        'amount': '900 doses',
-        'risk': 'Medium Risk',
-      },
-      {
-        'name': 'Azithromycin',
-        'amount': '600 doses',
-        'risk': 'Low Risk',
-      },
-      {
-        'name': 'Ibuprofen',
-        'amount': '450 doses',
-        'risk': 'Medium Risk',
-      },
-    ];
+      patientsPerClinic = [
+        {
+          'clinic': 'General Medicine',
+          'count': 0,
+          'percentage': 0,
+        },
+      ];
 
-    keyDrivers = [
-      'Increased antibiotic use',
-      'Seasonal respiratory cases',
-      'Population density growth',
-      'Frequent weather changes',
-    ];
-  }
+      mostUsedMedicines = [
+        {
+          'name': 'No medicine data',
+          'count': 0,
+          'demand': 'Stable',
+        },
+      ];
 
-  String _capitalize(String value) {
-    if (value.isEmpty) return value;
-    return value[0].toUpperCase() + value.substring(1);
-  }
+      keyDrivers = [
+        {
+          'label': 'Top Province',
+          'value': 'No data',
+          'detail': '0 patients',
+        },
+        {
+          'label': 'Most Common Diagnosis',
+          'value': 'No data',
+          'detail': '0%',
+        },
+        {
+          'label': 'Prescription Volume',
+          'value': 0,
+          'detail': 'Total prescriptions',
+        },
+        {
+          'label': 'Health Alert',
+          'value': 'No major health alert',
+          'detail': 'Monitor and prepare resources',
+        },
+      ];
 
-  List<Map<String, dynamic>> _filteredMedicationNeeds(String query) {
-    if (query.isEmpty) return medicationNeeds;
-
-    return medicationNeeds.where((item) {
-      return (item['name'] ?? '').toString().toLowerCase().contains(query) ||
-          (item['risk'] ?? '').toString().toLowerCase().contains(query) ||
-          (item['amount'] ?? '').toString().toLowerCase().contains(query);
-    }).toList();
-  }
-
-  List<String> _filteredDrivers(String query) {
-    if (query.isEmpty) return keyDrivers;
-
-    return keyDrivers
-        .where((item) => item.toLowerCase().contains(query))
-        .toList();
-  }
-
-  List<Map<String, dynamic>> _filteredConditions(String query) {
-    if (query.isEmpty) return topConditions;
-
-    return topConditions.where((item) {
-      return (item['title'] ?? '').toString().toLowerCase().contains(query);
-    }).toList();
-  }
-
-  Color _conditionColor(String key) {
-    switch (key.toLowerCase()) {
-      case 'red':
-      case 'danger':
-        return const Color(0xFFFFEEF1);
-      case 'blue':
-        return const Color(0xFFEAF3FF);
-      case 'green':
-      case 'success':
-        return const Color(0xFFE9FFF3);
-      case 'yellow':
-      case 'warning':
-      default:
-        return const Color(0xFFFFF5E6);
-    }
-  }
-
-  Color _conditionAccent(String key) {
-    switch (key.toLowerCase()) {
-      case 'red':
-      case 'danger':
-        return const Color(0xFFFF3B4E);
-      case 'blue':
-        return primaryBlue;
-      case 'green':
-      case 'success':
-        return const Color(0xFF16B364);
-      case 'yellow':
-      case 'warning':
-      default:
-        return const Color(0xFFFF8A00);
-    }
-  }
-
-  Color _riskColor(String risk) {
-    switch (risk.toLowerCase()) {
-      case 'high risk':
-        return const Color(0xFFFF2F45);
-      case 'medium risk':
-        return const Color(0xFFFF8A00);
-      case 'low risk':
-      default:
-        return const Color(0xFF16B364);
-    }
-  }
-
-  IconData _conditionIcon(String title) {
-    final lower = title.toLowerCase();
-
-    if (lower.contains('respiratory')) {
-      return Icons.air_rounded;
-    } else if (lower.contains('hypertension')) {
-      return Icons.favorite_rounded;
-    } else if (lower.contains('gastro')) {
-      return Icons.medical_services_rounded;
-    }
-
-    return Icons.health_and_safety_rounded;
-  }
-
-  IconData _driverIcon(String title) {
-    final lower = title.toLowerCase();
-
-    if (lower.contains('weather')) {
-      return Icons.cloud_rounded;
-    } else if (lower.contains('seasonal')) {
-      return Icons.air_rounded;
-    } else if (lower.contains('population')) {
-      return Icons.groups_rounded;
-    } else if (lower.contains('antibiotic')) {
-      return Icons.vaccines_rounded;
-    }
-
-    return Icons.trending_up_rounded;
+      isLoading = false;
+    });
   }
 
   @override
   Widget build(BuildContext context) {
-    final double width = MediaQuery.sizeOf(context).width;
-    final bool isTablet = width >= 700;
+    return Scaffold(
+      backgroundColor: kBg,
+      body: SafeArea(
+        child: RefreshIndicator(
+          color: const Color(0xFF5D74DA),
+          backgroundColor: Colors.white,
+          onRefresh: _loadHomeAnalytics,
+          child: isLoading
+              ? const Center(
+                  child: CircularProgressIndicator(
+                    color: Color(0xFF5D74DA),
+                  ),
+                )
+              : AnimatedOpacity(
+                  opacity: isLoading ? 0 : 1,
+                  duration: const Duration(milliseconds: 350),
+                  curve: Curves.easeOut,
+                  child: SingleChildScrollView(
+                    physics: const AlwaysScrollableScrollPhysics(),
+                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 26),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        _buildHeader(),
+                        const SizedBox(height: 22),
+                        _buildMainInsightCard(),
+                        const SizedBox(height: 18),
+                        _buildKeyDrivers(),
+                        const SizedBox(height: 18),
+                        _buildClinicDistribution(),
+                        const SizedBox(height: 18),
+                        _buildMedicineDemand(),
+                        const SizedBox(height: 24),
+                      ],
+                    ),
+                  ),
+                ),
+        ),
+      ),
+      bottomNavigationBar: const CustomNavBar(currentIndex: 0),
+    );
+  }
 
-    return GestureDetector(
-      onTap: () {
-        FocusScope.of(context).unfocus();
-        FocusManager.instance.primaryFocus?.unfocus();
-      },
-      child: Scaffold(
-        key: scaffoldKey,
-        backgroundColor: pageBg,
-        body: SafeArea(
+  Widget _buildHeader() {
+    final displayName = _readString(
+      summary,
+      ['firstName', 'first_name', 'name', 'userName'],
+    );
+
+    return Row(
+      children: [
+        Expanded(
           child: Column(
-            children: <Widget>[
-              _buildTopHeader(),
-              Expanded(
-                child: isLoading
-                    ? const Center(
-                        child: CircularProgressIndicator(
-                          color: primaryBlue,
-                          strokeWidth: 3,
-                        ),
-                      )
-                    : RefreshIndicator(
-                        color: primaryBlue,
-                        backgroundColor: Colors.white,
-                        onRefresh: _loadHomeData,
-                        child: CustomScrollView(
-                          physics: const AlwaysScrollableScrollPhysics(),
-                          slivers: <Widget>[
-                            SliverPadding(
-                              padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
-                              sliver: SliverToBoxAdapter(
-                                child: Center(
-                                  child: ConstrainedBox(
-                                    constraints:
-                                        const BoxConstraints(maxWidth: 1100),
-                                    child: Column(
-                                      crossAxisAlignment:
-                                          CrossAxisAlignment.stretch,
-                                      children: <Widget>[
-                                        _buildWelcomeCard(),
-                                        const SizedBox(height: 18),
-                                        _buildSearchBar(),
-                                        const SizedBox(height: 20),
-                                        ValueListenableBuilder<String>(
-                                          valueListenable: searchNotifier,
-                                          builder: (context, query, _) {
-                                            if (isTablet) {
-                                              return Row(
-                                                crossAxisAlignment:
-                                                    CrossAxisAlignment.start,
-                                                children: <Widget>[
-                                                  Expanded(
-                                                    flex: 6,
-                                                    child:
-                                                        _buildConditionsSection(
-                                                            query),
-                                                  ),
-                                                  const SizedBox(width: 16),
-                                                  Expanded(
-                                                    flex: 5,
-                                                    child:
-                                                        _buildMedicationSection(
-                                                            query),
-                                                  ),
-                                                ],
-                                              );
-                                            }
-
-                                            return Column(
-                                              crossAxisAlignment:
-                                                  CrossAxisAlignment.stretch,
-                                              children: <Widget>[
-                                                _buildConditionsSection(query),
-                                                const SizedBox(height: 18),
-                                                _buildMedicationSection(query),
-                                              ],
-                                            );
-                                          },
-                                        ),
-                                        const SizedBox(height: 18),
-                                        ValueListenableBuilder<String>(
-                                          valueListenable: searchNotifier,
-                                          builder: (context, query, _) {
-                                            return _buildDriversSection(query);
-                                          },
-                                        ),
-                                      ],
-                                    ),
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-              ),
-              const CustomNavBar(currentIndex: 0),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildTopHeader() {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 18, 22, 22),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF005CFF),
-            Color(0xFF0B7CFF),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -50,
-            top: -55,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.07),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 35,
-            bottom: -60,
-            child: Container(
-              width: 140,
-              height: 140,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.05),
-              ),
-            ),
-          ),
-          Row(
-            children: <Widget>[
-              Container(
-                width: 56,
-                height: 56,
-                decoration: BoxDecoration(
-                  color: Colors.white,
-                  borderRadius: BorderRadius.circular(18),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 18,
-                      offset: const Offset(0, 8),
-                    ),
-                  ],
-                ),
-                child: ClipRRect(
-                  borderRadius: BorderRadius.circular(18),
-                  child: Image.asset(
-                    'assets/images/ramhis_logo.png',
-                    fit: BoxFit.cover,
-                    cacheWidth: 112,
-                    cacheHeight: 112,
-                    errorBuilder: (context, error, stackTrace) {
-                      return const Icon(
-                        Icons.health_and_safety_rounded,
-                        color: primaryBlue,
-                        size: 32,
-                      );
-                    },
-                  ),
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                displayName.isNotEmpty
+                    ? 'Hello, $displayName 👋'
+                    : 'Hello, RAMHIS 👋',
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  fontSize: 25,
+                  fontWeight: FontWeight.w800,
+                  color: Color(0xFF1A1F36),
+                  letterSpacing: -0.4,
                 ),
               ),
-              const SizedBox(width: 16),
-              const Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'RAMHIS',
-                      style: TextStyle(
-                        fontSize: 30,
-                        height: 1,
-                        letterSpacing: 1.2,
-                        fontWeight: FontWeight.w900,
-                        color: Colors.white,
-                      ),
-                    ),
-                    SizedBox(height: 6),
-                    Text(
-                      'Real-time Community Health Intelligence',
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w500,
-                        color: Color(0xFFE9F2FF),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-              const SizedBox(width: 12),
-              Container(
-                width: 58,
-                height: 58,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.18),
-                  borderRadius: BorderRadius.circular(18),
-                  border: Border.all(
-                    color: Colors.white.withValues(alpha: 0.18),
-                  ),
-                ),
-                child: IconButton(
-                  onPressed: _loadHomeData,
-                  tooltip: 'Refresh',
-                  icon: const Icon(
-                    Icons.refresh_rounded,
-                    color: Colors.white,
-                    size: 28,
-                  ),
+              const SizedBox(height: 6),
+              const Text(
+                'Community Health Dashboard',
+                style: TextStyle(
+                  fontSize: 14,
+                  fontWeight: FontWeight.w500,
+                  color: Color(0xFF8892B0),
                 ),
               ),
             ],
           ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWelcomeCard() {
-    final String title =
-        homepageTitle.trim().isEmpty ? 'Hello, $userName 👋' : homepageTitle;
-
-    final String body = homepageBody.trim().isEmpty
-        ? 'Your real-time community health intelligence dashboard. Stay informed. Take action. Save lives.'
-        : homepageBody;
-
-    return Container(
-      padding: const EdgeInsets.fromLTRB(22, 24, 18, 24),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(30),
-        border: Border.all(
-          color: const Color(0xFFDCE7F7),
         ),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF155EEF).withValues(alpha: 0.10),
-            blurRadius: 26,
-            offset: const Offset(0, 12),
-          ),
-        ],
-      ),
-      child: Row(
-        crossAxisAlignment: CrossAxisAlignment.center,
-        children: <Widget>[
-          Expanded(
-            flex: 6,
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: <Widget>[
-                Text(
-                  title,
-                  maxLines: 2,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 28,
-                    height: 1.15,
-                    fontWeight: FontWeight.w900,
-                    color: deepNavy,
-                  ),
-                ),
-                const SizedBox(height: 8),
-                Text(
-                  homepageTitle.trim().isEmpty ? 'Welcome to RAMHIS' : accountType,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 17,
-                    fontWeight: FontWeight.w600,
-                    color: Color(0xFF697188),
-                  ),
-                ),
-                const SizedBox(height: 20),
-                Text(
-                  body,
-                  maxLines: 4,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 15.5,
-                    height: 1.55,
-                    fontWeight: FontWeight.w500,
-                    color: Color(0xFF4B587C),
-                  ),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(width: 10),
-          Expanded(
-            flex: 5,
-            child: _buildWelcomeIllustration(),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildWelcomeIllustration() {
-    return SizedBox(
-      height: 180,
-      child: Stack(
-        alignment: Alignment.center,
-        children: [
-          Positioned(
-            top: 8,
-            right: 8,
-            child: Container(
-              width: 116,
-              height: 116,
-              decoration: const BoxDecoration(
-                shape: BoxShape.circle,
-                color: softBlue,
-              ),
-            ),
-          ),
-          Positioned(
-            bottom: 8,
-            left: 6,
-            child: Row(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              children: [
-                _buildMiniBar(42, const Color(0xFF3B82F6)),
-                const SizedBox(width: 8),
-                _buildMiniBar(66, const Color(0xFF12B76A)),
-                const SizedBox(width: 8),
-                _buildMiniBar(92, const Color(0xFFFFA726)),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 16,
-            right: 8,
-            child: Container(
-              width: 132,
-              height: 96,
-              padding: const EdgeInsets.all(10),
+        Stack(
+          clipBehavior: Clip.none,
+          children: [
+            Container(
+              width: 48,
+              height: 48,
               decoration: BoxDecoration(
                 color: Colors.white,
                 borderRadius: BorderRadius.circular(18),
-                border: Border.all(color: const Color(0xFFD7E4FA)),
                 boxShadow: [
                   BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.08),
-                    blurRadius: 18,
+                    color: Colors.black.withValues(alpha: 0.06),
+                    blurRadius: 20,
                     offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      _buildDot(),
-                      const SizedBox(width: 4),
-                      _buildDot(),
-                      const SizedBox(width: 4),
-                      _buildDot(),
-                    ],
-                  ),
-                  const Spacer(),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.end,
-                    children: [
-                      _buildLinePoint(18),
-                      _buildLinePoint(34),
-                      _buildLinePoint(25),
-                      _buildLinePoint(44),
-                    ],
-                  ),
-                  const Spacer(),
-                ],
-              ),
-            ),
-          ),
-          Positioned(
-            right: 0,
-            bottom: 18,
-            child: Container(
-              width: 70,
-              height: 82,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    Color(0xFF0B6BFF),
-                    Color(0xFF064ED0),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
-                borderRadius: BorderRadius.circular(26),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryBlue.withValues(alpha: 0.28),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
                   ),
                 ],
               ),
               child: const Icon(
-                Icons.add_rounded,
-                color: Colors.white,
-                size: 42,
+                Icons.notifications_none_rounded,
+                color: Color(0xFF5D74DA),
+                size: 25,
               ),
             ),
+            Positioned(
+              top: 10,
+              right: 11,
+              child: Container(
+                width: 9,
+                height: 9,
+                decoration: BoxDecoration(
+                  color: const Color(0xFFEF4444),
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white,
+                    width: 1.5,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+  }
+
+  Widget _buildMainInsightCard() {
+    final totalPatients = summary?['totalPatients'] ?? 0;
+    final prescriptionVolume = summary?['prescriptionVolume'] ?? 0;
+    final healthAlert = summary?['healthAlert'] ?? 'No alert';
+
+    final hasAlert = !healthAlert.toString().toLowerCase().contains('no major') &&
+        !healthAlert.toString().toLowerCase().contains('no alert') &&
+        !healthAlert.toString().toLowerCase().contains('no data');
+
+    return Container(
+      width: double.infinity,
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(32),
+        boxShadow: [
+          BoxShadow(
+            color: const Color(0xFF4F46E5).withValues(alpha: 0.24),
+            blurRadius: 24,
+            offset: const Offset(0, 12),
           ),
-          Positioned(
-            left: 12,
-            top: 46,
-            child: Container(
-              width: 64,
-              height: 64,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                gradient: const SweepGradient(
+        ],
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(32),
+        child: Stack(
+          children: [
+            Container(
+              padding: const EdgeInsets.all(20),
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                   colors: [
-                    Color(0xFF0B6BFF),
-                    Color(0xFF13C2C2),
-                    Color(0xFFFF8A00),
-                    Color(0xFF0B6BFF),
+                    Color(0xFF4F46E5),
+                    Color(0xFF7C3AED),
                   ],
                 ),
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryBlue.withValues(alpha: 0.18),
-                    blurRadius: 14,
-                    offset: const Offset(0, 8),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.16),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: const Icon(
+                          Icons.health_and_safety_rounded,
+                          color: Colors.white,
+                          size: 22,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      const Expanded(
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            Text(
+                              'Health Intelligence',
+                              style: TextStyle(
+                                color: Colors.white,
+                                fontSize: 18,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                            SizedBox(height: 2),
+                            Text(
+                              'Live community overview',
+                              style: TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                                fontWeight: FontWeight.w500,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: _whiteMetric(
+                          'Patients',
+                          totalPatients.toString(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _whiteMetric(
+                          'Prescriptions',
+                          prescriptionVolume.toString(),
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: _whiteMetric(
+                          'Alerts',
+                          hasAlert ? 'Active' : 'OK',
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 18),
+                  Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 14,
+                      vertical: 12,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.13),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(
+                        color: Colors.white.withValues(alpha: 0.14),
+                      ),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(
+                          hasAlert
+                              ? Icons.warning_amber_rounded
+                              : Icons.check_circle_outline_rounded,
+                          color: Colors.white,
+                          size: 20,
+                        ),
+                        const SizedBox(width: 10),
+                        Expanded(
+                          child: Text(
+                            healthAlert.toString(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              height: 1.3,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                 ],
               ),
-              child: Center(
-                child: Container(
-                  width: 34,
-                  height: 34,
-                  decoration: const BoxDecoration(
-                    color: Colors.white,
-                    shape: BoxShape.circle,
+            ),
+            Positioned(
+              right: -26,
+              top: -28,
+              child: Icon(
+                Icons.monitor_heart_rounded,
+                size: 140,
+                color: Colors.white.withValues(alpha: 0.08),
+              ),
+            ),
+            Positioned(
+              right: 22,
+              bottom: 34,
+              child: Container(
+                width: 82,
+                height: 82,
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.08),
+                    width: 16,
                   ),
                 ),
               ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _whiteMetric(String label, String value) {
+    return Container(
+      height: 82,
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 12),
+      decoration: BoxDecoration(
+        color: Colors.white.withValues(alpha: 0.16),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withValues(alpha: 0.13),
+        ),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              Flexible(
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+              const SizedBox(width: 4),
+              const Icon(
+                Icons.trending_up_rounded,
+                color: Colors.white,
+                size: 15,
+              ),
+            ],
+          ),
+          const Spacer(),
+          Text(
+            label,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Colors.white70,
+              fontSize: 10.5,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ],
@@ -747,597 +735,451 @@ class _HomeWidgetState extends State<HomeWidget> {
     );
   }
 
-  Widget _buildMiniBar(double height, Color color) {
-    return Container(
-      width: 18,
-      height: height,
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(8),
+  Widget _buildKeyDrivers() {
+    final icons = [
+      Icons.people_alt_rounded,
+      Icons.medical_services_rounded,
+      Icons.receipt_long_rounded,
+      Icons.notification_important_rounded,
+    ];
+
+    final colors = [
+      const Color(0xFF5D74DA),
+      const Color(0xFF7C5CFF),
+      const Color(0xFF22C55E),
+      const Color(0xFFF59E0B),
+    ];
+
+    return _sectionCard(
+      title: 'Key Insights',
+      icon: Icons.bolt_rounded,
+      child: Column(
+        children: keyDrivers.asMap().entries.map((entry) {
+          final index = entry.key;
+          final item = entry.value;
+
+          return _listTile(
+            icon: icons[index < icons.length ? index : 0],
+            title: '${item['label'] ?? ''}',
+            subtitle: '${item['detail'] ?? ''}',
+            trailing: '${item['value'] ?? ''}',
+            accentColor: colors[index < colors.length ? index : 0],
+          );
+        }).toList(),
       ),
     );
   }
 
-  Widget _buildDot() {
-    return Container(
-      width: 6,
-      height: 6,
-      decoration: const BoxDecoration(
-        color: primaryBlue,
-        shape: BoxShape.circle,
-      ),
-    );
-  }
-
-  Widget _buildLinePoint(double height) {
-    return Expanded(
-      child: Align(
-        alignment: Alignment.bottomCenter,
-        child: Container(
-          height: height,
-          width: 4,
-          decoration: BoxDecoration(
-            color: primaryBlue.withValues(alpha: 0.72),
-            borderRadius: BorderRadius.circular(99),
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildSearchBar() {
-    return ValueListenableBuilder<String>(
-      valueListenable: searchNotifier,
-      builder: (context, query, _) {
-        return Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(24),
-            boxShadow: [
-              BoxShadow(
-                color: const Color(0xFF101828).withValues(alpha: 0.06),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
-          ),
-          child: TextFormField(
-            controller: searchController,
-            focusNode: searchFocusNode,
-            style: const TextStyle(
-              color: deepNavy,
-              fontWeight: FontWeight.w600,
-              fontSize: 15,
-            ),
-            decoration: InputDecoration(
-              hintText: 'Search medications, risks, conditions...',
-              hintStyle: const TextStyle(
-                color: Color(0xFF8B95A7),
-                fontWeight: FontWeight.w500,
-              ),
-              prefixIcon: const Icon(
-                Icons.search_rounded,
-                color: Color(0xFF667085),
-                size: 28,
-              ),
-              suffixIcon: query.isNotEmpty
-                  ? IconButton(
-                      icon: const Icon(
-                        Icons.close_rounded,
-                        color: primaryBlue,
-                      ),
-                      onPressed: searchController.clear,
-                    )
-                  : Container(
-                      width: 54,
-                      margin: const EdgeInsets.only(right: 6),
-                      decoration: const BoxDecoration(
-                        border: Border(
-                          left: BorderSide(
-                            color: Color(0xFFE7ECF4),
-                          ),
-                        ),
-                      ),
-                      child: const Icon(
-                        Icons.tune_rounded,
-                        color: Color(0xFF667085),
-                      ),
-                    ),
-              filled: true,
-              fillColor: Colors.white,
-              contentPadding: const EdgeInsets.symmetric(
-                horizontal: 18,
-                vertical: 20,
-              ),
-              border: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: const BorderSide(color: borderColor),
-              ),
-              enabledBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: const BorderSide(color: borderColor),
-              ),
-              focusedBorder: OutlineInputBorder(
-                borderRadius: BorderRadius.circular(24),
-                borderSide: const BorderSide(
-                  color: primaryBlue,
-                  width: 1.5,
-                ),
-              ),
-            ),
-          ),
-        );
-      },
-    );
-  }
-
-  Widget _buildConditionsSection(String query) {
-    final conditions = _filteredConditions(query);
-
-    return _buildPanel(
-  icon: Icons.monitor_heart_rounded,
-  title: 'Top Conditions Predicted',
-  showViewAll: false,
-  child: conditions.isEmpty
-      ? _buildEmptyState('No matching conditions found.')
-      : SizedBox(
-          height: 190,
-          child: ListView.separated(
-            scrollDirection: Axis.horizontal,
-            itemCount: conditions.length,
-            separatorBuilder: (_, __) => const SizedBox(width: 14),
-            itemBuilder: (context, index) {
-              final item = conditions[index];
-              final color = (item['color'] ?? 'warning').toString();
-              final title = (item['title'] ?? '').toString();
-              final percent = (item['percent'] ?? 0).toString();
-              final change = (item['change'] ?? 0).toString();
-
-              final Color bg = _conditionColor(color);
-              final Color accent = _conditionAccent(color);
-
-              return Container(
-                width: 185,
-                padding: const EdgeInsets.all(18),
-                decoration: BoxDecoration(
-                  color: bg,
-                  borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: accent.withValues(alpha: 0.18),
+  Widget _buildClinicDistribution() {
+    return _sectionCard(
+      title: 'Patients Per Clinic',
+      icon: Icons.local_hospital_rounded,
+      child: patientsPerClinic.isEmpty
+          ? Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 26),
+              child: const Column(
+                children: [
+                  Icon(
+                    Icons.local_hospital_outlined,
+                    color: Color(0xFFB9C0D4),
+                    size: 42,
                   ),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Container(
-                      width: 58,
-                      height: 58,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.72),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: accent.withValues(alpha: 0.18),
-                        ),
-                      ),
-                      child: Icon(
-                        _conditionIcon(title),
-                        color: accent,
-                        size: 32,
-                      ),
+                  SizedBox(height: 10),
+                  Text(
+                    'No clinic data available',
+                    style: TextStyle(
+                      color: Color(0xFF1A1F36),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
                     ),
-                    const Spacer(),
-                    Row(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(
-                          '$percent%',
-                          style: TextStyle(
-                            fontSize: 31,
-                            height: 1,
-                            fontWeight: FontWeight.w900,
-                            color: accent,
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Padding(
-                          padding: const EdgeInsets.only(bottom: 3),
-                          child: Row(
-                            children: [
-                              Icon(
-                                Icons.arrow_upward_rounded,
-                                size: 16,
-                                color: accent,
-                              ),
-                              Text(
-                                '$change%',
-                                style: TextStyle(
-                                  color: accent,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 14,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 14),
-                    Text(
-                      title,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 15.5,
-                        height: 1.28,
-                        fontWeight: FontWeight.w800,
-                        color: deepNavy,
-                      ),
-                    ),
-                  ],
-                ),
-              );
-            },
-          ),
-        ),
-);
-  }
-
-  Widget _buildMedicationSection(String query) {
-  final medicines = _filteredMedicationNeeds(query);
-
-  return _buildPanel(
-    icon: Icons.medication_liquid_rounded,
-    title: 'Medication Needs',
-    onViewAll: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => MedicationNeedsViewAllScreen(
-            medicines: medicationNeeds,
-          ),
-        ),
-      );
-    },
-    child: medicines.isEmpty
-        ? _buildEmptyState('No matching medicines found.')
-        : Container(
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
-              border: Border.all(color: borderColor),
-            ),
-            child: ListView.separated(
-              shrinkWrap: true,
-              physics: const NeverScrollableScrollPhysics(),
-              padding: const EdgeInsets.symmetric(vertical: 8),
-              itemCount: medicines.length,
-              separatorBuilder: (_, __) => const Divider(
-                height: 1,
-                indent: 74,
-                endIndent: 14,
-                color: Color(0xFFE9EEF6),
-              ),
-              itemBuilder: (context, index) {
-                final item = medicines[index];
-                final name = (item['name'] ?? '').toString();
-                final amount = (item['amount'] ?? '').toString();
-                final risk = (item['risk'] ?? '').toString();
-                final riskColor = _riskColor(risk);
-
-                return Padding(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 14,
-                    vertical: 12,
                   ),
-                  child: Row(
-                    crossAxisAlignment: CrossAxisAlignment.center,
+                  SizedBox(height: 4),
+                  Text(
+                    'Pull down to refresh',
+                    style: TextStyle(
+                      color: Color(0xFF8892B0),
+                      fontSize: 13,
+                    ),
+                  ),
+                ],
+              ),
+            )
+          : Column(
+              children: patientsPerClinic.map((item) {
+                final clinic = item['clinic'] ?? 'Unknown';
+                final percentageValue = item['percentage'] is num
+                    ? item['percentage'] as num
+                    : num.tryParse('${item['percentage']}') ?? 0;
+                final count = item['count'] ?? 0;
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FF),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: const Color(0xFFE8ECFF),
+                    ),
+                  ),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Container(
-                        width: 48,
-                        height: 48,
-                        decoration: BoxDecoration(
-                          color: riskColor.withValues(alpha: 0.10),
-                          shape: BoxShape.circle,
-                          border: Border.all(
-                            color: riskColor.withValues(alpha: 0.12),
-                          ),
-                        ),
-                        child: Icon(
-                          Icons.medication_rounded,
-                          color: riskColor,
-                          size: 25,
-                        ),
-                      ),
-                      const SizedBox(width: 14),
-                      Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text(
-                              name,
+                      Row(
+                        children: [
+                          Expanded(
+                            child: Text(
+                              clinic.toString(),
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: const TextStyle(
-                                fontSize: 15.5,
                                 fontWeight: FontWeight.w800,
-                                color: deepNavy,
+                                color: Color(0xFF1A1F36),
+                                fontSize: 14,
                               ),
                             ),
-                            const SizedBox(height: 4),
-                            Text(
-                              amount,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: const TextStyle(
-                                fontSize: 13.5,
-                                fontWeight: FontWeight.w500,
-                                color: mutedText,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      Container(
-                        constraints: const BoxConstraints(
-                          minWidth: 96,
-                          maxWidth: 112,
-                        ),
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 11,
-                        ),
-                        decoration: BoxDecoration(
-                          color: riskColor.withValues(alpha: 0.09),
-                          borderRadius: BorderRadius.circular(14),
-                          border: Border.all(
-                            color: riskColor.withValues(alpha: 0.10),
                           ),
-                        ),
-                        child: Row(
-                          mainAxisSize: MainAxisSize.min,
-                          children: [
-                            Expanded(
-                              child: Text(
-                                risk,
-                                textAlign: TextAlign.center,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: riskColor,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 13,
-                                ),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 10,
+                              vertical: 5,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF5D74DA).withValues(alpha: 0.10),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              '$count patients',
+                              style: const TextStyle(
+                                fontWeight: FontWeight.w800,
+                                color: Color(0xFF5D74DA),
+                                fontSize: 11,
                               ),
                             ),
-                            Icon(
-                              Icons.chevron_right_rounded,
-                              color: riskColor.withValues(alpha: 0.75),
-                              size: 18,
+                          ),
+                        ],
+                      ),
+                      const SizedBox(height: 12),
+                      Row(
+                        children: [
+                          Expanded(
+                            child: ClipRRect(
+                              borderRadius: BorderRadius.circular(999),
+                              child: LinearProgressIndicator(
+                                value: (percentageValue.clamp(0, 100)) / 100,
+                                minHeight: 9,
+                                backgroundColor: const Color(0xFFE5E9FF),
+                                color: const Color(0xFF5D74DA),
+                              ),
                             ),
-                          ],
-                        ),
+                          ),
+                          const SizedBox(width: 10),
+                          Text(
+                            '${percentageValue.round()}%',
+                            style: const TextStyle(
+                              fontWeight: FontWeight.w800,
+                              color: Color(0xFF5D74DA),
+                              fontSize: 12,
+                            ),
+                          ),
+                        ],
                       ),
                     ],
                   ),
                 );
-              },
+              }).toList(),
             ),
-          ),
-  );
-}
+    );
+  }
 
- Widget _buildDriversSection(String query) {
-  final drivers = _filteredDrivers(query);
-
-  return _buildPanel(
-    icon: Icons.trending_up_rounded,
-    title: 'Key Drivers',
-    onViewAll: () {
-      Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (_) => KeyDriversViewAllScreen(
-            drivers: keyDrivers,
-          ),
-        ),
-      );
-    },
-    child: drivers.isEmpty
-        ? _buildEmptyState('No matching drivers found.')
-        : LayoutBuilder(
-            builder: (context, constraints) {
-              final bool twoColumns = constraints.maxWidth >= 520;
-
-              return GridView.builder(
-                itemCount: drivers.length,
-                shrinkWrap: true,
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: twoColumns ? 2 : 1,
-                  crossAxisSpacing: 14,
-                  mainAxisSpacing: 12,
-                  childAspectRatio: twoColumns ? 3.45 : 5.2,
-                ),
-                itemBuilder: (context, index) {
-                  final driver = drivers[index];
-
-                  return Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 14,
-                      vertical: 10,
+  Widget _buildMedicineDemand() {
+    return _sectionCard(
+      title: 'Most Used Medicines',
+      icon: Icons.medication_rounded,
+      child: mostUsedMedicines.isEmpty
+          ? Container(
+              width: double.infinity,
+              padding: const EdgeInsets.symmetric(vertical: 26),
+              child: const Column(
+                children: [
+                  Icon(
+                    Icons.medication_outlined,
+                    color: Color(0xFFB9C0D4),
+                    size: 42,
+                  ),
+                  SizedBox(height: 10),
+                  Text(
+                    'No medicine data available',
+                    style: TextStyle(
+                      color: Color(0xFF1A1F36),
+                      fontWeight: FontWeight.w700,
+                      fontSize: 14,
                     ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: borderColor),
+                  ),
+                  SizedBox(height: 4),
+                  Text(
+                    'Pull down to refresh',
+                    style: TextStyle(
+                      color: Color(0xFF8892B0),
+                      fontSize: 13,
                     ),
-                    child: Row(
-                      children: [
-                        Container(
-                          width: 48,
-                          height: 48,
-                          decoration: const BoxDecoration(
-                            color: softBlue,
-                            shape: BoxShape.circle,
-                          ),
-                          child: Icon(
-                            _driverIcon(driver),
-                            color: primaryBlue,
-                            size: 26,
-                          ),
-                        ),
-                        const SizedBox(width: 14),
-                        Expanded(
-                          child: Text(
-                            driver,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 14.5,
-                              height: 1.28,
-                              fontWeight: FontWeight.w700,
-                              color: deepNavy,
-                            ),
-                          ),
-                        ),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: Color(0xFF98A2B3),
-                        ),
-                      ],
-                    ),
-                  );
-                },
-              );
-            },
-          ),
-  );
-}
-
-
-  Widget _buildPanel({
-  required IconData icon,
-  required String title,
-  required Widget child,
-  VoidCallback? onViewAll,
-  bool showViewAll = true,
-}) {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(18),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(28),
-      border: Border.all(color: borderColor),
-      boxShadow: [
-        BoxShadow(
-          color: const Color(0xFF101828).withValues(alpha: 0.06),
-          blurRadius: 24,
-          offset: const Offset(0, 10),
-        ),
-      ],
-    ),
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: <Widget>[
-        Row(
-          children: [
-            Container(
-              width: 38,
-              height: 38,
-              decoration: BoxDecoration(
-                gradient: const LinearGradient(
-                  colors: [
-                    primaryBlue,
-                    Color(0xFF075EE5),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(
-                    color: primaryBlue.withValues(alpha: 0.22),
-                    blurRadius: 12,
-                    offset: const Offset(0, 6),
                   ),
                 ],
               ),
-              child: Icon(
-                icon,
-                color: Colors.white,
-                size: 21,
-              ),
-            ),
-            const SizedBox(width: 10),
-            Expanded(
-              child: Text(
-                title,
-                maxLines: 1,
-                overflow: TextOverflow.visible,
-                softWrap: false,
-                style: const TextStyle(
-                  fontSize: 18,
-                  height: 1.1,
-                  fontWeight: FontWeight.w900,
-                  color: deepNavy,
-                ),
-              ),
-            ),
+            )
+          : Column(
+              children: mostUsedMedicines.asMap().entries.map((entry) {
+                final index = entry.key;
+                final item = entry.value;
+                final demand = '${item['demand'] ?? 'Stable'}';
 
-            if (showViewAll && onViewAll != null)
-              TextButton(
-                onPressed: onViewAll,
-                style: TextButton.styleFrom(
-                  foregroundColor: primaryBlue,
-                  padding: const EdgeInsets.symmetric(horizontal: 4),
-                  minimumSize: Size.zero,
-                  tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                Color demandColor;
+
+                if (demand.toLowerCase() == 'high') {
+                  demandColor = const Color(0xFFEF4444);
+                } else if (demand.toLowerCase() == 'moderate') {
+                  demandColor = const Color(0xFFF59E0B);
+                } else {
+                  demandColor = const Color(0xFF22C55E);
+                }
+
+                final badge = index == 0
+                    ? '🥇'
+                    : index == 1
+                        ? '🥈'
+                        : index == 2
+                            ? '🥉'
+                            : '${index + 1}';
+
+                return Container(
+                  margin: const EdgeInsets.only(bottom: 8),
+                  padding: const EdgeInsets.all(14),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF8F9FF),
+                    borderRadius: BorderRadius.circular(18),
+                    border: Border.all(
+                      color: const Color(0xFFE8ECFF),
+                    ),
+                  ),
+                  child: Row(
+                    children: [
+                      Container(
+                        width: 38,
+                        height: 38,
+                        alignment: Alignment.center,
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF7C5CFF).withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(14),
+                        ),
+                        child: Text(
+                          badge,
+                          style: TextStyle(
+                            fontSize: index < 3 ? 18 : 13,
+                            fontWeight: FontWeight.w900,
+                            color: const Color(0xFF7C5CFF),
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
+                          '${item['name'] ?? ''}',
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: Color(0xFF1A1F36),
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          Text(
+                            '${item['count'] ?? 0}',
+                            style: const TextStyle(
+                              color: Color(0xFF5D74DA),
+                              fontWeight: FontWeight.w900,
+                              fontSize: 15,
+                            ),
+                          ),
+                          const SizedBox(height: 4),
+                          Container(
+                            padding: const EdgeInsets.symmetric(
+                              horizontal: 8,
+                              vertical: 4,
+                            ),
+                            decoration: BoxDecoration(
+                              color: demandColor.withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(999),
+                            ),
+                            child: Text(
+                              demand,
+                              style: TextStyle(
+                                color: demandColor,
+                                fontSize: 11,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                );
+              }).toList(),
+            ),
+    );
+  }
+
+  Widget _sectionCard({
+    required String title,
+    required Widget child,
+    IconData? icon,
+  }) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(18),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(26),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.06),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              if (icon != null) ...[
+                Container(
+                  width: 34,
+                  height: 34,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF5D74DA).withValues(alpha: 0.10),
+                    borderRadius: BorderRadius.circular(13),
+                  ),
+                  child: Icon(
+                    icon,
+                    size: 19,
+                    color: const Color(0xFF5D74DA),
+                  ),
                 ),
-                child: const Row(
+                const SizedBox(width: 10),
+              ],
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: Color(0xFF1A1F36),
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    letterSpacing: -0.2,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          child,
+        ],
+      ),
+    );
+  }
+
+  Widget _listTile({
+    required IconData icon,
+    required String title,
+    required String subtitle,
+    required String trailing,
+    Color accentColor = const Color(0xFF5D74DA),
+  }) {
+    return Container(
+      margin: const EdgeInsets.only(bottom: 8),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF8F9FF),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(
+          color: const Color(0xFFE8ECFF),
+        ),
+      ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            Container(
+              width: 5,
+              decoration: BoxDecoration(
+                color: accentColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(18),
+                  bottomLeft: Radius.circular(18),
+                ),
+              ),
+            ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(13),
+                child: Row(
                   children: [
-                    Text(
-                      'View all',
-                      style: TextStyle(
-                        fontSize: 13,
-                        fontWeight: FontWeight.w800,
+                    Icon(
+                      icon,
+                      color: accentColor,
+                      size: 22,
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            title,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF1A1F36),
+                              fontWeight: FontWeight.w800,
+                              fontSize: 13.5,
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            subtitle,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: Color(0xFF8892B0),
+                              fontSize: 12,
+                              fontWeight: FontWeight.w500,
+                            ),
+                          ),
+                        ],
                       ),
                     ),
-                    SizedBox(width: 2),
-                    Icon(
-                      Icons.chevron_right_rounded,
-                      size: 20,
+                    const SizedBox(width: 8),
+                    Flexible(
+                      child: Text(
+                        trailing,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        textAlign: TextAlign.right,
+                        style: TextStyle(
+                          color: accentColor,
+                          fontWeight: FontWeight.w900,
+                          fontSize: 13,
+                        ),
+                      ),
                     ),
                   ],
                 ),
               ),
+            ),
           ],
-        ),
-        const SizedBox(height: 18),
-        child,
-      ],
-    ),
-  );
-}
-
-  Widget _buildEmptyState(String text) {
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.all(24),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8FAFF),
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: borderColor),
-      ),
-      child: Center(
-        child: Text(
-          text,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontSize: 15,
-            fontWeight: FontWeight.w600,
-            color: mutedText,
-          ),
         ),
       ),
     );

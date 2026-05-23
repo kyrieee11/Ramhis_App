@@ -4,7 +4,6 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ramhis_app/core/session_manager.dart';
-import 'package:ramhis_app/features/admin/shell/admin_shell.dart';
 import 'package:ramhis_app/features/auth/screens/landing_page.dart';
 import 'package:ramhis_app/features/auth/screens/reset_password_screen.dart';
 import 'package:ramhis_app/features/user/screens/home_screen.dart';
@@ -14,21 +13,8 @@ final GlobalKey<NavigatorState> navigatorKey = GlobalKey<NavigatorState>();
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
 
+  // Only restore local session — no network calls at startup
   await AuthSession.restoreSession();
-
-  if (AuthSession.isLoggedIn) {
-    final user = await AuthSession.fetchMe();
-
-    if (user == null) {
-      final refreshed = await AuthSession.refreshSession();
-
-      if (refreshed) {
-        await AuthSession.fetchMe();
-      } else {
-        await AuthSession.clearSession();
-      }
-    }
-  }
 
   runApp(const MyApp());
 }
@@ -47,6 +33,33 @@ class _MyAppState extends State<MyApp> {
   void initState() {
     super.initState();
     _initDeepLinks();
+    _checkSession();
+  }
+
+  Future<void> _checkSession() async {
+    if (!AuthSession.isLoggedIn) return;
+
+    final user = await AuthSession.fetchMe();
+
+    if (user == null) {
+      final refreshed = await AuthSession.refreshSession();
+
+      if (refreshed) {
+        await AuthSession.fetchMe();
+      } else {
+        await AuthSession.clearSession();
+      }
+    }
+
+    final role = AuthSession.currentUser?['role']
+        ?.toString()
+        .toLowerCase();
+
+    if (role == 'admin') {
+      await AuthSession.clearSession();
+    }
+
+    if (mounted) setState(() {});
   }
 
   void _initDeepLinks() {
@@ -78,19 +91,25 @@ class _MyAppState extends State<MyApp> {
       return const LandingpageWidget();
     }
 
-    if (AuthSession.currentUser?['role'] == 'admin') {
-      return const AdminShellWidget();
-    }
-
-    return const HomeWidget();
+    return const HomeScreen();
   }
 
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-      navigatorKey: navigatorKey,
-      debugShowCheckedModeBanner: false,
-      home: _startScreen(),
-    );
+  navigatorKey: navigatorKey,
+  debugShowCheckedModeBanner: false,
+  home: _startScreen(),
+  routes: {
+    '/reset-password': (context) {
+      final token =
+          ModalRoute.of(context)!.settings.arguments as String;
+
+      return ResetPasswordScreen(
+        token: token,
+      );
+    },
+  },
+);
   }
 }

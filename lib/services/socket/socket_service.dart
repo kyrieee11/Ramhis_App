@@ -1,14 +1,12 @@
 import 'package:flutter/foundation.dart';
-import 'package:socket_io_client/socket_io_client.dart'
-    as io;
+import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../../core/app_config.dart';
 
 class SocketService {
   SocketService._internal();
 
-  static final SocketService _instance =
-      SocketService._internal();
+  static final SocketService _instance = SocketService._internal();
 
   factory SocketService() => _instance;
 
@@ -16,25 +14,21 @@ class SocketService {
 
   io.Socket? get socket => _socket;
 
-  bool get isConnected =>
-      _socket?.connected == true;
+  bool get isConnected => _socket?.connected == true;
 
   // ─────────────────────────────────────────────────────────────
   // CONNECT
   // ─────────────────────────────────────────────────────────────
 
   void connect() {
-    if (_socket != null &&
-        _socket!.connected) {
+    if (_socket != null && _socket!.connected) {
       return;
     }
 
     _socket = io.io(
-      AppConfig.baseUrl,
+      AppConfig.socketBaseUrl,
       io.OptionBuilder()
-          .setTransports([
-            'websocket',
-          ])
+          .setTransports(['websocket'])
           .enableReconnection()
           .setReconnectionAttempts(10)
           .setReconnectionDelay(1000)
@@ -45,33 +39,23 @@ class SocketService {
     _socket?.connect();
 
     _socket?.onConnect((_) {
-      debugPrint(
-        '✅ Socket connected',
-      );
+      debugPrint('✅ Socket connected');
     });
 
     _socket?.onDisconnect((_) {
-      debugPrint(
-        '❌ Socket disconnected',
-      );
+      debugPrint('❌ Socket disconnected');
     });
 
     _socket?.onConnectError((error) {
-      debugPrint(
-        '❌ Socket connect error: $error',
-      );
+      debugPrint('❌ Socket connect error: $error');
     });
 
     _socket?.onError((error) {
-      debugPrint(
-        '❌ Socket error: $error',
-      );
+      debugPrint('❌ Socket error: $error');
     });
 
     _socket?.onReconnect((_) {
-      debugPrint(
-        '🔄 Socket reconnected',
-      );
+      debugPrint('🔄 Socket reconnected');
     });
   }
 
@@ -97,14 +81,9 @@ class SocketService {
       return;
     }
 
-    _socket?.emit(
-      'join_room',
-      threadId,
-    );
+    _socket?.emit('join_room', threadId);
 
-    debugPrint(
-      '📥 Joined room: $threadId',
-    );
+    debugPrint('📥 Joined room: $threadId');
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -116,12 +95,9 @@ class SocketService {
     required String senderId,
     required String message,
   }) {
-    final trimmed =
-        message.trim();
+    final trimmed = message.trim();
 
-    if (threadId.isEmpty ||
-        senderId.isEmpty ||
-        trimmed.isEmpty) {
+    if (threadId.isEmpty || senderId.isEmpty || trimmed.isEmpty) {
       return;
     }
 
@@ -131,14 +107,9 @@ class SocketService {
       'message': trimmed,
     };
 
-    _socket?.emit(
-      'send_message',
-      payload,
-    );
+    _socket?.emit('send_message', payload);
 
-    debugPrint(
-      '📤 Sent message: $payload',
-    );
+    debugPrint('📤 Sent message: $payload');
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -146,27 +117,15 @@ class SocketService {
   // ─────────────────────────────────────────────────────────────
 
   void onReceiveMessage(
-    void Function(
-      Map<String, dynamic> data,
-    )
-        callback,
+    void Function(Map<String, dynamic> data) callback,
   ) {
-    _socket?.off(
-      'receive_message',
-    );
+    _socket?.off('receive_message');
 
-    _socket?.on(
-      'receive_message',
-      (data) {
-        if (data is Map) {
-          callback(
-            Map<String, dynamic>.from(
-              data,
-            ),
-          );
-        }
-      },
-    );
+    _socket?.on('receive_message', (data) {
+      if (data is Map) {
+        callback(Map<String, dynamic>.from(data));
+      }
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -174,29 +133,17 @@ class SocketService {
   // ─────────────────────────────────────────────────────────────
 
   void onEventsUpdated(
-    void Function(
-      Map<String, dynamic> data,
-    )
-        callback,
+    void Function(Map<String, dynamic> data) callback,
   ) {
-    _socket?.off(
-      'events_updated',
-    );
+    _socket?.off('events_updated');
 
-    _socket?.on(
-      'events_updated',
-      (data) {
-        if (data is Map) {
-          callback(
-            Map<String, dynamic>.from(
-              data,
-            ),
-          );
-        } else {
-          callback({});
-        }
-      },
-    );
+    _socket?.on('events_updated', (data) {
+      if (data is Map) {
+        callback(Map<String, dynamic>.from(data));
+      } else {
+        callback({});
+      }
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -204,29 +151,17 @@ class SocketService {
   // ─────────────────────────────────────────────────────────────
 
   void onContentUpdated(
-    void Function(
-      Map<String, dynamic> data,
-    )
-        callback,
+    void Function(Map<String, dynamic> data) callback,
   ) {
-    _socket?.off(
-      'content_updated',
-    );
+    _socket?.off('content_updated');
 
-    _socket?.on(
-      'content_updated',
-      (data) {
-        if (data is Map) {
-          callback(
-            Map<String, dynamic>.from(
-              data,
-            ),
-          );
-        } else {
-          callback({});
-        }
-      },
-    );
+    _socket?.on('content_updated', (data) {
+      if (data is Map) {
+        callback(Map<String, dynamic>.from(data));
+      } else {
+        callback({});
+      }
+    });
   }
 
   // ─────────────────────────────────────────────────────────────
@@ -234,21 +169,15 @@ class SocketService {
   // ─────────────────────────────────────────────────────────────
 
   void removeChatListeners() {
-    _socket?.off(
-      'receive_message',
-    );
+    _socket?.off('receive_message');
   }
 
   void removeEventListeners() {
-    _socket?.off(
-      'events_updated',
-    );
+    _socket?.off('events_updated');
   }
 
   void removeContentListeners() {
-    _socket?.off(
-      'content_updated',
-    );
+    _socket?.off('content_updated');
   }
 
   void removeAllListeners() {

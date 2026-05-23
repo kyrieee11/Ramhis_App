@@ -49,8 +49,8 @@
     <category android:name="android.intent.category.BROWSABLE" />
 
     <data
-        android:scheme="myapp"
-        android:host="reset-password" />
+    android:scheme="ramhis"
+    android:host="reset-password" />
 </intent-filter>
 
         </activity>

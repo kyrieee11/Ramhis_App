@@ -1,8 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ramhis_app/core/session_manager.dart';
 import 'package:ramhis_app/features/user/screens/home_screen.dart';
-import 'package:ramhis_app/features/admin/shell/admin_shell.dart';
 import 'package:ramhis_app/features/auth/screens/welcome_screen.dart';
 import 'package:ramhis_app/features/auth/screens/forgot_password_screen.dart';
 import 'package:ramhis_app/services/api/auth_service.dart';
@@ -29,94 +29,127 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
   }
 
   Future<void> _handleLogin() async {
-  final String email = emailController.text.trim();
-  final String password = passwordController.text;
+    final String email = emailController.text.trim();
+    final String password = passwordController.text;
 
-  if (email.isEmpty || password.isEmpty) {
-    _showSnackBar('Please enter your email and password.');
-    return;
-  }
-
-  if (mounted) {
-    setState(() => isLoading = true);
-  }
-
-  try {
-    final result = await AuthService.login(
-      email: email,
-      password: password,
-    );
-
-    debugPrint('LOGIN RESULT: $result');
-    debugPrint('SESSION USER AFTER LOGIN: ${AuthSession.currentUser}');
-
-    if (!mounted) return;
-
-    final bool loginSuccess =
-        result['ok'] == true ||
-        result['accessToken'] != null ||
-        result['access_token'] != null ||
-        result['token'] != null ||
-        result['user'] != null;
-
-    if (!loginSuccess) {
-      setState(() => isLoading = false);
-      _showSnackBar((result['message'] ?? 'Login failed.').toString());
+    if (email.isEmpty || password.isEmpty) {
+      _showSnackBar('Please enter your email and password.');
       return;
     }
+
+    setState(() => isLoading = true);
 
     try {
-      await AuthService.fetchMe();
-      debugPrint('SESSION USER AFTER FETCH ME: ${AuthSession.currentUser}');
-    } catch (e) {
-      debugPrint('fetchMe error: $e');
-    }
+      final result = await AuthService.login(
+        email: email,
+        password: password,
+      );
 
-    final Map<String, dynamic>? user =
-        AuthSession.currentUser ??
-        (result['user'] is Map<String, dynamic>
-            ? Map<String, dynamic>.from(result['user'])
-            : null);
+      if (!mounted) return;
 
-    if (user == null) {
+      final bool loginSuccess =
+          result['ok'] == true ||
+          result['success'] == true ||
+          result['accessToken'] != null ||
+          result['access_token'] != null ||
+          result['token'] != null ||
+          result['user'] != null;
+
+      if (!loginSuccess) {
+        setState(() => isLoading = false);
+        _showSnackBar((result['message'] ?? 'Login failed.').toString());
+        return;
+      }
+
+      try {
+        await AuthService.fetchMe();
+      } catch (e) {
+        debugPrint('fetchMe error: $e');
+      }
+
+      final Map<String, dynamic>? user =
+          AuthSession.currentUser ??
+          (result['user'] is Map<String, dynamic>
+              ? Map<String, dynamic>.from(result['user'])
+              : null);
+
+      if (user == null) {
+        setState(() => isLoading = false);
+        _showSnackBar('Failed to load user session.');
+        return;
+      }
+
+      final String role =
+          (user['role'] ?? user['account_type'] ?? '')
+              .toString()
+              .toLowerCase();
+
+      final String status =
+          (user['status'] ?? 'active')
+              .toString()
+              .toLowerCase();
+
       setState(() => isLoading = false);
-      _showSnackBar('Failed to load user session.');
-      return;
+
+      if (status == 'pending') {
+        _showSnackBar('Your account is pending admin approval.');
+        return;
+      }
+
+      if (status == 'suspended') {
+        _showSnackBar('Your account is suspended. Please contact support.');
+        return;
+      }
+
+      if (role == 'admin') {
+        await AuthSession.clearSession();
+        _showSnackBar('Admin accounts must use the web dashboard.');
+        return;
+      }
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const HomeScreen(),
+        ),
+      );
+    } catch (e) {
+      if (!mounted) return;
+
+      setState(() => isLoading = false);
+
+      debugPrint('Login error: $e');
+
+      _showSnackBar('Connection error. Please try again.');
     }
-
-    final String role =
-        (user['role'] ?? user['account_type'] ?? '').toString().toLowerCase();
-
-    final String status =
-        (user['status'] ?? 'active').toString().toLowerCase();
-
-    setState(() => isLoading = false);
-
-    if (status == 'pending') {
-      _showSnackBar('Your account is pending admin approval.');
-      return;
-    }
-
-    if (status == 'suspended') {
-      _showSnackBar('Your account is suspended. Please contact support.');
-      return;
-    }
-
-    if (!mounted) return;
-
-    final Widget nextPage =
-        role == 'admin' ? const AdminShellWidget() : const HomeWidget();
-
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(builder: (_) => nextPage),
-    );
-  } catch (e) {
-    if (!mounted) return;
-    setState(() => isLoading = false);
-    debugPrint('Login error: $e');
-    _showSnackBar('Connection error. Please try again.');
   }
-}
+
+  Future<void> _handleDebugLogin() async {
+    try {
+      await AuthSession.saveSession(
+        access: 'debug-token',
+        refresh: 'debug-refresh-token',
+        user: {
+          'id': 'debug-id-123',
+          'name': 'Debug User',
+          'email': 'debug@ramhis.com',
+          'role': 'user',
+        },
+      );
+
+      if (!mounted) return;
+
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (_) => const HomeScreen(),
+        ),
+      );
+    } catch (e) {
+      debugPrint('Debug login error: $e');
+      _showSnackBar('Failed to start debug session.');
+    }
+  }
 
   void _showSnackBar(String message) {
     if (!mounted) return;
@@ -148,24 +181,30 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
           child: SafeArea(
             child: Center(
               child: SingleChildScrollView(
-                padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 24),
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 24,
+                  vertical: 24,
+                ),
                 child: ConstrainedBox(
-                  constraints: const BoxConstraints(maxWidth: 430),
+                  constraints: const BoxConstraints(
+                    maxWidth: 430,
+                  ),
                   child: Container(
                     padding: EdgeInsets.symmetric(
                       horizontal: isMobile ? 26 : 32,
                       vertical: isMobile ? 34 : 40,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4167D4).withValues(alpha:0.88),
+                      color: const Color(0xFF4167D4)
+                          .withValues(alpha: 0.88),
                       borderRadius: BorderRadius.circular(38),
                       border: Border.all(
-                        color: Colors.white.withValues(alpha:18),
+                        color: Colors.white.withValues(alpha: 0.18),
                         width: 1.2,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: Colors.black.withValues(alpha:0.22),
+                          color: Colors.black.withValues(alpha: 0.22),
                           blurRadius: 32,
                           offset: const Offset(0, 18),
                         ),
@@ -174,6 +213,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                     child: Column(
                       children: [
                         _buildLogo(),
+
                         const SizedBox(height: 26),
 
                         const Text(
@@ -189,7 +229,9 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                         const SizedBox(height: 26),
 
                         _buildLabel('Email'),
+
                         const SizedBox(height: 8),
+
                         TextFormField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -206,7 +248,9 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                         const SizedBox(height: 18),
 
                         _buildLabel('Password'),
+
                         const SizedBox(height: 8),
+
                         TextFormField(
                           controller: passwordController,
                           obscureText: obscurePassword,
@@ -243,7 +287,8 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const ForgotPasswordScreen(),
+                                  builder: (_) =>
+                                      const ForgotPasswordScreen(),
                                 ),
                               );
                             },
@@ -266,7 +311,9 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                           width: double.infinity,
                           height: 58,
                           child: ElevatedButton.icon(
-                            onPressed: isLoading ? null : _handleLogin,
+                            onPressed: isLoading
+                                ? null
+                                : _handleLogin,
                             icon: isLoading
                                 ? const SizedBox(
                                     width: 18,
@@ -276,9 +323,14 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                                       color: Colors.white,
                                     ),
                                   )
-                                : const Icon(Icons.login_rounded, size: 24),
+                                : const Icon(
+                                    Icons.login_rounded,
+                                    size: 24,
+                                  ),
                             label: Text(
-                              isLoading ? 'Loading...' : 'Log in',
+                              isLoading
+                                  ? 'Loading...'
+                                  : 'Log in',
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
@@ -296,22 +348,59 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                           ),
                         ),
 
+                        if (kDebugMode) ...[
+                          const SizedBox(height: 14),
+
+                          SizedBox(
+                            width: double.infinity,
+                            height: 54,
+                            child: OutlinedButton.icon(
+                              onPressed: _handleDebugLogin,
+                              icon: const Icon(
+                                Icons.bug_report_outlined,
+                                size: 22,
+                              ),
+                              label: const Text(
+                                '[ DEBUG ] Skip Login',
+                                style: TextStyle(
+                                  fontSize: 16,
+                                  fontWeight: FontWeight.w800,
+                                ),
+                              ),
+                              style: OutlinedButton.styleFrom(
+                                foregroundColor: Colors.orangeAccent,
+                                side: const BorderSide(
+                                  color: Colors.orangeAccent,
+                                  width: 2,
+                                ),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(30),
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+
                         const SizedBox(height: 26),
 
                         Row(
                           children: [
                             Expanded(
                               child: Divider(
-                                color: Colors.white.withValues(alpha:0.35),
+                                color: Colors.white.withValues(alpha: 0.35),
                                 thickness: 1,
                               ),
                             ),
                             Padding(
-                              padding: const EdgeInsets.symmetric(horizontal: 14),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 14,
+                              ),
                               child: Text(
                                 'or',
                                 style: TextStyle(
-                                  color: Colors.white.withValues(alpha:0.65),
+                                  color: Colors.white.withValues(
+                                    alpha: 0.65,
+                                  ),
                                   fontSize: 14,
                                   fontWeight: FontWeight.w700,
                                 ),
@@ -319,7 +408,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                             ),
                             Expanded(
                               child: Divider(
-                                color: Colors.white.withValues(alpha:0.35),
+                                color: Colors.white.withValues(alpha: 0.35),
                                 thickness: 1,
                               ),
                             ),
@@ -347,7 +436,8 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                               Navigator.push(
                                 context,
                                 MaterialPageRoute(
-                                  builder: (_) => const WelcomeScreenWidget(),
+                                  builder: (_) =>
+                                      const WelcomeScreenWidget(),
                                 ),
                               );
                             },

@@ -25,7 +25,7 @@ class AuthService {
     String skills = '',
     File? licenseFile,
   }) async {
-    final uri = Uri.parse('$baseUrl/signup');
+    final uri = Uri.parse('$baseUrl/auth/signup');
 
     final request = http.MultipartRequest('POST', uri);
 
@@ -51,7 +51,11 @@ class AuthService {
       );
     }
 
-    final streamedResponse = await request.send();
+    final streamedResponse = await request
+    .send()
+    .timeout(
+      const Duration(seconds: 60),
+    );
     final response = await http.Response.fromStream(streamedResponse);
 
     final data = jsonDecode(response.body);
@@ -68,8 +72,9 @@ class AuthService {
     required String email,
     required String password,
   }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/login'),
+    final response = await http
+    .post(
+      Uri.parse('$baseUrl/auth/login'),
       headers: {
         'Content-Type': 'application/json',
       },
@@ -77,17 +82,41 @@ class AuthService {
         'email': email,
         'password': password,
       }),
+    )
+    .timeout(
+      const Duration(seconds: 60),
     );
 
     final data = jsonDecode(response.body);
 
-    if (response.statusCode != 200) {
-      throw Exception(data['message'] ?? 'Login failed.');
-    }
+   if (response.statusCode != 200) {
+  final message =
+      (data['message'] ?? data['msg'] ?? '')
+          .toString()
+          .toLowerCase();
+
+  if (message.contains('awaiting admin approval') ||
+      message.contains('pending')) {
+    throw Exception(
+      'Your account is pending approval',
+    );
+  }
+
+  throw Exception(
+    data['message'] ??
+        data['msg'] ??
+        'Login failed.',
+  );
+}
 
     await AuthSession.saveSession(
-      access: data['accessToken'],
-      refresh: data['refreshToken'],
+      access:
+    data['accessToken'] ??
+    data['token'] ??
+    '',
+refresh:
+    data['refreshToken'] ??
+    '',
       user: Map<String, dynamic>.from(data['user']),
     );
 
@@ -119,8 +148,13 @@ class AuthService {
     }
 
     await AuthSession.updateTokens(
-      access: data['accessToken'],
-      refresh: data['refreshToken'],
+      access:
+    data['accessToken'] ??
+    data['token'] ??
+    '',
+refresh:
+    data['refreshToken'] ??
+    '',
     );
 
     return data;
@@ -172,9 +206,9 @@ class AuthService {
         'Content-Type': 'application/json',
       },
       body: jsonEncode({
-        'token': token,
-        'newPassword': newPassword,
-      }),
+  'token': token,
+  'password': newPassword,
+}),
     );
 
     final data = jsonDecode(response.body);
@@ -189,7 +223,7 @@ class AuthService {
   // ── Get Me ─────────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> fetchMe() async {
     final response = await http.get(
-      Uri.parse('$baseUrl/me'),
+      Uri.parse('$baseUrl/auth/me'),
       headers: AuthSession.headers(),
     );
 
@@ -199,9 +233,14 @@ class AuthService {
       throw Exception(data['message'] ?? 'Failed to fetch user.');
     }
 
-    AuthSession.currentUser = Map<String, dynamic>.from(data);
+    final userData =
+    Map<String, dynamic>.from(
+      data['data'] ?? data,
+    );
 
-    return data;
+AuthSession.currentUser = userData;
+
+return userData;
   }
 
   // NOTE:

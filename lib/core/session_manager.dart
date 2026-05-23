@@ -6,25 +6,16 @@ import 'package:shared_preferences/shared_preferences.dart';
 import 'app_config.dart';
 
 class AuthSession {
-  static const String baseUrl =
-      AppConfig.baseUrl;
+  static const String baseUrl = AppConfig.baseUrl;
 
-  static const String _accessTokenKey =
-      'auth_access_token';
-
-  static const String _refreshTokenKey =
-      'auth_refresh_token';
-
-  static const String _userKey =
-      'auth_user';
+  static const String _accessTokenKey = 'auth_access_token';
+  static const String _refreshTokenKey = 'auth_refresh_token';
+  static const String _userKey = 'auth_user';
 
   static String? accessToken;
   static String? refreshToken;
 
-  static Map<String, dynamic>?
-      currentUser;
-
-  
+  static Map<String, dynamic>? currentUser;
 
   // ─────────────────────────────────────────────────────────────
   // SAVE SESSION
@@ -33,15 +24,13 @@ class AuthSession {
   static Future<void> saveSession({
     required String access,
     required String refresh,
-    required Map<String, dynamic>
-        user,
+    required Map<String, dynamic> user,
   }) async {
     accessToken = access;
     refreshToken = refresh;
     currentUser = user;
 
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(
       _accessTokenKey,
@@ -63,28 +52,21 @@ class AuthSession {
   // RESTORE SESSION
   // ─────────────────────────────────────────────────────────────
 
-  static Future<void>
-      restoreSession() async {
-    final prefs =
-        await SharedPreferences.getInstance();
+  static Future<void> restoreSession() async {
+    final prefs = await SharedPreferences.getInstance();
 
-    accessToken =
-        prefs.getString(
+    accessToken = prefs.getString(
       _accessTokenKey,
     );
 
-    refreshToken =
-        prefs.getString(
+    refreshToken = prefs.getString(
       _refreshTokenKey,
     );
 
-    final rawUser =
-        prefs.getString(_userKey);
+    final rawUser = prefs.getString(_userKey);
 
-    if (rawUser != null &&
-        rawUser.isNotEmpty) {
-      currentUser =
-          Map<String, dynamic>.from(
+    if (rawUser != null && rawUser.isNotEmpty) {
+      currentUser = Map<String, dynamic>.from(
         jsonDecode(rawUser),
       );
     }
@@ -101,8 +83,7 @@ class AuthSession {
     accessToken = access;
     refreshToken = refresh;
 
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     await prefs.setString(
       _accessTokenKey,
@@ -119,15 +100,11 @@ class AuthSession {
   // AUTH HEADERS
   // ─────────────────────────────────────────────────────────────
 
-  static Map<String, String>
-      headers() {
+  static Map<String, String> headers() {
     return {
-      'Content-Type':
-          'application/json',
-      if (accessToken != null &&
-          accessToken!.isNotEmpty)
-        'Authorization':
-            'Bearer $accessToken',
+      'Content-Type': 'application/json',
+      if (accessToken != null && accessToken!.isNotEmpty)
+        'Authorization': 'Bearer $accessToken',
     };
   }
 
@@ -135,27 +112,21 @@ class AuthSession {
   // REFRESH ACCESS TOKEN
   // ─────────────────────────────────────────────────────────────
 
-  static Future<bool>
-      refreshSession() async {
+  static Future<bool> refreshSession() async {
     try {
-      if (refreshToken == null ||
-          refreshToken!.isEmpty) {
+      if (refreshToken == null || refreshToken!.isEmpty) {
         return false;
       }
 
       final response = await http.post(
         Uri.parse(
-          '$baseUrl/auth/refresh',
+          '$baseUrl/api/auth/refresh',
         ),
-
         headers: {
-          'Content-Type':
-              'application/json',
+          'Content-Type': 'application/json',
         },
-
         body: jsonEncode({
-          'refreshToken':
-              refreshToken,
+          'refreshToken': refreshToken,
         }),
       );
 
@@ -163,21 +134,14 @@ class AuthSession {
         return false;
       }
 
-      final data =
-          Map<String, dynamic>.from(
+      final data = Map<String, dynamic>.from(
         jsonDecode(response.body),
       );
 
-      final newAccess =
-          (data['accessToken'] ?? '')
-              .toString();
+      final newAccess = (data['accessToken'] ?? '').toString();
+      final newRefresh = (data['refreshToken'] ?? '').toString();
 
-      final newRefresh =
-          (data['refreshToken'] ?? '')
-              .toString();
-
-      if (newAccess.isEmpty ||
-          newRefresh.isEmpty) {
+      if (newAccess.isEmpty || newRefresh.isEmpty) {
         return false;
       }
 
@@ -196,12 +160,10 @@ class AuthSession {
   // FETCH CURRENT USER
   // ─────────────────────────────────────────────────────────────
 
-  static Future<
-      Map<String, dynamic>?>
-      fetchMe() async {
+  static Future<Map<String, dynamic>?> fetchMe() async {
     try {
       final response = await http.get(
-        Uri.parse('$baseUrl/me'),
+        Uri.parse('$baseUrl/api/users/me'),
         headers: headers(),
       );
 
@@ -209,15 +171,13 @@ class AuthSession {
         return null;
       }
 
-      final data =
-          Map<String, dynamic>.from(
+      final data = Map<String, dynamic>.from(
         jsonDecode(response.body),
       );
 
       currentUser = data;
 
-      final prefs =
-          await SharedPreferences.getInstance();
+      final prefs = await SharedPreferences.getInstance();
 
       await prefs.setString(
         _userKey,
@@ -238,7 +198,7 @@ class AuthSession {
     try {
       await http.post(
         Uri.parse(
-          '$baseUrl/auth/logout',
+          '$baseUrl/api/auth/logout',
         ),
         headers: headers(),
       );
@@ -251,14 +211,12 @@ class AuthSession {
   // CLEAR SESSION
   // ─────────────────────────────────────────────────────────────
 
-  static Future<void>
-      clearSession() async {
+  static Future<void> clearSession() async {
     accessToken = null;
     refreshToken = null;
     currentUser = null;
 
-    final prefs =
-        await SharedPreferences.getInstance();
+    final prefs = await SharedPreferences.getInstance();
 
     await prefs.remove(
       _accessTokenKey,
@@ -276,17 +234,10 @@ class AuthSession {
   // ─────────────────────────────────────────────────────────────
 
   static bool get isLoggedIn {
-    return accessToken != null &&
-        accessToken!.isNotEmpty;
+    return accessToken != null && accessToken!.isNotEmpty;
   }
 
-  static Map<String, dynamic>?
-      get user {
+  static Map<String, dynamic>? get user {
     return currentUser;
-  }
-
-  static bool get isAdmin {
-    return currentUser?['role'] ==
-        'admin';
   }
 }
