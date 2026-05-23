@@ -59,33 +59,27 @@ class _AccountWidgetState extends State<AccountWidget> {
 
     currentUser = user;
 
-    fullName = user.fullName.isEmpty ? 'User' : user.fullName;
-    email = user.email;
+    fullName = user.fullName.isNotEmpty
+    ? user.fullName
+    : _resolveFullName(resolvedUserData);
 
-    accountType = user.accountType.isEmpty
-        ? 'Volunteer'
-        : _capitalize(user.accountType);
+email = user.email.isNotEmpty
+    ? user.email
+    : _readString(resolvedUserData, ['email']);
+
+accountType = user.accountType.isNotEmpty
+    ? _capitalize(user.accountType)
+    : _resolveAccountType(resolvedUserData);
   } catch (error) {
     debugPrint('❌ Failed to load profile: $error');
 
     final sessionUser = AuthSession.currentUser;
 
     if (sessionUser != null) {
-      final firstName = (sessionUser['first_name'] ?? '').toString();
-      final lastName = (sessionUser['last_name'] ?? '').toString();
-      final sessionFullName =
-          (sessionUser['full_name'] ?? '$firstName $lastName').toString();
-
-      fullName = sessionFullName.trim().isEmpty ? 'User' : sessionFullName;
-      email = (sessionUser['email'] ?? '').toString();
-
-      final type = (sessionUser['account_type'] ??
-              sessionUser['role'] ??
-              'Volunteer')
-          .toString();
-
-      accountType = _capitalize(type);
-    }
+  fullName = _resolveFullName(sessionUser);
+  email = _readString(sessionUser, ['email']);
+  accountType = _resolveAccountType(sessionUser);
+}
   }
 
   if (!mounted) return;
@@ -167,6 +161,51 @@ class _AccountWidgetState extends State<AccountWidget> {
     return value[0].toUpperCase() + value.substring(1);
   }
 
+  String _readString(
+  Map<String, dynamic>? data,
+  List<String> keys, [
+  String fallback = '',
+]) {
+  if (data == null) return fallback;
+
+  for (final key in keys) {
+    final value = data[key];
+
+    if (value != null && value.toString().trim().isNotEmpty) {
+      return value.toString().trim();
+    }
+  }
+
+  return fallback;
+}
+
+String _resolveFullName(Map<String, dynamic>? data) {
+  final direct = _readString(data, [
+    'full_name',
+    'name',
+    'fullName',
+  ]);
+
+  if (direct.isNotEmpty) return direct;
+
+  final firstName = _readString(data, ['first_name', 'firstName']);
+  final lastName = _readString(data, ['last_name', 'lastName']);
+
+  final combined = '$firstName $lastName'.trim();
+
+  return combined.isEmpty ? 'User' : combined;
+}
+
+String _resolveAccountType(Map<String, dynamic>? data) {
+  final value = _readString(data, [
+    'account_type',
+    'role',
+    'accountType',
+  ], 'Volunteer');
+
+  return _capitalize(value);
+}
+
   String _resolveProfileImageUrl(
     String imageUrl,
   ) {
@@ -183,7 +222,7 @@ class _AccountWidgetState extends State<AccountWidget> {
       return imageUrl;
     }
 
-    return '${AppConfig.baseUrl}$imageUrl';
+    return '${AppConfig.productionUrl}$imageUrl';
   }
 
   Color _roleColor(String role) {

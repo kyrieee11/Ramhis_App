@@ -1,4 +1,4 @@
-import 'package:flutter/foundation.dart';
+
 import 'package:flutter/material.dart';
 
 import 'package:ramhis_app/core/session_manager.dart';
@@ -125,31 +125,10 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
     }
   }
 
-  Future<void> _handleDebugLogin() async {
-    try {
-      await AuthSession.saveSession(
-        access: 'debug-token',
-        refresh: 'debug-refresh-token',
-        user: {
-          'id': 'debug-id-123',
-          'name': 'Debug User',
-          'email': 'debug@ramhis.com',
-          'role': 'user',
-        },
-      );
+  
+      
 
-      if (!mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const HomeScreen(),
-        ),
-      );
-    } catch (e) {
-      debugPrint('Debug login error: $e');
-      _showSnackBar('Failed to start debug session.');
-    }
-  }
+      
 
   void _showSnackBar(String message) {
     if (!mounted) return;
@@ -348,38 +327,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                           ),
                         ),
 
-                        if (kDebugMode) ...[
-                          const SizedBox(height: 14),
-
-                          SizedBox(
-                            width: double.infinity,
-                            height: 54,
-                            child: OutlinedButton.icon(
-                              onPressed: _handleDebugLogin,
-                              icon: const Icon(
-                                Icons.bug_report_outlined,
-                                size: 22,
-                              ),
-                              label: const Text(
-                                '[ DEBUG ] Skip Login',
-                                style: TextStyle(
-                                  fontSize: 16,
-                                  fontWeight: FontWeight.w800,
-                                ),
-                              ),
-                              style: OutlinedButton.styleFrom(
-                                foregroundColor: Colors.orangeAccent,
-                                side: const BorderSide(
-                                  color: Colors.orangeAccent,
-                                  width: 2,
-                                ),
-                                shape: RoundedRectangleBorder(
-                                  borderRadius: BorderRadius.circular(30),
-                                ),
-                              ),
-                            ),
-                          ),
-                        ],
+                        
 
                         const SizedBox(height: 26),
 

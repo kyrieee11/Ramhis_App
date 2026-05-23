@@ -93,6 +93,44 @@ class _SignupAccountSecurityWidgetState
       return;
     }
 
+    if (!RegExp(r'[A-Z]').hasMatch(password)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password must contain at least one uppercase letter'),
+        ),
+      );
+      return;
+    }
+
+    if (!RegExp(r'[a-z]').hasMatch(password)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password must contain at least one lowercase letter'),
+        ),
+      );
+      return;
+    }
+
+    if (!RegExp(r'[0-9]').hasMatch(password)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Password must contain at least one number'),
+        ),
+      );
+      return;
+    }
+
+    if (!RegExp(r'[!@#\$%^&*]').hasMatch(password)) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+            'Password must contain at least one special character (!@#\$%^&*)',
+          ),
+        ),
+      );
+      return;
+    }
+
     if (password != confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
