@@ -3,6 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
+import 'package:url_launcher/url_launcher.dart';
+import 'package:maplibre_gl/maplibre_gl.dart';
 
 import 'package:ramhis_app/core/app_config.dart';
 import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
@@ -64,6 +66,32 @@ class _EventsWidgetState extends State<EventsWidget> {
     super.dispose();
   }
 
+  Future<void> _openLocationInMaps(String location) async {
+    if (location.trim().isEmpty) return;
+
+    final encoded = Uri.encodeComponent(location);
+    final googleMapsUrl = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$encoded',
+    );
+
+    try {
+      await launchUrl(
+        googleMapsUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      debugPrint('❌ Failed to open maps: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to open Google Maps'),
+        ),
+      );
+    }
+  }
+
   void _connectSocket() {
     _socket = io.io(
       AppConfig.baseUrl,
@@ -90,83 +118,37 @@ class _EventsWidgetState extends State<EventsWidget> {
   }
 
   Future<void> _loadEvents() async {
-  if (!mounted) return;
-
-  setState(() => isLoading = true);
-
-  try {
-    final data = await EventService.getEvents();
-
     if (!mounted) return;
 
-    setState(() {
-      events = data;
-      isLoading = false;
-    });
-  } catch (error) {
-    debugPrint('❌ Failed to load events: $error');
+    setState(() => isLoading = true);
 
-    if (!mounted) return;
+    try {
+      final data = await EventService.getEvents();
 
-    // DEBUG MODE: load mock events so UI can be tested
-    // without a live backend
-    if (kDebugMode) {
+      if (!mounted) return;
+
       setState(() {
-        events = [
-          EventModel.mock(
-            id: 'mock-1',
-            title: 'Medical Mission Tondo',
-            status: 'Upcoming',
-            type: 'Medical Mission',
-            location: 'Tondo, Manila',
-            date: DateTime.now().add(const Duration(days: 3)).toIso8601String(),
-            startTime: '8:00 AM',
-            endTime: '5:00 PM',
-            description: 'Free medical checkup for the community.',
-          ),
-          EventModel.mock(
-            id: 'mock-2',
-            title: 'Health Seminar 2025',
-            status: 'Ongoing',
-            type: 'Seminar',
-            location: 'Quezon City Hall',
-            date: DateTime.now().toIso8601String(),
-            startTime: '9:00 AM',
-            endTime: '12:00 PM',
-            description: 'Community health awareness seminar.',
-          ),
-          EventModel.mock(
-            id: 'mock-3',
-            title: 'Volunteer Training',
-            status: 'Completed',
-            type: 'Training',
-            location: 'Pasig City',
-            date: DateTime.now()
-                .subtract(const Duration(days: 5))
-                .toIso8601String(),
-            startTime: '7:00 AM',
-            endTime: '3:00 PM',
-            description: 'Training for new health volunteers.',
-          ),
-        ];
+        events = data;
         isLoading = false;
       });
-      return;
+    } catch (error) {
+      debugPrint('❌ Failed to load events: $error');
+
+      if (!mounted) return;
+
+      setState(() {
+        events = [];
+        isLoading = false;
+      });
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to load events: $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
     }
-
-    setState(() {
-      events = [];
-      isLoading = false;
-    });
-
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('Failed to load events: $error'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
   }
-}
 
   bool _isSuccess(Map<String, dynamic> result) {
     return result['ok'] == true ||
@@ -533,21 +515,25 @@ class _EventsWidgetState extends State<EventsWidget> {
                     onRefresh: _loadEvents,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(16, 16, 16, 24),
+                      padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
                       children: [
                         _buildFilterTabs(),
-                        const SizedBox(height: 16),
+                        const SizedBox(height: 14),
+                        _buildSearchBar(),
+                        const SizedBox(height: 10),
                         if (events.isEmpty)
-                          _buildEmptyState()
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: _buildEmptyState(),
+                          )
                         else if (list.isEmpty)
-                          _buildFilteredEmptyState()
+                          Padding(
+                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            child: _buildFilteredEmptyState(),
+                          )
                         else
-                          AnimatedOpacity(
-                            opacity: 1,
-                            duration: const Duration(milliseconds: 260),
-                            child: Column(
-                              children: list.map(_buildEventCard).toList(),
-                            ),
+                          Column(
+                            children: list.map(_buildEventCard).toList(),
                           ),
                       ],
                     ),
@@ -627,6 +613,7 @@ class _EventsWidgetState extends State<EventsWidget> {
   Widget _buildFilterTabs() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
       child: Row(
         children: filters.map((filter) {
           final selected = selectedFilter == filter;
@@ -648,14 +635,7 @@ class _EventsWidgetState extends State<EventsWidget> {
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: selected ? null : Colors.white,
-                  gradient: selected
-                      ? const LinearGradient(
-                          colors: [Color(0xFF5B76F7), Color(0xFF4564E8)],
-                          begin: Alignment.topLeft,
-                          end: Alignment.bottomRight,
-                        )
-                      : null,
+                  color: selected ? const Color(0xFF3949AB) : Colors.white,
                   borderRadius: BorderRadius.circular(999),
                   border: selected
                       ? null
@@ -663,7 +643,7 @@ class _EventsWidgetState extends State<EventsWidget> {
                   boxShadow: [
                     BoxShadow(
                       color: selected
-                          ? _kPrimary.withValues(alpha: 0.24)
+                          ? _kPrimary.withValues(alpha: 0.20)
                           : Colors.black.withValues(alpha: 0.04),
                       blurRadius: selected ? 16 : 12,
                       offset: const Offset(0, 6),
@@ -686,496 +666,223 @@ class _EventsWidgetState extends State<EventsWidget> {
     );
   }
 
-  Widget _buildSkeletonList() {
-    return ListView(
-      physics: const NeverScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
-      children: [
-        Row(
-          children: List.generate(
-            4,
-            (index) => Expanded(
-              child: Container(
-                height: 38,
-                margin: const EdgeInsets.only(right: 8),
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.85),
-                  borderRadius: BorderRadius.circular(999),
-                ),
-              ),
+  Widget _buildSearchBar() {
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      child: Container(
+        height: 52,
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(30),
+          border: Border.all(
+            color: Colors.grey.withValues(alpha: 0.12),
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.03),
+              blurRadius: 12,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: const TextField(
+          decoration: InputDecoration(
+            border: InputBorder.none,
+            prefixIcon: Icon(
+              Icons.search_rounded,
+              color: _kTextSecondary,
+            ),
+            hintText: 'Search events...',
+            hintStyle: TextStyle(
+              color: _kTextSecondary,
+              fontWeight: FontWeight.w500,
             ),
           ),
         ),
-        const SizedBox(height: 18),
-        _skeletonCard(),
-        _skeletonCard(),
-        _skeletonCard(),
-      ],
+      ),
     );
   }
 
-  Widget _skeletonCard() {
-    return TweenAnimationBuilder<double>(
-      key: ValueKey(DateTime.now().millisecondsSinceEpoch),
-      tween: Tween<double>(begin: 0.55, end: 1),
-      duration: const Duration(milliseconds: 850),
-      curve: Curves.easeInOut,
-      builder: (context, opacity, child) {
-        return Opacity(
-          opacity: opacity,
-          child: child,
+  Widget _buildSkeletonList() {
+    return ListView.builder(
+      itemCount: 6,
+      padding: const EdgeInsets.only(top: 12),
+      itemBuilder: (_, index) {
+        return Container(
+          margin: const EdgeInsets.symmetric(
+            horizontal: 16,
+            vertical: 8,
+          ),
+          height: 110,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(18),
+          ),
         );
       },
-      onEnd: () {
-        if (mounted) {
-          setState(() {});
-        }
-      },
-      child: Container(
-        margin: const EdgeInsets.only(bottom: 16),
-        padding: const EdgeInsets.all(14),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(20),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.045),
-              blurRadius: 22,
-              offset: const Offset(0, 8),
-            ),
-          ],
-        ),
-        child: Column(
-          children: [
-            Container(
-              height: 130,
-              decoration: BoxDecoration(
-                color: const Color(0xFFE8ECFF),
-                borderRadius: BorderRadius.circular(16),
-              ),
-            ),
-            const SizedBox(height: 14),
-            _skeletonLine(width: double.infinity, height: 18),
-            const SizedBox(height: 10),
-            _skeletonLine(width: double.infinity, height: 12),
-            const SizedBox(height: 8),
-            _skeletonLine(width: 220, height: 12),
-            const SizedBox(height: 14),
-            _skeletonLine(width: double.infinity, height: 46),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _skeletonLine({
-    required double width,
-    required double height,
-  }) {
-    return Align(
-      alignment: Alignment.centerLeft,
-      child: Container(
-        width: width,
-        height: height,
-        decoration: BoxDecoration(
-          color: const Color(0xFFE8ECFF),
-          borderRadius: BorderRadius.circular(999),
-        ),
-      ),
     );
   }
 
   Widget _buildEventCard(EventModel event) {
-    final status = _statusText(event);
-    final type = _typeText(event);
     final joinStatus = _joinStatus(event);
-    final closed = _isClosed(event);
-    final participants = event.participants.length;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 18),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.045),
-            blurRadius: 22,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            left: 0,
-            top: 18,
-            bottom: 18,
-            child: Container(
-              width: 3,
-              decoration: BoxDecoration(
-                color: _typeColor(type),
-                borderRadius: BorderRadius.circular(999),
-              ),
-            ),
-          ),
-          InkWell(
-            borderRadius: BorderRadius.circular(20),
-            onTap: () => _openEventDetails(event),
-            child: Padding(
-          padding: const EdgeInsets.all(14),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildEventImage(
-                event: event,
-                type: type,
-                status: status,
-              ),
-              const SizedBox(height: 14),
-              Text(
-                event.title.isEmpty ? 'Untitled Event' : event.title,
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: _kTextPrimary,
-                  fontSize: 19,
-                  fontWeight: FontWeight.w900,
-                  height: 1.18,
-                ),
-              ),
-              const SizedBox(height: 12),
-              _infoRow(
-                icon: Icons.calendar_month_rounded,
-                text: _eventDate(event),
-              ),
-              const SizedBox(height: 8),
-              _infoRow(
-                icon: Icons.access_time_rounded,
-                text: _eventTime(event),
-              ),
-              const SizedBox(height: 8),
-              _infoRow(
-                icon: Icons.location_on_rounded,
-                text: _eventLocation(event),
-              ),
-              const SizedBox(height: 8),
-              _infoRow(
-                icon: Icons.groups_rounded,
-                text: '$participants joined',
-              ),
-              const SizedBox(height: 16),
-              _joinButton(
-                event: event,
-                joinStatus: joinStatus,
-                closed: closed,
-                isLarge: false,
-              ),
-            ],
-          ),
-        ),
-          ),
-        ],
-      ),
-    );
-  }
+    Color accentColor = Colors.transparent;
 
-  Widget _buildEventImage({
-    required EventModel event,
-    required String type,
-    required String status,
-  }) {
-    final image = _imageUrl(event);
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(16),
-      child: Stack(
-        children: [
-          SizedBox(
-            width: double.infinity,
-            height: 150,
-            child: image.isNotEmpty
-                ? Image.network(
-                    image,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) {
-                      return _gradientBanner(type);
-                    },
-                  )
-                : _gradientBanner(type),
-          ),
-          Positioned(
-            top: 12,
-            left: 12,
-            child: _badge(
-              text: type,
-              color: _typeColor(type),
-              icon: _typeIcon(type),
-            ),
-          ),
-          Positioned(
-            top: 12,
-            right: 12,
-            child: _badge(
-              text: status,
-              color: _statusColor(status),
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _gradientBanner(String type) {
-    return Container(
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            _typeColor(type),
-            _kAccent,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -16,
-            bottom: -24,
-            child: Icon(
-              _typeIcon(type),
-              size: 140,
-              color: Colors.white.withValues(alpha: 0.14),
-            ),
-          ),
-          Center(
-            child: Icon(
-              _typeIcon(type),
-              size: 54,
-              color: Colors.white,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _badge({
-    required String text,
-    required Color color,
-    IconData? icon,
-  }) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color,
-        borderRadius: BorderRadius.circular(999),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.14),
-            blurRadius: 10,
-            offset: const Offset(0, 5),
-          ),
-        ],
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (icon != null) ...[
-            Icon(icon, size: 13, color: Colors.white),
-            const SizedBox(width: 5),
-          ],
-          Text(
-            text,
-            style: const TextStyle(
-              color: Colors.white,
-              fontWeight: FontWeight.w900,
-              fontSize: 10.5,
-            ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _infoRow({
-    required IconData icon,
-    required String text,
-  }) {
-    return Container(
-      padding: const EdgeInsets.all(8),
-      decoration: BoxDecoration(
-        color: const Color(0xFFF8F9FE),
-        borderRadius: BorderRadius.circular(10),
-      ),
-      child: Row(
-        children: [
-          Icon(
-            icon,
-            color: _kPrimary,
-            size: 18,
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Text(
-              text,
-              maxLines: 2,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                color: _kTextSecondary,
-                fontSize: 13,
-                fontWeight: FontWeight.w600,
-                height: 1.25,
-              ),
-            ),
-          ),
-        ],
-      ),
-    );
-}
-
-  Widget _joinButton({
-    required EventModel event,
-    required String joinStatus,
-    required bool closed,
-    required bool isLarge,
-  }) {
-    final status = _statusText(event).toLowerCase();
-
-    String label;
-    IconData icon;
-    Color color;
-    bool filled;
-    bool enabled;
-
-    if (status == 'completed' || status == 'done') {
-      label = 'Event Completed';
-      icon = Icons.event_available_rounded;
-      color = _kGray;
-      filled = true;
-      enabled = false;
-    } else if (status == 'cancelled') {
-      label = 'Event Cancelled';
-      icon = Icons.cancel_rounded;
-      color = _kRed;
-      filled = true;
-      enabled = false;
+    if (joinStatus == 'Approved') {
+      accentColor = _kGreen;
     } else if (joinStatus == 'Pending') {
-      label = 'Request Pending';
-      icon = Icons.hourglass_top_rounded;
-      color = _kOrange;
-      filled = false;
-      enabled = false;
-    } else if (joinStatus == 'Approved') {
-      label = 'Approved ✓';
-      icon = Icons.verified_rounded;
-      color = _kGreen;
-      filled = false;
-      enabled = false;
-    } else if (joinStatus == 'Rejected') {
-      label = 'Rejected';
-      icon = Icons.block_rounded;
-      color = _kRed;
-      filled = false;
-      enabled = false;
-    } else if (closed) {
-      label = 'Registration Closed';
-      icon = Icons.lock_clock_rounded;
-      color = _kGray;
-      filled = true;
-      enabled = false;
-    } else {
-      label = 'Join Event';
-      icon = Icons.how_to_reg_rounded;
-      color = _kPrimary;
-      filled = true;
-      enabled = true;
+      accentColor = _kOrange;
     }
 
-    return AnimatedContainer(
-      duration: const Duration(milliseconds: 220),
-      width: double.infinity,
-      height: isLarge ? 54 : 48,
-      decoration: filled
-          ? BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              gradient: enabled
-                  ? const LinearGradient(
-                      colors: [Color(0xFF5B76F7), Color(0xFF4564E8)],
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                    )
-                  : null,
-              color: enabled ? null : color.withValues(alpha: 0.70),
-              boxShadow: enabled
-                  ? [
-                      BoxShadow(
-                        color: _kPrimary.withValues(alpha: 0.28),
-                        blurRadius: 18,
-                        offset: const Offset(0, 8),
-                      ),
-                    ]
-                  : [],
-            )
-          : null,
-      child: filled
-          ? ElevatedButton.icon(
-              onPressed: enabled ? () => _joinEvent(event.id) : null,
-              icon: Icon(icon),
-              label: Text(label),
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.transparent,
-                disabledBackgroundColor: Colors.transparent,
-                shadowColor: Colors.transparent,
-                foregroundColor: Colors.white,
-                disabledForegroundColor: Colors.white.withValues(alpha: 0.92),
-                elevation: 0,
-                textStyle: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: isLarge ? 15 : 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
-                ),
-              ),
-            )
-          : OutlinedButton.icon(
-              onPressed: null,
-              icon: Icon(icon, color: color),
-              label: Text(label),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: color,
-                disabledForegroundColor: color,
-                side: BorderSide(color: color, width: 1.5),
-                textStyle: TextStyle(
-                  fontWeight: FontWeight.w900,
-                  fontSize: isLarge ? 15 : 14,
-                ),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(20),
+    return Container(
+      margin: const EdgeInsets.symmetric(
+        horizontal: 16,
+        vertical: 8,
+      ),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: InkWell(
+        borderRadius: BorderRadius.circular(18),
+        onTap: () => _openEventDetails(event),
+        child: Row(
+          children: [
+            Container(
+              width: 4,
+              height: 110,
+              decoration: BoxDecoration(
+                color: accentColor,
+                borderRadius: const BorderRadius.only(
+                  topLeft: Radius.circular(18),
+                  bottomLeft: Radius.circular(18),
                 ),
               ),
             ),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        const Icon(
+                          Icons.calendar_month_rounded,
+                          size: 18,
+                          color: _kTextSecondary,
+                        ),
+                        const SizedBox(width: 8),
+                        const Text(
+                          'Date',
+                          style: TextStyle(
+                            color: _kTextSecondary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        const Spacer(),
+                        if (joinStatus == 'Approved')
+                          _compactBadge(
+                            'Approved ✓',
+                            _kGreen,
+                          ),
+                        if (joinStatus == 'Pending')
+                          _compactBadge(
+                            'Pending',
+                            _kOrange,
+                          ),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      _eventDate(event),
+                      style: const TextStyle(
+                        color: _kTextPrimary,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+Row(
+                      children: [
+                        const Icon(
+                          Icons.location_on_rounded,
+                          size: 18,
+                          color: _kTextSecondary,
+                        ),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            _eventLocation(event),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: _kTextSecondary,
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        const SizedBox(width: 8),
+                        const Icon(
+                          Icons.chevron_right_rounded,
+                          color: _kTextSecondary,
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _compactBadge(
+    String text,
+    Color color,
+  ) {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 10,
+        vertical: 6,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(30),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontWeight: FontWeight.w800,
+          fontSize: 11,
+        ),
+      ),
     );
   }
 
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
+      padding: const EdgeInsets.all(28),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5B76F7), Color(0xFF4564E8)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(22),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: _kPrimary.withValues(alpha: 0.22),
-            blurRadius: 22,
-            offset: const Offset(0, 10),
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 18,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -1184,25 +891,24 @@ class _EventsWidgetState extends State<EventsWidget> {
           Icon(
             Icons.event_busy_rounded,
             size: 58,
-            color: Colors.white,
+            color: _kPrimary,
           ),
           SizedBox(height: 14),
           Text(
             'No events available',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 18,
-              fontWeight: FontWeight.w900,
+              color: _kTextPrimary,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
             ),
           ),
-          SizedBox(height: 7),
+          SizedBox(height: 8),
           Text(
-            'Please check again later for upcoming community health events.',
+            'Please check again later.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 13,
-              height: 1.35,
+              color: _kTextSecondary,
+              fontSize: 14,
             ),
           ),
         ],
@@ -1299,9 +1005,104 @@ class EventDetailScreen extends StatefulWidget {
 
 class _EventDetailScreenState extends State<EventDetailScreen> {
   bool isSubmitting = false;
+  MapLibreMapController? _mapController;
+
+bool get hasCoordinates =>
+    widget.event.latitude != null &&
+    widget.event.longitude != null;
 
   Color get typeColor => _typeColor(widget.typeText);
   Color get statusColor => _statusColor(widget.statusText);
+  Widget _mapPreview() {
+  return Container(
+    height: 190,
+    width: double.infinity,
+    margin: const EdgeInsets.only(bottom: 22),
+    decoration: BoxDecoration(
+      color: Colors.white,
+      borderRadius: BorderRadius.circular(18),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.045),
+          blurRadius: 18,
+          offset: const Offset(0, 8),
+        ),
+      ],
+    ),
+    clipBehavior: Clip.antiAlias,
+    child: hasCoordinates
+        ? Stack(
+            children: [
+              MapLibreMap(
+                styleString:
+                    'https://demotiles.maplibre.org/style.json',
+                initialCameraPosition: CameraPosition(
+                  target: LatLng(
+                    widget.event.latitude!,
+                    widget.event.longitude!,
+                  ),
+                  zoom: 15,
+                ),
+                myLocationEnabled: false,
+                compassEnabled: false,
+                rotateGesturesEnabled: false,
+                tiltGesturesEnabled: false,
+              ),
+
+              // Flutter marker overlay
+              const Center(
+                child: Icon(
+                  Icons.location_pin,
+                  color: _kRed,
+                  size: 44,
+                ),
+              ),
+
+              Positioned(
+                right: 12,
+                bottom: 12,
+                child: GestureDetector(
+                  onTap: () => _openLocationInMaps(widget.locationText),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 12,
+                      vertical: 8,
+                    ),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(999),
+                      boxShadow: [
+                        BoxShadow(
+                          color: Colors.black.withValues(alpha: 0.12),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
+                    ),
+                    child: const Text(
+                      'Open map',
+                      style: TextStyle(
+                        color: _kPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+            ],
+          )
+        : const Center(
+            child: Text(
+              'No coordinates available',
+              style: TextStyle(
+                color: _kTextSecondary,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+  );
+}
 
   static Color _typeColor(String type) {
     switch (type.toLowerCase()) {
@@ -1317,6 +1118,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         return _kGray;
     }
   }
+
+  
 
   static IconData _typeIcon(String type) {
     switch (type.toLowerCase()) {
@@ -1382,19 +1185,18 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       backgroundColor: _kBg,
       body: Column(
         children: [
+          _detailHeader(),
           Expanded(
-            child: CustomScrollView(
-              slivers: [
-                SliverToBoxAdapter(
-                  child: _buildHero(),
-                ),
-                SliverToBoxAdapter(
-                  child: Padding(
-                    padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text(
+            child: SingleChildScrollView(
+              padding: const EdgeInsets.fromLTRB(18, 18, 18, 120),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
                           widget.event.title.isEmpty
                               ? 'Untitled Event'
                               : widget.event.title,
@@ -1405,64 +1207,53 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                             height: 1.15,
                           ),
                         ),
-                        const SizedBox(height: 12),
-                        Row(
-                          children: [
-                            _detailBadge(
-                              text: widget.typeText,
-                              color: typeColor,
-                              icon: _typeIcon(widget.typeText),
-                            ),
-                            const SizedBox(width: 8),
-                            _detailBadge(
-                              text: widget.statusText,
-                              color: statusColor,
-                            ),
-                          ],
+                      ),
+                      if (widget.joinStatus != 'None') ...[
+                        const SizedBox(width: 10),
+                        _detailBadge(
+                          text: widget.joinStatus == 'Approved'
+                              ? 'Approved ✓'
+                              : widget.joinStatus,
+                          color: _joinStatusColor(widget.joinStatus),
                         ),
-                        const SizedBox(height: 22),
-                        _sectionTitle('Description'),
-                        const SizedBox(height: 10),
-                        Text(
-                          widget.descriptionText,
-                          style: const TextStyle(
-                            color: _kTextSecondary,
-                            fontSize: 14,
-                            height: 1.55,
-                            fontWeight: FontWeight.w500,
-                          ),
-                        ),
-                        const SizedBox(height: 22),
-                        _sectionTitle('Event Information'),
-                        const SizedBox(height: 12),
-                        _infoTile(
-                          icon: Icons.calendar_month_rounded,
-                          title: 'Date',
-                          value: widget.dateText,
-                        ),
-                        _infoTile(
-                          icon: Icons.access_time_rounded,
-                          title: 'Time',
-                          value: widget.timeText,
-                        ),
-                        _infoTile(
-                          icon: Icons.location_on_rounded,
-                          title: 'Location',
-                          value: widget.locationText,
-                        ),
-                        _infoTile(
-                          icon: Icons.groups_rounded,
-                          title: 'Participants',
-                          value:
-                              '${widget.event.participants.length} participants joined',
-                        ),
-                        const SizedBox(height: 18),
-                        _organizerCard(),
                       ],
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    widget.descriptionText,
+                    maxLines: 3,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: _kTextSecondary,
+                      fontSize: 14,
+                      height: 1.55,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
-                ),
-              ],
+                 const SizedBox(height: 18),
+_mapPreview(),
+const SizedBox(height: 22),
+_infoCard(),
+const SizedBox(height: 22),
+                  
+                  _sectionTitle('Description'),
+                  const SizedBox(height: 10),
+                  Text(
+                    widget.descriptionText,
+                    style: const TextStyle(
+                      color: _kTextSecondary,
+                      fontSize: 14,
+                      height: 1.6,
+                      fontWeight: FontWeight.w500,
+                    ),
+                  ),
+                  const SizedBox(height: 22),
+                  _sectionTitle('Organizers'),
+                  const SizedBox(height: 12),
+                  _organizerCard(),
+                ],
+              ),
             ),
           ),
           _stickyFooter(),
@@ -1471,111 +1262,144 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     );
   }
 
-  Widget _buildHero() {
-    return SizedBox(
-      height: 290,
+  Widget _detailHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(8, 46, 18, 18),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF5B76F7), Color(0xFF4564E8)],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
+      ),
       child: Stack(
+        alignment: Alignment.center,
         children: [
-          Positioned.fill(
-            child: widget.imageUrl.isNotEmpty
-                ? Image.network(
-                    widget.imageUrl,
-                    fit: BoxFit.cover,
-                    errorBuilder: (_, __, ___) => _heroGradient(),
-                  )
-                : _heroGradient(),
-          ),
-          Positioned.fill(
-            child: Container(
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Colors.black.withValues(alpha: 0.38),
-                    Colors.transparent,
-                    Colors.black.withValues(alpha: 0.18),
-                  ],
-                  begin: Alignment.topCenter,
-                  end: Alignment.bottomCenter,
-                ),
+          Align(
+            alignment: Alignment.centerLeft,
+            child: IconButton(
+              onPressed: () => Navigator.pop(context),
+              icon: const Icon(
+                Icons.arrow_back_ios_new_rounded,
+                color: Colors.white,
               ),
             ),
           ),
-          Positioned(
-            top: 46,
-            left: 16,
-            child: Material(
-               child: Container(
-              decoration: BoxDecoration(
-  gradient: const LinearGradient(
-    colors: [
-      Color(0xFFFFFFFF),
-      Color(0xFFF2F5FF),
-    ],
-    begin: Alignment.topLeft,
-    end: Alignment.bottomRight,
-  ),
-  borderRadius: BorderRadius.circular(16),
-  boxShadow: [
-    BoxShadow(
-      color: _kPrimary.withValues(alpha: 0.16),
-      blurRadius: 16,
-      offset: const Offset(0, 6),
-    ),
-  ],
-),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(16),
-                onTap: () => Navigator.pop(context),
-                child: const SizedBox(
-                  width: 44,
-                  height: 44,
-                  child: Icon(
-                    Icons.arrow_back_rounded,
-                    color: _kTextPrimary,
-                  ),
-                ),
-              ),
+          const Text(
+            'Event Details',
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: 21,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          )
         ],
       ),
     );
   }
 
-  Widget _heroGradient() {
+  Widget _infoCard() {
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            typeColor,
-            _kAccent,
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -24,
-            bottom: -30,
-            child: Icon(
-              _typeIcon(widget.typeText),
-              color: Colors.white.withValues(alpha: 0.13),
-              size: 180,
-            ),
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.045),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
-          Center(
-            child: Icon(
-              _typeIcon(widget.typeText),
-              size: 76,
-              color: Colors.white,
-            ),
+        ],
+      ),
+      child: Column(
+        children: [
+          _infoTile(
+            icon: Icons.calendar_month_rounded,
+            title: 'Date',
+            value: widget.dateText,
+            color: _kPrimary,
+          ),
+          _infoTile(
+            icon: Icons.access_time_rounded,
+            title: 'Time',
+            value: widget.timeText,
+            color: _kOrange,
+          ),
+          _infoTile(
+            icon: Icons.location_on_rounded,
+            title: 'Location',
+            value: widget.locationText,
+            color: _kRed,
+            actionText: 'View on map',
+            onTap: () => _openLocationInMaps(widget.locationText),
+          ),
+          _infoTile(
+            icon: Icons.groups_rounded,
+            title: 'Participants',
+            value: '${widget.event.participants.length} joined',
+            color: _kGreen,
+          ),
+          _infoTile(
+            icon: Icons.person_rounded,
+            title: 'Created By',
+            value: widget.organizerName,
+            color: _kPrimary,
+          ),
+          _infoTile(
+            icon: _typeIcon(widget.typeText),
+            title: 'Event Type',
+            value: widget.typeText,
+            color: typeColor,
+            badgeValue: widget.typeText,
+          ),
+          _infoTile(
+            icon: Icons.verified_rounded,
+            title: 'Status',
+            value: widget.statusText,
+            color: statusColor,
+            badgeValue: widget.statusText,
           ),
         ],
       ),
     );
+  }
+
+  Future<void> _openLocationInMaps(String location) async {
+    if (location.trim().isEmpty) return;
+
+    final encoded = Uri.encodeComponent(location);
+    final googleMapsUrl = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$encoded',
+    );
+
+    try {
+      await launchUrl(
+        googleMapsUrl,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      debugPrint('❌ Failed to open maps: $e');
+    }
+  }
+
+  Color _joinStatusColor(String status) {
+    switch (status.toLowerCase()) {
+      case 'approved':
+        return _kGreen;
+      case 'pending':
+        return _kOrange;
+      case 'rejected':
+        return _kRed;
+      default:
+        return _kGray;
+    }
   }
 
   Widget _sectionTitle(String title) {
@@ -1594,34 +1418,30 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     required Color color,
     IconData? icon,
   }) {
-    return Flexible(
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(999),
-          border: Border.all(color: color.withValues(alpha: 0.22)),
-        ),
-        child: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            if (icon != null) ...[
-              Icon(icon, size: 14, color: color),
-              const SizedBox(width: 5),
-            ],
-            Flexible(
-              child: Text(
-                text,
-                overflow: TextOverflow.ellipsis,
-                style: TextStyle(
-                  color: color,
-                  fontWeight: FontWeight.w900,
-                  fontSize: 11,
-                ),
-              ),
-            ),
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 11, vertical: 7),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.22)),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (icon != null) ...[
+            Icon(icon, size: 14, color: color),
+            const SizedBox(width: 5),
           ],
-        ),
+          Text(
+            text,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: color,
+              fontWeight: FontWeight.w900,
+              fontSize: 11,
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -1630,33 +1450,26 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     required IconData icon,
     required String title,
     required String value,
+    required Color color,
+    String? actionText,
+    VoidCallback? onTap,
+    String? badgeValue,
   }) {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.045),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 12),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Container(
             width: 42,
             height: 42,
             decoration: BoxDecoration(
-              color: _kPrimary.withValues(alpha: 0.10),
+              color: color.withValues(alpha: 0.10),
               borderRadius: BorderRadius.circular(14),
             ),
             child: Icon(
               icon,
-              color: _kPrimary,
+              color: color,
               size: 22,
             ),
           ),
@@ -1673,15 +1486,38 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                     fontWeight: FontWeight.w700,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  value,
-                  style: const TextStyle(
-                    color: _kTextPrimary,
-                    fontSize: 14,
-                    fontWeight: FontWeight.w900,
+                const SizedBox(height: 4),
+                if (badgeValue != null)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: _detailBadge(
+                      text: badgeValue,
+                      color: color,
+                    ),
+                  )
+                else
+                  Text(
+                    value,
+                    style: const TextStyle(
+                      color: _kTextPrimary,
+                      fontSize: 14,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
-                ),
+                if (actionText != null) ...[
+                  const SizedBox(height: 5),
+                  GestureDetector(
+                    onTap: onTap,
+                    child: Text(
+                      actionText,
+                      style: const TextStyle(
+                        color: _kPrimary,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ),
+                ],
               ],
             ),
           ),
@@ -1691,46 +1527,58 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   }
 
   Widget _organizerCard() {
+    final initial = widget.organizerName.trim().isNotEmpty
+        ? widget.organizerName.trim()[0].toUpperCase()
+        : 'R';
+
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: _kPrimary.withValues(alpha: 0.08),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(
-          color: _kPrimary.withValues(alpha: 0.12),
-        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 14,
+            offset: const Offset(0, 6),
+          ),
+        ],
       ),
       child: Row(
         children: [
-          const CircleAvatar(
-            backgroundColor: _kPrimary,
-            child: Icon(
-              Icons.admin_panel_settings_rounded,
-              color: Colors.white,
+          CircleAvatar(
+            radius: 24,
+            backgroundColor: _kPrimary.withValues(alpha: 0.12),
+            child: Text(
+              initial,
+              style: const TextStyle(
+                color: _kPrimary,
+                fontWeight: FontWeight.w900,
+              ),
             ),
           ),
           const SizedBox(width: 12),
           Expanded(
-            child: Text.rich(
-              TextSpan(
-                children: [
-                  const TextSpan(
-                    text: 'Organized by: ',
-                    style: TextStyle(
-                      color: _kTextSecondary,
-                      fontWeight: FontWeight.w600,
-                    ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.organizerName,
+                  style: const TextStyle(
+                    color: _kTextPrimary,
+                    fontWeight: FontWeight.w900,
                   ),
-                  TextSpan(
-                    text: widget.organizerName,
-                    style: const TextStyle(
-                      color: _kTextPrimary,
-                      fontWeight: FontWeight.w900,
-                    ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Organizer',
+                  style: TextStyle(
+                    color: _kTextSecondary,
+                    fontWeight: FontWeight.w600,
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -1756,15 +1604,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       icon = Icons.cancel_rounded;
       color = _kRed;
     } else if (joinStatus == 'Pending') {
-      text = 'Your request is pending approval';
+      text = 'Request Pending';
       icon = Icons.hourglass_top_rounded;
       color = _kOrange;
     } else if (joinStatus == 'Approved') {
-      text = 'You are approved to attend ✓';
+      text = 'You are approved ✓';
       icon = Icons.verified_rounded;
       color = _kGreen;
     } else if (joinStatus == 'Rejected') {
-      text = 'Your request was rejected';
+      text = 'Rejected';
       icon = Icons.block_rounded;
       color = _kRed;
     } else if (widget.isClosed) {
@@ -1772,7 +1620,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       icon = Icons.lock_clock_rounded;
       color = _kGray;
     } else {
-      text = 'Submit Join Request';
+      text = 'Join Event';
       icon = Icons.how_to_reg_rounded;
       color = _kPrimary;
       canJoin = true;
@@ -1795,37 +1643,54 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 220),
+            SizedBox(
               width: double.infinity,
               height: 54,
-              child: ElevatedButton.icon(
-                onPressed: canJoin && !isSubmitting ? _submitJoin : null,
-                icon: isSubmitting
-                    ? const SizedBox(
-                        width: 18,
-                        height: 18,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Colors.white,
+              child: canJoin
+                  ? ElevatedButton.icon(
+                      onPressed: isSubmitting ? null : _submitJoin,
+                      icon: isSubmitting
+                          ? const SizedBox(
+                              width: 18,
+                              height: 18,
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: Colors.white,
+                              ),
+                            )
+                          : Icon(icon),
+                      label: Text(isSubmitting ? 'Please wait...' : text),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: color,
+                        disabledBackgroundColor:
+                            color.withValues(alpha: 0.70),
+                        foregroundColor: Colors.white,
+                        elevation: 0,
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
                         ),
-                      )
-                    : Icon(icon),
-                label: Text(isSubmitting ? 'Please wait...' : text),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: color,
-                  disabledBackgroundColor: color.withValues(alpha: 0.70),
-                  foregroundColor: Colors.white,
-                  elevation: 0,
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 15,
-                  ),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(20),
-                  ),
-                ),
-              ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    )
+                  : OutlinedButton.icon(
+                      onPressed: null,
+                      icon: Icon(icon, color: color),
+                      label: Text(text),
+                      style: OutlinedButton.styleFrom(
+                        disabledForegroundColor: color,
+                        side: BorderSide(color: color, width: 1.5),
+                        textStyle: const TextStyle(
+                          fontWeight: FontWeight.w900,
+                          fontSize: 15,
+                        ),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                    ),
             ),
             if (joinStatus == 'Pending') ...[
               const SizedBox(height: 10),

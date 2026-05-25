@@ -7,40 +7,61 @@ import 'package:ramhis_app/models/chat_message_model.dart';
 import 'package:ramhis_app/models/chat_thread_model.dart';
 
 class ChatService {
+static String get _base => AppConfig.baseUrl;
   Future<List<ChatThreadModel>> getThreads() async {
     try {
       final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/chat/threads'),
+        Uri.parse('$_base/chat/threads'),
         headers: AuthSession.headers(),
       );
 
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200) {
+        return [];
+      }
 
-      final data = List<Map<String, dynamic>>.from(
-        jsonDecode(response.body),
-      );
+      final decoded = jsonDecode(response.body);
+
+      final data = decoded is List
+          ? List<Map<String, dynamic>>.from(decoded)
+          : List<Map<String, dynamic>>.from(
+              decoded['threads'] ?? [],
+            );
 
       return data.map(ChatThreadModel.fromJson).toList();
-    } catch (_) {
+    } catch (e) {
+      print('❌ getThreads error: $e');
       return [];
     }
   }
 
-  Future<List<ChatMessageModel>> getMessages(String threadId) async {
+  Future<List<ChatMessageModel>> getMessages(
+    String threadId,
+  ) async {
     try {
       final response = await http.get(
-        Uri.parse('${AppConfig.baseUrl}/chat/threads/$threadId/messages'),
+        Uri.parse(
+          '$_base/chat/threads/$threadId/messages',
+        ),
         headers: AuthSession.headers(),
       );
 
-      if (response.statusCode != 200) return [];
+      if (response.statusCode != 200) {
+        return [];
+      }
 
-      final data = List<Map<String, dynamic>>.from(
-        jsonDecode(response.body),
-      );
+      final decoded = jsonDecode(response.body);
 
-      return data.map(ChatMessageModel.fromJson).toList();
-    } catch (_) {
+      final data = decoded is List
+          ? List<Map<String, dynamic>>.from(decoded)
+          : List<Map<String, dynamic>>.from(
+              decoded['messages'] ?? [],
+            );
+
+      return data
+          .map(ChatMessageModel.fromJson)
+          .toList();
+    } catch (e) {
+      print('❌ getMessages error: $e');
       return [];
     }
   }
@@ -51,52 +72,85 @@ class ChatService {
   }) async {
     try {
       final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/chat/threads/$threadId/messages'),
-        headers: AuthSession.headers(),
-        body: jsonEncode({'message': message}),
+        Uri.parse(
+          '$_base/chat/threads/$threadId/messages',
+        ),
+        headers: {
+          ...AuthSession.headers(),
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'message': message,
+        }),
       );
 
-      return response.statusCode == 200 || response.statusCode == 201;
-    } catch (_) {
+      return response.statusCode == 200 ||
+          response.statusCode == 201;
+    } catch (e) {
+      print('❌ sendMessage error: $e');
       return false;
     }
   }
 
-  Future<List<Map<String, dynamic>>> searchApprovedUsers(String query) async {
+  Future<List<Map<String, dynamic>>>
+      searchApprovedUsers(String query) async {
     try {
       final response = await http.get(
-        Uri.parse(
-          '${AppConfig.baseUrl}/users/approved?q=${Uri.encodeQueryComponent(query)}',
-        ),
-        headers: AuthSession.headers(),
-      );
+  Uri.parse(
+    '$_base/users/approved?q=${Uri.encodeQueryComponent(query)}',
+  ),
+  headers: AuthSession.headers(),
+);
 
-      if (response.statusCode != 200) return [];
+print('🔍 SEARCH URL: ${response.request?.url}');
+print('🔍 SEARCH STATUS: ${response.statusCode}');
+print('🔍 SEARCH BODY: ${response.body}');
+
+if (response.statusCode != 200) {
+  return [];
+}
+
+      final decoded = jsonDecode(response.body);
+
+      if (decoded is List) {
+        return List<Map<String, dynamic>>.from(decoded);
+      }
 
       return List<Map<String, dynamic>>.from(
-        jsonDecode(response.body),
+        decoded['users'] ?? [],
       );
-    } catch (_) {
+    } catch (e) {
+      print('❌ searchApprovedUsers error: $e');
       return [];
     }
   }
 
-  Future<Map<String, dynamic>?> createOrOpenDirectThread(String userId) async {
+  Future<Map<String, dynamic>?>
+      createOrOpenDirectThread(
+    String userId,
+  ) async {
     try {
       final response = await http.post(
-        Uri.parse('${AppConfig.baseUrl}/chat/direct'),
-        headers: AuthSession.headers(),
-        body: jsonEncode({'userId': userId}),
+        Uri.parse('$_base/chat/direct'),
+        headers: {
+          ...AuthSession.headers(),
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'userId': userId,
+        }),
       );
 
-      if (response.statusCode != 200 && response.statusCode != 201) {
+      if (response.statusCode != 200 &&
+          response.statusCode != 201) {
         return null;
       }
 
       return Map<String, dynamic>.from(
         jsonDecode(response.body),
       );
-    } catch (_) {
+    } catch (e) {
+      print('❌ createOrOpenDirectThread error: $e');
       return null;
     }
   }

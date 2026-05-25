@@ -80,6 +80,189 @@ class _SignupTermsConditionsWidgetState
     );
   }
 
+  Future<void> _showSuccessDialog() async {
+    final bool isDoctor = widget.accountType == 'doctor';
+
+    await showGeneralDialog(
+      context: context,
+      barrierDismissible: false,
+      barrierLabel: 'Registration Success',
+      barrierColor: Colors.black.withValues(alpha: 0.45),
+      transitionDuration: const Duration(milliseconds: 260),
+      pageBuilder: (context, animation, secondaryAnimation) {
+        return Center(
+          child: Material(
+            color: Colors.transparent,
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 340),
+              child: Container(
+                margin: const EdgeInsets.symmetric(horizontal: 24),
+                padding: const EdgeInsets.all(24),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(28),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.20),
+                      blurRadius: 30,
+                      offset: const Offset(0, 16),
+                    ),
+                  ],
+                ),
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(
+                      isDoctor
+                          ? Icons.local_hospital_rounded
+                          : Icons.check_circle_rounded,
+                      size: 80,
+                      color: isDoctor
+                          ? const Color(0xFF3949AB)
+                          : const Color(0xFF22C55E),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      isDoctor
+                          ? 'Doctor Registration Submitted!'
+                          : 'Registration Submitted!',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF1B2559),
+                        fontSize: 22,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const SizedBox(height: 10),
+                    Text(
+                      isDoctor
+                          ? 'Thank you for registering as a Doctor'
+                          : 'Thank you for signing up as a Volunteer',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF7B8BB2),
+                        fontSize: 14,
+                        height: 1.4,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                    const SizedBox(height: 20),
+                    Divider(
+                      color: const Color(0xFF7B8BB2).withValues(alpha: 0.20),
+                    ),
+                    const SizedBox(height: 18),
+                    Text(
+                      isDoctor
+                          ? 'Your professional credentials have been submitted for verification.\n\n'
+                              'Our admin team will review your:\n'
+                              '- PRC License Number\n'
+                              '- Specialty Information\n'
+                              '- Hospital/Clinic Details\n\n'
+                              'This verification may take 2-3 business days.'
+                          : 'Your account has been submitted for admin review.\n\n'
+                              'You will be able to log in once an administrator approves your account.\n\n'
+                              'This usually takes 1-2 business days.',
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Color(0xFF1B2559),
+                        fontSize: 14,
+                        height: 1.55,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    const SizedBox(height: 18),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 14,
+                        vertical: 12,
+                      ),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF4FF),
+                        borderRadius: BorderRadius.circular(18),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.email_rounded,
+                            color: Color(0xFF3949AB),
+                            size: 20,
+                          ),
+                          const SizedBox(width: 10),
+                          Expanded(
+                            child: Text(
+                              isDoctor
+                                  ? 'Updates will be sent to ${widget.email}'
+                                  : 'A confirmation will be sent to ${widget.email}',
+                              style: const TextStyle(
+                                color: Color(0xFF3949AB),
+                                fontSize: 12,
+                                height: 1.35,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(height: 22),
+                    GestureDetector(
+                      onTap: () => Navigator.of(context).pop(),
+                      child: Container(
+                        width: double.infinity,
+                        height: 52,
+                        decoration: BoxDecoration(
+                          borderRadius: BorderRadius.circular(32),
+                          gradient: const LinearGradient(
+                            colors: [
+                              Color(0xFFF05261),
+                              Color(0xFFD94350),
+                            ],
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.18),
+                              blurRadius: 14,
+                              offset: const Offset(0, 8),
+                            ),
+                          ],
+                        ),
+                        child: const Center(
+                          child: Text(
+                            'Got it!',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 16,
+                              fontWeight: FontWeight.w900,
+                            ),
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      },
+      transitionBuilder: (context, animation, secondaryAnimation, child) {
+        final curved = CurvedAnimation(
+          parent: animation,
+          curve: Curves.easeOutBack,
+        );
+
+        return FadeTransition(
+          opacity: animation,
+          child: ScaleTransition(
+            scale: curved,
+            child: child,
+          ),
+        );
+      },
+    );
+  }
+
   Future<void> _submit() async {
     if (!_acceptedTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -118,15 +301,9 @@ class _SignupTermsConditionsWidgetState
 
       if (!mounted) return;
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(
-            widget.accountType == 'doctor'
-                ? 'Doctor registration submitted. Await admin approval.'
-                : 'Volunteer registration submitted successfully.',
-          ),
-        ),
-      );
+      await _showSuccessDialog();
+
+      if (!mounted) return;
 
       Navigator.pushAndRemoveUntil(
         context,

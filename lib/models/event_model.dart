@@ -4,6 +4,11 @@ class EventModel {
   final String description;
   final String location;
 
+  final double? latitude;
+  final double? longitude;
+  final String googleMapsUrl;
+
+
   final String operationDays;
   final String callTime;
   final String meetingPlace;
@@ -29,6 +34,9 @@ class EventModel {
     required this.title,
     required this.description,
     required this.location,
+      required this.latitude,
+  required this.longitude,
+  required this.googleMapsUrl,
     required this.operationDays,
     required this.callTime,
     required this.meetingPlace,
@@ -57,7 +65,28 @@ class EventModel {
       id: (json['_id'] ?? json['id'] ?? '').toString(),
       title: (json['title'] ?? '').toString(),
       description: (json['description'] ?? '').toString(),
+      
       location: (json['location'] ?? '').toString(),
+
+latitude: (json['latitude'] ?? json['lat']) is num
+    ? (json['latitude'] ?? json['lat']).toDouble()
+    : double.tryParse(
+        (json['latitude'] ?? json['lat'] ?? '').toString(),
+      ),
+
+longitude: (json['longitude'] ?? json['lng'] ?? json['longtitude']) is num
+    ? (json['longitude'] ?? json['lng'] ?? json['longtitude']).toDouble()
+    : double.tryParse(
+        (json['longitude'] ?? json['lng'] ?? json['longtitude'] ?? '').toString(),
+      ),
+
+      googleMapsUrl:
+    (json['googleMapsUrl'] ??
+            json['google_maps_url'] ??
+            '')
+        .toString(),
+
+
       operationDays:
           (json['operation_days'] ?? json['date'] ?? '').toString(),
       callTime:
@@ -154,37 +183,40 @@ class EventModel {
   // DEBUG ONLY — mock factory for UI testing
   // ─────────────────────────────────────────────
   factory EventModel.mock({
-    required String id,
-    required String title,
-    required String status,
-    required String type,
-    required String location,
-    required String date,
-    required String startTime,
-    required String endTime,
-    required String description,
-  }) {
-    return EventModel(
-      id: id,
-      title: title,
-      description: description,
-      location: location,
-      operationDays: date,
-      callTime: startTime,
-      meetingPlace: location,
-      date: date,
-      startTime: startTime,
-      endTime: endTime,
-      type: type,
-      imageUrl: '',
-      volunteers: const [],
-      participants: const [],
-      alreadyJoined: false,
-      joinStatus: 'None',
-      participantStatus: 'None',
-      status: status,
-      missionDate: date,
-      registrationOpen: true,
-    );
-  }
+  required String id,
+  required String title,
+  required String status,
+  required String type,
+  required String location,
+  required String date,
+  required String startTime,
+  required String endTime,
+  required String description,
+}) {
+  return EventModel(
+    id: id,
+    title: title,
+    description: description,
+    location: location,
+    latitude: null,
+    longitude: null,
+    googleMapsUrl: '',
+    operationDays: date,
+    callTime: startTime,
+    meetingPlace: location,
+    date: date,
+    startTime: startTime,
+    endTime: endTime,
+    type: type,
+    imageUrl: '',
+    volunteers: const [],
+    participants: const [],
+    alreadyJoined: false,
+    joinStatus: 'None',
+    participantStatus: 'None',
+    status: status,
+    missionDate: date,
+    registrationOpen: true,
+  );
+}
 }

@@ -29,9 +29,11 @@ dependencies:
   file_picker: ^10.3.3
 
   # Utilities
-  url_launcher: ^6.3.1
+  url_launcher: ^6.3.2
   intl: ^0.20.2
   app_links: ^7.0.0
+
+  maplibre_gl: ^0.21.0
 
 dev_dependencies:
   flutter_test:

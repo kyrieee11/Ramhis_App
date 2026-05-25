@@ -35,6 +35,7 @@ class _SignupAccountSecurityWidgetState
 
   bool _passwordVisible1 = false;
   bool _passwordVisible2 = false;
+  bool _useSamePassword = false;
 
   String get _accountName {
     if (widget.accountType == 'doctor') return 'Doctor Account';
@@ -45,9 +46,21 @@ class _SignupAccountSecurityWidgetState
   @override
   void initState() {
     super.initState();
-    _passwordController = TextEditingController(text: widget.password);
+
+    _passwordController =
+        TextEditingController(text: widget.password);
+
     _confirmPasswordController =
-        TextEditingController(text: widget.confirmPassword);
+        TextEditingController(
+      text: widget.confirmPassword,
+    );
+
+    _passwordController.addListener(() {
+      if (_useSamePassword) {
+        _confirmPasswordController.text =
+            _passwordController.text;
+      }
+    });
   }
 
   @override
@@ -73,12 +86,15 @@ class _SignupAccountSecurityWidgetState
 
   void _goNext() {
     final password = _passwordController.text.trim();
-    final confirmPassword = _confirmPasswordController.text.trim();
+    final confirmPassword =
+        _confirmPasswordController.text.trim();
 
     if (password.isEmpty || confirmPassword.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please complete both password fields.'),
+          content: Text(
+            'Please complete both password fields.',
+          ),
         ),
       );
       return;
@@ -87,7 +103,9 @@ class _SignupAccountSecurityWidgetState
     if (password.length < 8) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password must be at least 8 characters long.'),
+          content: Text(
+            'Password must be at least 8 characters long.',
+          ),
         ),
       );
       return;
@@ -96,7 +114,9 @@ class _SignupAccountSecurityWidgetState
     if (!RegExp(r'[A-Z]').hasMatch(password)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password must contain at least one uppercase letter'),
+          content: Text(
+            'Password must contain at least one uppercase letter',
+          ),
         ),
       );
       return;
@@ -105,7 +125,9 @@ class _SignupAccountSecurityWidgetState
     if (!RegExp(r'[a-z]').hasMatch(password)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password must contain at least one lowercase letter'),
+          content: Text(
+            'Password must contain at least one lowercase letter',
+          ),
         ),
       );
       return;
@@ -114,7 +136,9 @@ class _SignupAccountSecurityWidgetState
     if (!RegExp(r'[0-9]').hasMatch(password)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Password must contain at least one number'),
+          content: Text(
+            'Password must contain at least one number',
+          ),
         ),
       );
       return;
@@ -142,7 +166,8 @@ class _SignupAccountSecurityWidgetState
 
     Navigator.of(context).push(
       MaterialPageRoute(
-        builder: (_) => SignupProfessionalVerificationWidget(
+        builder: (_) =>
+            SignupProfessionalVerificationWidget(
           accountType: widget.accountType,
           fullName: widget.fullName,
           email: widget.email,
@@ -169,18 +194,25 @@ class _SignupAccountSecurityWidgetState
       totalSteps: 4,
       onBack: _goBack,
       child: Column(
-        crossAxisAlignment: CrossAxisAlignment.stretch,
+        crossAxisAlignment:
+            CrossAxisAlignment.stretch,
         children: [
           _buildLabel('Password'),
+
           _buildPasswordField(
             controller: _passwordController,
             hintText: 'Password',
             obscureText: !_passwordVisible1,
             onToggle: () {
-              setState(() => _passwordVisible1 = !_passwordVisible1);
+              setState(() {
+                _passwordVisible1 =
+                    !_passwordVisible1;
+              });
             },
           ),
+
           const SizedBox(height: 8),
+
           const Text(
             'Use at least 8 characters.',
             style: TextStyle(
@@ -188,22 +220,69 @@ class _SignupAccountSecurityWidgetState
               fontSize: 13,
             ),
           ),
-          const SizedBox(height: 24),
-          _buildLabel('Confirm password'),
-          _buildPasswordField(
-            controller: _confirmPasswordController,
-            hintText: 'Confirm password',
-            obscureText: !_passwordVisible2,
-            onToggle: () {
-              setState(() => _passwordVisible2 = !_passwordVisible2);
+
+          const SizedBox(height: 16),
+
+          CheckboxListTile(
+            value: _useSamePassword,
+            contentPadding: EdgeInsets.zero,
+            activeColor:
+                const Color(0xFF4267D6),
+            controlAffinity:
+                ListTileControlAffinity.leading,
+            title: const Text(
+              'Use same password for confirmation',
+              style: TextStyle(
+                color: Color(0xFF243B73),
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+            onChanged: (value) {
+              setState(() {
+                _useSamePassword =
+                    value ?? false;
+
+                if (_useSamePassword) {
+                  _confirmPasswordController
+                          .text =
+                      _passwordController.text;
+                } else {
+                  _confirmPasswordController
+                      .clear();
+                }
+              });
             },
           ),
+
+          const SizedBox(height: 12),
+
+          _buildLabel('Confirm password'),
+
+          _buildPasswordField(
+            controller:
+                _confirmPasswordController,
+            hintText: 'Confirm password',
+            enabled: !_useSamePassword,
+            obscureText: !_passwordVisible2,
+            onToggle: () {
+              setState(() {
+                _passwordVisible2 =
+                    !_passwordVisible2;
+              });
+            },
+          ),
+
           const SizedBox(height: 34),
+
           SizedBox(
             height: 58,
             child: ElevatedButton.icon(
               onPressed: _goNext,
-              icon: const Icon(Icons.navigate_next_rounded, size: 28),
+              icon: const Icon(
+                Icons.navigate_next_rounded,
+                size: 28,
+              ),
               label: const Text(
                 'Next',
                 style: TextStyle(
@@ -212,12 +291,14 @@ class _SignupAccountSecurityWidgetState
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF05261),
+                backgroundColor:
+                    const Color(0xFFF05261),
                 foregroundColor: Colors.white,
                 elevation: 10,
                 shadowColor: Colors.black26,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(32),
+                  borderRadius:
+                      BorderRadius.circular(32),
                 ),
               ),
             ),
@@ -229,7 +310,8 @@ class _SignupAccountSecurityWidgetState
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(left: 6, bottom: 8),
+      padding:
+          const EdgeInsets.only(left: 6, bottom: 8),
       child: Text(
         text,
         style: const TextStyle(
@@ -246,9 +328,11 @@ class _SignupAccountSecurityWidgetState
     required String hintText,
     required bool obscureText,
     required VoidCallback onToggle,
+    bool enabled = true,
   }) {
     return TextFormField(
       controller: controller,
+      enabled: enabled,
       obscureText: obscureText,
       style: const TextStyle(
         color: Color(0xFF334155),
@@ -257,7 +341,9 @@ class _SignupAccountSecurityWidgetState
       decoration: InputDecoration(
         hintText: hintText,
         filled: true,
-        fillColor: Colors.white,
+        fillColor: enabled
+            ? Colors.white
+            : Colors.grey.shade100,
         prefixIcon: const Icon(
           Icons.lock_outline_rounded,
           color: Color(0xFF4267D6),
@@ -270,16 +356,19 @@ class _SignupAccountSecurityWidgetState
                 : Icons.visibility_outlined,
           ),
         ),
-        contentPadding: const EdgeInsets.symmetric(
+        contentPadding:
+            const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 20,
         ),
         border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius:
+              BorderRadius.circular(18),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius:
+              BorderRadius.circular(18),
           borderSide: const BorderSide(
             color: Color(0xFF4267D6),
             width: 1.5,
@@ -326,90 +415,153 @@ class _SignupStepScaffold extends StatelessWidget {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
+              padding:
+                  const EdgeInsets.all(24),
               child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
+                constraints:
+                    const BoxConstraints(
+                  maxWidth: 430,
+                ),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  crossAxisAlignment:
+                      CrossAxisAlignment
+                          .stretch,
                   children: [
                     Align(
-                      alignment: Alignment.centerLeft,
+                      alignment:
+                          Alignment.centerLeft,
                       child: InkWell(
                         onTap: onBack,
-                        borderRadius: BorderRadius.circular(16),
+                        borderRadius:
+                            BorderRadius
+                                .circular(16),
                         child: Container(
                           width: 54,
                           height: 54,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(16),
+                          decoration:
+                              BoxDecoration(
+                            color: Colors.white
+                                .withValues(
+                              alpha: 0.9,
+                            ),
+                            borderRadius:
+                                BorderRadius
+                                    .circular(
+                              16,
+                            ),
                           ),
                           child: const Icon(
-                            Icons.arrow_back_rounded,
-                            color: Color(0xFF4267D6),
+                            Icons
+                                .arrow_back_rounded,
+                            color: Color(
+                              0xFF4267D6,
+                            ),
                           ),
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 30),
+
                     const Text(
                       'Create',
-                      textAlign: TextAlign.center,
+                      textAlign:
+                          TextAlign.center,
                       style: TextStyle(
-                        color: Color(0xFFEAF0FF),
+                        color:
+                            Color(0xFFEAF0FF),
                         fontSize: 30,
-                        fontWeight: FontWeight.w300,
+                        fontWeight:
+                            FontWeight.w300,
                       ),
                     ),
+
                     const SizedBox(height: 6),
+
                     Text(
                       accountName,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
+                      textAlign:
+                          TextAlign.center,
+                      style:
+                          const TextStyle(
                         color: Colors.white,
                         fontSize: 38,
-                        fontWeight: FontWeight.w900,
+                        fontWeight:
+                            FontWeight.w900,
                       ),
                     ),
+
                     const SizedBox(height: 34),
+
                     ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: LinearProgressIndicator(
+                      borderRadius:
+                          BorderRadius.circular(
+                        30,
+                      ),
+                      child:
+                          LinearProgressIndicator(
                         value: progress,
-                        color: const Color(0xFFF05261),
-                        backgroundColor: Colors.white24,
+                        color:
+                            const Color(
+                          0xFFF05261,
+                        ),
+                        backgroundColor:
+                            Colors.white24,
                         minHeight: 7,
                       ),
                     ),
+
                     const SizedBox(height: 18),
+
                     Row(
                       children: [
                         const CircleAvatar(
                           radius: 24,
-                          backgroundColor: Colors.white24,
+                          backgroundColor:
+                              Colors.white24,
                           child: Icon(
-                            Icons.lock_outline_rounded,
-                            color: Colors.white,
+                            Icons
+                                .lock_outline_rounded,
+                            color:
+                                Colors.white,
                           ),
                         ),
-                        const SizedBox(width: 12),
+
+                        const SizedBox(
+                            width: 12),
+
                         Text(
                           'Step $currentStep of $totalSteps\n$stepLabel',
-                          style: const TextStyle(
-                            color: Colors.white,
+                          style:
+                              const TextStyle(
+                            color:
+                                Colors.white,
                             height: 1.35,
-                            fontWeight: FontWeight.w600,
+                            fontWeight:
+                                FontWeight
+                                    .w600,
                           ),
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 22),
+
                     Container(
                       width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEAF4FF),
-                        borderRadius: BorderRadius.circular(30),
+                      padding:
+                          const EdgeInsets.all(
+                        20,
+                      ),
+                      decoration:
+                          BoxDecoration(
+                        color:
+                            const Color(
+                          0xFFEAF4FF,
+                        ),
+                        borderRadius:
+                            BorderRadius
+                                .circular(30),
                       ),
                       child: child,
                     ),

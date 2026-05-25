@@ -1,3 +1,5 @@
+import 'dart:async';
+import 'dart:io';
 
 import 'package:flutter/material.dart';
 
@@ -21,43 +23,274 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
   bool isLoading = false;
   bool obscurePassword = true;
 
+  String loadingText = 'Log in';
+
+  Timer? _loadingTimer10;
+  Timer? _loadingTimer30;
+
   @override
   void dispose() {
+    _loadingTimer10?.cancel();
+    _loadingTimer30?.cancel();
     emailController.dispose();
     passwordController.dispose();
     super.dispose();
+  }
+
+  void _startLoadingTimers() {
+    _loadingTimer10?.cancel();
+    _loadingTimer30?.cancel();
+
+    loadingText = 'Logging in...';
+
+    _loadingTimer10 = Timer(const Duration(seconds: 10), () {
+      if (!mounted || !isLoading) return;
+      setState(() {
+        loadingText = 'Connecting to server...';
+      });
+    });
+
+    _loadingTimer30 = Timer(const Duration(seconds: 30), () {
+      if (!mounted || !isLoading) return;
+      setState(() {
+        loadingText = 'Server is starting up, please wait...';
+      });
+    });
+  }
+
+  void _stopLoading() {
+    _loadingTimer10?.cancel();
+    _loadingTimer30?.cancel();
+
+    if (!mounted) return;
+
+    setState(() {
+      isLoading = false;
+      loadingText = 'Log in';
+    });
+  }
+
+  bool _isValidEmail(String email) {
+    return RegExp(r'^[^@]+@[^@]+\.[^@]+').hasMatch(email);
   }
 
   Future<void> _handleLogin() async {
     final String email = emailController.text.trim();
     final String password = passwordController.text;
 
-    if (email.isEmpty || password.isEmpty) {
-      _showSnackBar('Please enter your email and password.');
+    if (email.isEmpty) {
+      _showSnackBar('Please enter your email address.');
       return;
     }
 
-    setState(() => isLoading = true);
+    if (!_isValidEmail(email)) {
+      _showSnackBar('Please enter a valid email address.');
+      return;
+    }
+
+    if (password.isEmpty) {
+      _showSnackBar('Please enter your password.');
+      return;
+    }
+
+    if (password.length < 8) {
+      _showSnackBar('Password must be at least 8 characters.');
+      return;
+    }
+
+    setState(() {
+      isLoading = true;
+      loadingText = 'Logging in...';
+    });
+
+    _startLoadingTimers();
 
     try {
       final result = await AuthService.login(
         email: email,
         password: password,
-      );
+      ).timeout(const Duration(seconds: 60));
 
       if (!mounted) return;
 
       final bool loginSuccess =
           result['ok'] == true ||
           result['success'] == true ||
-          result['accessToken'] != null ||
-          result['access_token'] != null ||
           result['token'] != null ||
-          result['user'] != null;
+          result['accessToken'] != null ||
+          result['access_token'] != null;
 
-      if (!loginSuccess) {
-        setState(() => isLoading = false);
-        _showSnackBar((result['message'] ?? 'Login failed.').toString());
+      final String message = (result['msg'] ??
+              result['message'] ??
+              result['error'] ??
+              '')
+          .toString()
+          .toLowerCase();
+
+      final Map<String, dynamic>? user =
+          result['user'] is Map<String, dynamic>
+              ? Map<String, dynamic>.from(result['user'])
+              : AuthSession.currentUser;
+
+      final String role = (user?['role'] ??
+              user?['account_type'] ??
+              '')
+          .toString()
+          .toLowerCase();
+
+      final String status =
+          (user?['status'] ?? '').toString().toLowerCase();
+
+      final String verificationStatus =
+          (user?['verificationStatus'] ?? '')
+              .toString()
+              .toLowerCase();
+
+      final bool mustChangePassword =
+          user?['mustChangePassword'] == true;
+
+      if (!loginSuccess &&
+          (message.contains('invalid') ||
+              message.contains('credentials') ||
+              message.contains('wrong') ||
+              message.contains('incorrect') ||
+              message.contains('not found'))) {
+        _stopLoading();
+        passwordController.clear();
+
+        _showSnackBar(
+          'Incorrect email or password. Please try again.',
+        );
+        return;
+      }
+
+      if (!loginSuccess &&
+          (message.contains('no account') ||
+              message.contains('not registered') ||
+              message.contains('does not exist'))) {
+        _stopLoading();
+
+        _showAuthDialog(
+          title: 'Account Not Found',
+          icon: Icons.person_off,
+          iconColor: Colors.grey,
+          message:
+              'No mobile account found with this email.\n\nPlease sign up first to create a mobile account.',
+          buttonText: 'Try Again',
+          secondButtonText: 'Sign Up',
+          onSecondPressed: () {
+            Navigator.pop(context);
+            Navigator.push(
+              context,
+              MaterialPageRoute(
+                builder: (_) => const WelcomeScreenWidget(),
+              ),
+            );
+          },
+        );
+        return;
+      }
+
+      if ((!loginSuccess &&
+              (message.contains('pending') ||
+                  message.contains('approval'))) ||
+          verificationStatus == 'pending' ||
+          status == 'pending') {
+        _stopLoading();
+
+        _showAuthDialog(
+          title: 'Awaiting Approval',
+          icon: Icons.hourglass_top_rounded,
+          iconColor: Colors.orange,
+          message:
+              'Your account has been submitted and is waiting for admin approval.\n\nYou will be able to log in once an admin approves your account.\n\nPlease check back later.',
+        );
+        return;
+      }
+
+      if (verificationStatus == 'rejected' ||
+          status == 'rejected') {
+        _stopLoading();
+
+        _showAuthDialog(
+          title: 'Account Not Approved',
+          icon: Icons.cancel_rounded,
+          iconColor: Colors.red,
+          message:
+              'Your registration was not approved by the admin.\n\nPlease contact the RAMHIS administrator for more information or sign up again with correct information.',
+        );
+        return;
+      }
+
+      if (verificationStatus == 'deactivated' ||
+          status == 'deactivated' ||
+          status == 'suspended' ||
+          message.contains('deactivated') ||
+          message.contains('suspended')) {
+        _stopLoading();
+
+        _showAuthDialog(
+          title: 'Account Deactivated',
+          icon: Icons.block_rounded,
+          iconColor: Colors.red,
+          message:
+              'Your account has been deactivated by the administrator.\n\nPlease contact the RAMHIS admin to restore your account.',
+        );
+        return;
+      }
+
+      if (loginSuccess &&
+          (role == 'admin' || role == 'pharmacist')) {
+        await AuthSession.clearSession();
+
+        _stopLoading();
+
+        _showAuthDialog(
+          title: 'Wrong Platform',
+          icon: Icons.computer,
+          iconColor: Colors.blue,
+          message:
+              'This account type is not supported on the mobile app.\n\nPlease use the RAMHIS web dashboard to access your account:\n\nramhis-v2-1.onrender.com',
+        );
+        return;
+      }
+
+      final bool allowedMobileRole =
+          role == 'doctor' || role == 'volunteer';
+
+      if (!loginSuccess || user == null) {
+        _stopLoading();
+
+        _showSnackBar(
+          message.isNotEmpty
+              ? message
+              : 'Login failed. Please try again.',
+        );
+        return;
+      }
+
+      if (!allowedMobileRole) {
+        await AuthSession.clearSession();
+
+        _stopLoading();
+
+        _showAuthDialog(
+          title: 'Wrong Platform',
+          icon: Icons.computer,
+          iconColor: Colors.blue,
+          message:
+              'This account type is not supported on the mobile app.\n\nPlease use the RAMHIS web dashboard to access your account.',
+        );
+        return;
+      }
+
+      if (mustChangePassword) {
+        _stopLoading();
+
+        _showSnackBar(
+          'Please set a new password to continue.',
+        );
+
         return;
       }
 
@@ -67,45 +300,12 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
         debugPrint('fetchMe error: $e');
       }
 
-      final Map<String, dynamic>? user =
-          AuthSession.currentUser ??
-          (result['user'] is Map<String, dynamic>
-              ? Map<String, dynamic>.from(result['user'])
-              : null);
+      _stopLoading();
 
-      if (user == null) {
-        setState(() => isLoading = false);
-        _showSnackBar('Failed to load user session.');
-        return;
-      }
+      final String name =
+          (user['name'] ?? user['full_name'] ?? 'User').toString();
 
-      final String role =
-          (user['role'] ?? user['account_type'] ?? '')
-              .toString()
-              .toLowerCase();
-
-      final String status =
-          (user['status'] ?? 'active')
-              .toString()
-              .toLowerCase();
-
-      setState(() => isLoading = false);
-
-      if (status == 'pending') {
-        _showSnackBar('Your account is pending admin approval.');
-        return;
-      }
-
-      if (status == 'suspended') {
-        _showSnackBar('Your account is suspended. Please contact support.');
-        return;
-      }
-
-      if (role == 'admin') {
-        await AuthSession.clearSession();
-        _showSnackBar('Admin accounts must use the web dashboard.');
-        return;
-      }
+      _showSnackBar('Welcome back, $name! 👋');
 
       if (!mounted) return;
 
@@ -114,27 +314,165 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
           builder: (_) => const HomeScreen(),
         ),
       );
+    } on TimeoutException {
+      _stopLoading();
+
+      _showSnackBar(
+        'Connection timed out. Server may be starting up. Please try again.',
+      );
+    } on SocketException {
+      _stopLoading();
+
+      _showSnackBar(
+        'No internet connection. Please check your network and try again.',
+      );
     } catch (e) {
       if (!mounted) return;
 
-      setState(() => isLoading = false);
-
       debugPrint('Login error: $e');
 
-      _showSnackBar('Connection error. Please try again.');
+      final String errorMessage =
+          e.toString().replaceFirst('Exception: ', '').toLowerCase();
+
+      _stopLoading();
+
+      if (errorMessage.contains('invalid') ||
+          errorMessage.contains('credentials') ||
+          errorMessage.contains('wrong') ||
+          errorMessage.contains('incorrect') ||
+          errorMessage.contains('not found')) {
+        passwordController.clear();
+
+        _showSnackBar(
+          'Incorrect email or password. Please try again.',
+        );
+        return;
+      }
+
+      if (errorMessage.contains('pending') ||
+          errorMessage.contains('approval') ||
+          errorMessage.contains('awaiting')) {
+        _showAuthDialog(
+          title: 'Awaiting Approval',
+          icon: Icons.hourglass_top_rounded,
+          iconColor: Colors.orange,
+          message:
+              'Your account has been submitted and is waiting for admin approval.\n\nYou will be able to log in once an admin approves your account.\n\nPlease check back later.',
+        );
+        return;
+      }
+
+      if (errorMessage.contains('deactivated') ||
+          errorMessage.contains('suspended')) {
+        _showAuthDialog(
+          title: 'Account Deactivated',
+          icon: Icons.block_rounded,
+          iconColor: Colors.red,
+          message:
+              'Your account has been deactivated by the administrator.\n\nPlease contact the RAMHIS admin to restore your account.',
+        );
+        return;
+      }
+
+      _showSnackBar(
+        'Unable to reach server. Please try again in a moment.',
+      );
     }
   }
-
-  
-      
-
-      
 
   void _showSnackBar(String message) {
     if (!mounted) return;
 
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message)),
+    );
+  }
+
+  void _showAuthDialog({
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required String message,
+    String buttonText = 'OK',
+    VoidCallback? onPressed,
+    String? secondButtonText,
+    VoidCallback? onSecondPressed,
+  }) {
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (_) {
+        return AlertDialog(
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
+          contentPadding: const EdgeInsets.all(24),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(
+                icon,
+                size: 48,
+                color: iconColor,
+              ),
+              const SizedBox(height: 18),
+              Text(
+                title,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 20,
+                  fontWeight: FontWeight.bold,
+                  color: Color(0xFF1B2559),
+                ),
+              ),
+              const SizedBox(height: 14),
+              Text(
+                message,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  fontSize: 14,
+                  height: 1.5,
+                  color: Color(0xFF7B8BB2),
+                ),
+              ),
+              const SizedBox(height: 24),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  if (secondButtonText != null) ...[
+                    TextButton(
+                      onPressed: onSecondPressed ??
+                          () => Navigator.pop(context),
+                      child: Text(
+                        secondButtonText,
+                        style: const TextStyle(
+                          color: Color(0xFF3949AB),
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                  ],
+                  ElevatedButton(
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: const Color(0xFF3949AB),
+                      foregroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    onPressed:
+                        onPressed ?? () => Navigator.pop(context),
+                    child: Text(buttonText),
+                  ),
+                ],
+              ),
+            ],
+          ),
+        );
+      },
     );
   }
 
@@ -174,8 +512,8 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                       vertical: isMobile ? 34 : 40,
                     ),
                     decoration: BoxDecoration(
-                      color: const Color(0xFF4167D4)
-                          .withValues(alpha: 0.88),
+                      color:
+                          const Color(0xFF4167D4).withValues(alpha: 0.88),
                       borderRadius: BorderRadius.circular(38),
                       border: Border.all(
                         color: Colors.white.withValues(alpha: 0.18),
@@ -192,9 +530,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                     child: Column(
                       children: [
                         _buildLogo(),
-
                         const SizedBox(height: 26),
-
                         const Text(
                           'Log in',
                           style: TextStyle(
@@ -204,13 +540,9 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                             letterSpacing: 0.2,
                           ),
                         ),
-
                         const SizedBox(height: 26),
-
                         _buildLabel('Email'),
-
                         const SizedBox(height: 8),
-
                         TextFormField(
                           controller: emailController,
                           keyboardType: TextInputType.emailAddress,
@@ -223,13 +555,9 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                             prefixIcon: Icons.email_outlined,
                           ),
                         ),
-
                         const SizedBox(height: 18),
-
                         _buildLabel('Password'),
-
                         const SizedBox(height: 8),
-
                         TextFormField(
                           controller: passwordController,
                           obscureText: obscurePassword,
@@ -256,9 +584,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 8),
-
                         Align(
                           alignment: Alignment.centerRight,
                           child: TextButton(
@@ -283,16 +609,12 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                             ),
                           ),
                         ),
-
                         const SizedBox(height: 22),
-
                         SizedBox(
                           width: double.infinity,
                           height: 58,
                           child: ElevatedButton.icon(
-                            onPressed: isLoading
-                                ? null
-                                : _handleLogin,
+                            onPressed: isLoading ? null : _handleLogin,
                             icon: isLoading
                                 ? const SizedBox(
                                     width: 18,
@@ -307,9 +629,8 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                                     size: 24,
                                   ),
                             label: Text(
-                              isLoading
-                                  ? 'Loading...'
-                                  : 'Log in',
+                              isLoading ? loadingText : 'Log in',
+                              textAlign: TextAlign.center,
                               style: const TextStyle(
                                 fontSize: 20,
                                 fontWeight: FontWeight.w800,
@@ -326,16 +647,13 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                             ),
                           ),
                         ),
-
-                        
-
                         const SizedBox(height: 26),
-
                         Row(
                           children: [
                             Expanded(
                               child: Divider(
-                                color: Colors.white.withValues(alpha: 0.35),
+                                color:
+                                    Colors.white.withValues(alpha: 0.35),
                                 thickness: 1,
                               ),
                             ),
@@ -356,15 +674,14 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                             ),
                             Expanded(
                               child: Divider(
-                                color: Colors.white.withValues(alpha: 0.35),
+                                color:
+                                    Colors.white.withValues(alpha: 0.35),
                                 thickness: 1,
                               ),
                             ),
                           ],
                         ),
-
                         const SizedBox(height: 22),
-
                         const Text(
                           'Don’t have an account?',
                           style: TextStyle(
@@ -373,9 +690,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                             fontWeight: FontWeight.w700,
                           ),
                         ),
-
                         const SizedBox(height: 14),
-
                         SizedBox(
                           width: 210,
                           height: 48,

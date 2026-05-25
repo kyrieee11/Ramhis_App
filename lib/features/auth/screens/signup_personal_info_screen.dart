@@ -77,41 +77,132 @@ class _SignupPersonalInformationWidgetState
     return RegExp(r'^[^@\s]+@[^@\s]+\.[^@\s]+$').hasMatch(email);
   }
 
-  void _goNext() {
-    final fullName = _fullNameController.text.trim();
-    final email = _emailController.text.trim().toLowerCase();
-    final contact = _contactController.text.trim();
-    final birthdate = _birthdateController.text.trim();
+ void _goNext() {
+  final fullName =
+      _fullNameController.text.trim();
 
-    if (fullName.isEmpty ||
-        email.isEmpty ||
-        contact.isEmpty ||
-        birthdate.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please complete all fields.')),
-      );
-      return;
-    }
+  final email =
+      _emailController.text.trim().toLowerCase();
 
-    if (!_isValidEmail(email)) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter a valid email address.')),
-      );
-      return;
-    }
+  final contact =
+      _contactController.text.trim();
 
-    Navigator.of(context).push(
-      MaterialPageRoute(
-        builder: (_) => SignupAccountSecurityWidget(
-          accountType: widget.accountType,
-          fullName: fullName,
-          email: email,
-          contactNumber: contact,
-          birthdate: birthdate,
+  final birthdate =
+      _birthdateController.text.trim();
+
+  // ───────────────── FULL NAME ─────────────────
+
+  if (fullName.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Please enter your full name.',
         ),
       ),
     );
+    return;
   }
+
+  if (fullName.length < 3) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Full name must be at least 3 characters.',
+        ),
+      ),
+    );
+    return;
+  }
+
+  if (!RegExp(r"^[a-zA-Z\s.'-]+$")
+      .hasMatch(fullName)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Full name must contain letters only.',
+        ),
+      ),
+    );
+    return;
+  }
+
+  // ───────────────── EMAIL ─────────────────
+
+  if (email.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Please enter your email address.',
+        ),
+      ),
+    );
+    return;
+  }
+
+  if (!_isValidEmail(email)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Please enter a valid email address.',
+        ),
+      ),
+    );
+    return;
+  }
+
+  // ───────────────── CONTACT ─────────────────
+
+  if (contact.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Please enter your contact number.',
+        ),
+      ),
+    );
+    return;
+  }
+
+  if (!RegExp(r'^(09|\+639)\d{9}$')
+      .hasMatch(contact)) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Please enter a valid PH mobile number (e.g. 09123456789).',
+        ),
+      ),
+    );
+    return;
+  }
+
+  // ───────────────── BIRTHDATE ─────────────────
+
+  if (birthdate.isEmpty) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text(
+          'Please select your birthdate.',
+        ),
+      ),
+    );
+    return;
+  }
+
+  // ───────────────── SUCCESS ─────────────────
+
+  Navigator.of(context).push(
+    MaterialPageRoute(
+      builder: (_) =>
+          SignupAccountSecurityWidget(
+        accountType: widget.accountType,
+        fullName: fullName,
+        email: email,
+        contactNumber: contact,
+        birthdate: birthdate,
+      ),
+    ),
+  );
+}
 
   @override
   Widget build(BuildContext context) {

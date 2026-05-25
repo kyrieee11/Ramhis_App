@@ -715,10 +715,16 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
 
   Widget _buildUserResults() {
     if (isSearchingUsers) {
-      return Container(
-        margin: const EdgeInsets.symmetric(horizontal: 16),
-        padding: const EdgeInsets.symmetric(vertical: 18),
-        decoration: BoxDecoration(
+  return Container(
+    margin: const EdgeInsets.symmetric(horizontal: 16),
+
+    constraints: const BoxConstraints(
+      maxHeight: 320,
+    ),
+
+    padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+
+    decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(22),
           boxShadow: [
@@ -780,6 +786,9 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
+       constraints: const BoxConstraints(
+    maxHeight: 320,
+  ),
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -808,6 +817,7 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
             ),
           ),
           ...searchUsers.map((user) {
+            
             final fullName = (user['full_name'] ?? user['name'] ?? 'User')
                 .toString();
             final accountType = (user['account_type'] ?? user['role'] ?? 'User')

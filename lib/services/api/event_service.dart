@@ -3,13 +3,13 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 
+
 import '../../core/app_config.dart';
 import '../../core/session_manager.dart';
 import '../../models/event_model.dart';
 
 class EventService {
-  static const String baseUrl = AppConfig.baseUrl;
-
+static const String apiUrl = AppConfig.baseUrl;
   static Map<String, dynamic> _decodeObject(http.Response response) {
     if (response.body.isEmpty) return {};
 
@@ -96,13 +96,20 @@ class EventService {
     final response = await _withRefresh(() {
       return http
           .get(
-            Uri.parse('$baseUrl/events'),
+            Uri.parse('$apiUrl/events'),
             headers: AuthSession.headers(),
           )
           .timeout(
             const Duration(seconds: 60),
           );
     });
+    
+
+print('GET EVENTS URL: $apiUrl/events');
+print('GET EVENTS STATUS: ${response.statusCode}');
+print('GET EVENTS BODY: ${response.body}');
+
+
 
     _throwIfFailed(response, 'Failed to fetch events.');
 
@@ -123,7 +130,7 @@ class EventService {
     final response = await _withRefresh(() {
       return http
           .get(
-            Uri.parse('$baseUrl/events/$eventId'),
+            Uri.parse('$apiUrl/events/$eventId'),
             headers: AuthSession.headers(),
           )
           .timeout(
@@ -154,7 +161,7 @@ class EventService {
     final response = await _withRefresh(() {
       return http
           .post(
-            Uri.parse('$baseUrl/events/$eventId/join'),
+            Uri.parse('$apiUrl/events/$eventId/join'),
             headers: AuthSession.headers(),
           )
           .timeout(
@@ -182,7 +189,7 @@ print('JOIN BODY: ${response.body}');
     final response = await _withRefresh(() {
       return http
           .post(
-            Uri.parse('$baseUrl/events/$eventId/leave'),
+            Uri.parse('$apiUrl/events/$eventId/leave'),
             headers: AuthSession.headers(),
           )
           .timeout(
