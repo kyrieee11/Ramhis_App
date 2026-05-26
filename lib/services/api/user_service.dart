@@ -26,27 +26,50 @@ class UserService {
   }
 
   // PUT /me/change-password
-  static Future<Map<String, dynamic>> changePassword({
-    required String currentPassword,
-    required String newPassword,
-  }) async {
-    final response = await http.put(
-      Uri.parse('$baseUrl/me/change-password'),
-      headers: AuthSession.headers(),
-      body: jsonEncode({
-        'currentPassword': currentPassword,
-        'newPassword': newPassword,
-      }),
-    );
+  // PUT /api/users/change-password
+// PUT /api/users/change-password
+static Future<Map<String, dynamic>> changePassword({
+  required String currentPassword,
+  required String newPassword,
+}) async {
+  final base = AppConfig.baseUrl.replaceAll(RegExp(r'/+$'), '');
+  final apiBase = base.endsWith('/api') ? base : '$base/api';
 
-    final data = jsonDecode(response.body);
+  final response = await http
+      .put(
+        Uri.parse('$apiBase/users/change-password'),
+        headers: {
+          ...AuthSession.headers(),
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'currentPassword': currentPassword,
+          'newPassword': newPassword,
+        }),
+      )
+      .timeout(const Duration(seconds: 60));
 
-    if (response.statusCode != 200) {
-      throw Exception(data['message'] ?? 'Failed to change password.');
-    }
+  print('CHANGE PASSWORD URL: ${response.request?.url}');
+  print('CHANGE PASSWORD STATUS: ${response.statusCode}');
+  print('CHANGE PASSWORD BODY: ${response.body}');
 
+  final body = response.body.trim();
+
+  final data = body.isNotEmpty && body.startsWith('{')
+      ? jsonDecode(body) as Map<String, dynamic>
+      : <String, dynamic>{};
+
+  if (response.statusCode >= 200 && response.statusCode < 300) {
     return data;
   }
+
+  throw Exception(
+    (data['message'] ??
+            data['error'] ??
+            'Failed to change password.')
+        .toString(),
+  );
+}
 
   // GET /users
   static Future<List<dynamic>> getUsers() async {

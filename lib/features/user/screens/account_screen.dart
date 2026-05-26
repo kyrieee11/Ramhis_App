@@ -36,110 +36,181 @@ class _AccountWidgetState extends State<AccountWidget> {
   @override
   void initState() {
     super.initState();
-
     _loadProfile();
   }
 
   Future<void> _loadProfile() async {
-  if (!mounted) return;
+    if (!mounted) return;
 
-  setState(() => isLoading = true);
+    setState(() => isLoading = true);
 
-  try {
-    final userData = await AuthService.fetchMe();
+    try {
+      final userData = await AuthService.fetchMe();
 
-    final Map<String, dynamic> resolvedUserData =
-        userData['user'] is Map<String, dynamic>
-            ? Map<String, dynamic>.from(userData['user'])
-            : userData['data'] is Map<String, dynamic>
-                ? Map<String, dynamic>.from(userData['data'])
-                : Map<String, dynamic>.from(userData);
+      final Map<String, dynamic> resolvedUserData =
+          userData['user'] is Map<String, dynamic>
+              ? Map<String, dynamic>.from(userData['user'])
+              : userData['data'] is Map<String, dynamic>
+                  ? Map<String, dynamic>.from(userData['data'])
+                  : Map<String, dynamic>.from(userData);
 
-    final UserModel user = UserModel.fromJson(resolvedUserData);
+      final UserModel user = UserModel.fromJson(resolvedUserData);
 
-    currentUser = user;
+      currentUser = user;
 
-    fullName = user.fullName.isNotEmpty
-    ? user.fullName
-    : _resolveFullName(resolvedUserData);
+      fullName = user.fullName.isNotEmpty
+          ? user.fullName
+          : _resolveFullName(resolvedUserData);
 
-email = user.email.isNotEmpty
-    ? user.email
-    : _readString(resolvedUserData, ['email']);
+      email = user.email.isNotEmpty
+          ? user.email
+          : _readString(resolvedUserData, ['email']);
 
-accountType = user.accountType.isNotEmpty
-    ? _capitalize(user.accountType)
-    : _resolveAccountType(resolvedUserData);
-  } catch (error) {
-    debugPrint('❌ Failed to load profile: $error');
+      accountType = user.accountType.isNotEmpty
+          ? _capitalize(user.accountType)
+          : _resolveAccountType(resolvedUserData);
+    } catch (error) {
+      debugPrint('❌ Failed to load profile: $error');
 
+      final sessionUser = AuthSession.currentUser;
+
+      if (sessionUser != null) {
+        fullName = _resolveFullName(sessionUser);
+        email = _readString(sessionUser, ['email']);
+        accountType = _resolveAccountType(sessionUser);
+      }
+    }
+
+    if (!mounted) return;
+
+    setState(() => isLoading = false);
+  }
+
+  Future<void> _openUserInformation() async {
     final sessionUser = AuthSession.currentUser;
 
-    if (sessionUser != null) {
-  fullName = _resolveFullName(sessionUser);
-  email = _readString(sessionUser, ['email']);
-  accountType = _resolveAccountType(sessionUser);
-}
-  }
+    final String userId = currentUser?.id.isNotEmpty == true
+        ? currentUser!.id
+        : (sessionUser?['_id'] ?? sessionUser?['id'] ?? '').toString();
 
-  if (!mounted) return;
+    if (userId.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text(
+              'User profile is not ready. Please refresh and try again.'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+      return;
+    }
 
-  setState(() => isLoading = false);
-}
-
- Future<void> _openUserInformation() async {
-  final sessionUser = AuthSession.currentUser;
-
-  final String userId = currentUser?.id.isNotEmpty == true
-      ? currentUser!.id
-      : (sessionUser?['_id'] ?? sessionUser?['id'] ?? '').toString();
-
-  if (userId.isEmpty) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('User profile is not ready. Please refresh and try again.'),
-        behavior: SnackBarBehavior.floating,
+    final updatedUser = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => AccUsernameWidget(
+          userData: {
+            '_id': userId,
+            'id': userId,
+            'full_name': currentUser?.fullName.isNotEmpty == true
+                ? currentUser!.fullName
+                : (sessionUser?['full_name'] ??
+                        sessionUser?['fullName'] ??
+                        sessionUser?['name'] ??
+                        fullName)
+                    .toString(),
+            'fullName': currentUser?.fullName.isNotEmpty == true
+                ? currentUser!.fullName
+                : (sessionUser?['fullName'] ??
+                        sessionUser?['full_name'] ??
+                        sessionUser?['name'] ??
+                        fullName)
+                    .toString(),
+            'name': currentUser?.fullName.isNotEmpty == true
+                ? currentUser!.fullName
+                : (sessionUser?['name'] ??
+                        sessionUser?['full_name'] ??
+                        sessionUser?['fullName'] ??
+                        fullName)
+                    .toString(),
+            'email': currentUser?.email.isNotEmpty == true
+                ? currentUser!.email
+                : (sessionUser?['email'] ?? email).toString(),
+            'contact_number': currentUser?.contactNumber.isNotEmpty == true
+                ? currentUser!.contactNumber
+                : (sessionUser?['contact_number'] ??
+                        sessionUser?['contactNumber'] ??
+                        sessionUser?['phone'] ??
+                        sessionUser?['phoneNumber'] ??
+                        '')
+                    .toString(),
+            'contactNumber': currentUser?.contactNumber.isNotEmpty == true
+                ? currentUser!.contactNumber
+                : (sessionUser?['contactNumber'] ??
+                        sessionUser?['contact_number'] ??
+                        sessionUser?['phone'] ??
+                        sessionUser?['phoneNumber'] ??
+                        '')
+                    .toString(),
+            'birthDate': currentUser?.birthdate.isNotEmpty == true
+                ? currentUser!.birthdate
+                : (sessionUser?['birthDate'] ??
+                        sessionUser?['birthdate'] ??
+                        sessionUser?['birthday'] ??
+                        sessionUser?['bdate'] ??
+                        '')
+                    .toString(),
+            'birthday': currentUser?.birthdate.isNotEmpty == true
+                ? currentUser!.birthdate
+                : (sessionUser?['birthday'] ??
+                        sessionUser?['birthdate'] ??
+                        sessionUser?['birthDate'] ??
+                        sessionUser?['bdate'] ??
+                        '')
+                    .toString(),
+            'bdate': currentUser?.birthdate.isNotEmpty == true
+                ? currentUser!.birthdate
+                : (sessionUser?['bdate'] ??
+                        sessionUser?['birthdate'] ??
+                        sessionUser?['birthDate'] ??
+                        sessionUser?['birthday'] ??
+                        '')
+                    .toString(),
+            'profile_image_url':
+                currentUser?.profileImageUrl.isNotEmpty == true
+                    ? currentUser!.profileImageUrl
+                    : (sessionUser?['profile_image_url'] ??
+                            sessionUser?['profileImageUrl'] ??
+                            sessionUser?['profileImage'] ??
+                            '')
+                        .toString(),
+          },
+        ),
       ),
     );
-    return;
+
+    if (updatedUser is Map) {
+      final syncedUser = Map<String, dynamic>.from(updatedUser);
+
+      await AuthSession.updateCurrentUser(syncedUser);
+
+      if (!mounted) return;
+
+      setState(() {
+        currentUser = UserModel.fromJson(syncedUser);
+        fullName = _resolveFullName(syncedUser);
+        email = _readString(syncedUser, ['email']);
+        accountType = _resolveAccountType(syncedUser);
+      });
+    }
+
+    await _loadProfile();
   }
-
-  await Navigator.push(
-    context,
-    MaterialPageRoute(
-      builder: (_) => AccUsernameWidget(
-        userData: {
-          '_id': userId,
-          'full_name': currentUser?.fullName.isNotEmpty == true
-              ? currentUser!.fullName
-              : (sessionUser?['full_name'] ?? fullName).toString(),
-          'email': currentUser?.email.isNotEmpty == true
-              ? currentUser!.email
-              : (sessionUser?['email'] ?? email).toString(),
-          'contact_number': currentUser?.contactNumber.isNotEmpty == true
-              ? currentUser!.contactNumber
-              : (sessionUser?['contact_number'] ?? '').toString(),
-          'birthdate': currentUser?.birthdate.isNotEmpty == true
-              ? currentUser!.birthdate
-              : (sessionUser?['birthdate'] ?? '').toString(),
-          'profile_image_url': currentUser?.profileImageUrl.isNotEmpty == true
-              ? currentUser!.profileImageUrl
-              : (sessionUser?['profile_image_url'] ?? '').toString(),
-        },
-      ),
-    ),
-  );
-
-  await _loadProfile();
-}
 
   Future<void> _logout() async {
     try {
       await AuthService.logout();
     } catch (error) {
-      debugPrint(
-        '❌ Logout error: $error',
-      );
+      debugPrint('❌ Logout error: $error');
     }
 
     if (!mounted) return;
@@ -154,134 +225,71 @@ accountType = user.accountType.isNotEmpty
   }
 
   String _capitalize(String value) {
-    if (value.isEmpty) {
-      return value;
-    }
-
+    if (value.isEmpty) return value;
     return value[0].toUpperCase() + value.substring(1);
   }
 
   String _readString(
-  Map<String, dynamic>? data,
-  List<String> keys, [
-  String fallback = '',
-]) {
-  if (data == null) return fallback;
-
-  for (final key in keys) {
-    final value = data[key];
-
-    if (value != null && value.toString().trim().isNotEmpty) {
-      return value.toString().trim();
+    Map<String, dynamic>? data,
+    List<String> keys, [
+    String fallback = '',
+  ]) {
+    if (data == null) return fallback;
+    for (final key in keys) {
+      final value = data[key];
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
     }
+    return fallback;
   }
 
-  return fallback;
-}
+  String _resolveFullName(Map<String, dynamic>? data) {
+    final direct = _readString(data, ['full_name', 'name', 'fullName']);
+    if (direct.isNotEmpty) return direct;
+    final firstName = _readString(data, ['first_name', 'firstName']);
+    final lastName = _readString(data, ['last_name', 'lastName']);
+    final combined = '$firstName $lastName'.trim();
+    return combined.isEmpty ? 'User' : combined;
+  }
 
-String _resolveFullName(Map<String, dynamic>? data) {
-  final direct = _readString(data, [
-    'full_name',
-    'name',
-    'fullName',
-  ]);
+  String _resolveAccountType(Map<String, dynamic>? data) {
+    final value = _readString(
+        data, ['account_type', 'role', 'accountType'], 'Volunteer');
+    return _capitalize(value);
+  }
 
-  if (direct.isNotEmpty) return direct;
-
-  final firstName = _readString(data, ['first_name', 'firstName']);
-  final lastName = _readString(data, ['last_name', 'lastName']);
-
-  final combined = '$firstName $lastName'.trim();
-
-  return combined.isEmpty ? 'User' : combined;
-}
-
-String _resolveAccountType(Map<String, dynamic>? data) {
-  final value = _readString(data, [
-    'account_type',
-    'role',
-    'accountType',
-  ], 'Volunteer');
-
-  return _capitalize(value);
-}
-
-  String _resolveProfileImageUrl(
-    String imageUrl,
-  ) {
-    if (imageUrl.isEmpty) {
-      return '';
-    }
-
-    if (imageUrl.startsWith(
-          'http://',
-        ) ||
-        imageUrl.startsWith(
-          'https://',
-        )) {
+  String _resolveProfileImageUrl(String imageUrl) {
+    if (imageUrl.isEmpty) return '';
+    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
       return imageUrl;
     }
-
     return '${AppConfig.productionUrl}$imageUrl';
   }
 
   Color _roleColor(String role) {
     final normalized = role.toLowerCase();
-
-    if (normalized.contains('doctor')) {
-      return const Color(0xFF1976D2);
-    }
-
-    if (normalized.contains('volunteer')) {
-      return const Color(0xFF388E3C);
-    }
-
-    if (normalized.contains('pharmacist')) {
-      return const Color(0xFF7B1FA2);
-    }
-
-    if (normalized.contains('admin')) {
-      return const Color(0xFFD32F2F);
-    }
-
+    if (normalized.contains('doctor')) return const Color(0xFF1976D2);
+    if (normalized.contains('volunteer')) return const Color(0xFF388E3C);
+    if (normalized.contains('pharmacist')) return const Color(0xFF7B1FA2);
+    if (normalized.contains('admin')) return const Color(0xFFD32F2F);
     return const Color(0xFF3949AB);
   }
 
   Color _avatarFallbackColor(String name) {
     final first = name.trim().isEmpty ? 'A' : name.trim()[0].toUpperCase();
-
-    if ('ABCDE'.contains(first)) {
-      return const Color(0xFFF44336);
-    }
-
-    if ('FGHIJ'.contains(first)) {
-      return const Color(0xFF9C27B0);
-    }
-
-    if ('KLMNO'.contains(first)) {
-      return const Color(0xFF2196F3);
-    }
-
-    if ('PQRST'.contains(first)) {
-      return const Color(0xFF4CAF50);
-    }
-
+    if ('ABCDE'.contains(first)) return const Color(0xFFF44336);
+    if ('FGHIJ'.contains(first)) return const Color(0xFF9C27B0);
+    if ('KLMNO'.contains(first)) return const Color(0xFF2196F3);
+    if ('PQRST'.contains(first)) return const Color(0xFF4CAF50);
     return const Color(0xFFFF9800);
   }
 
   String _initials(String value) {
     final clean = value.trim();
-
-    if (clean.isEmpty) {
-      return 'U';
-    }
-
+    if (clean.isEmpty) return 'U';
     final parts = clean.split(RegExp(r'\s+'));
-
-    if (parts.length == 1) {
-      return parts.first.substring(0, 1).toUpperCase();
-    }
-
+    if (parts.length == 1) return parts.first.substring(0, 1).toUpperCase();
     return '${parts.first.substring(0, 1)}${parts.last.substring(0, 1)}'
         .toUpperCase();
   }
@@ -293,15 +301,10 @@ String _resolveAccountType(Map<String, dynamic>? data) {
       return Container(
         decoration: BoxDecoration(
           shape: BoxShape.circle,
-          border: Border.all(
-            color: Colors.white,
-            width: 4,
-          ),
+          border: Border.all(color: Colors.white, width: 4),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(
-                alpha: 0.12,
-              ),
+              color: Colors.black.withValues(alpha: 0.12),
               blurRadius: 16,
               offset: const Offset(0, 6),
             ),
@@ -310,11 +313,8 @@ String _resolveAccountType(Map<String, dynamic>? data) {
         child: CircleAvatar(
           radius: 44,
           backgroundColor: Colors.white,
-          backgroundImage: NetworkImage(
-            _resolveProfileImageUrl(
-              imageUrl,
-            ),
-          ),
+          backgroundImage:
+              NetworkImage(_resolveProfileImageUrl(imageUrl)),
         ),
       );
     }
@@ -322,15 +322,10 @@ String _resolveAccountType(Map<String, dynamic>? data) {
     return Container(
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        border: Border.all(
-          color: Colors.white,
-          width: 4,
-        ),
+        border: Border.all(color: Colors.white, width: 4),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(
-              alpha: 0.12,
-            ),
+            color: Colors.black.withValues(alpha: 0.12),
             blurRadius: 16,
             offset: const Offset(0, 6),
           ),
@@ -359,6 +354,7 @@ String _resolveAccountType(Map<String, dynamic>? data) {
       body: SafeArea(
         child: Stack(
           children: [
+            // Blue gradient background behind header + profile card
             Positioned(
               top: 0,
               left: 0,
@@ -379,7 +375,25 @@ String _resolveAccountType(Map<String, dynamic>? data) {
             ),
             Column(
               children: [
+                // ── Fixed: header title ──────────────────────────────
                 _buildHeader(),
+
+                // ── Fixed: profile card (never scrolls) ─────────────
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
+                  child: isLoading
+                      ? const SizedBox(
+                          height: 120,
+                          child: Center(
+                            child: CircularProgressIndicator(
+                              color: Colors.white,
+                            ),
+                          ),
+                        )
+                      : _buildProfileCard(),
+                ),
+
+                // ── Scrollable: menu + logout + version ──────────────
                 Expanded(
                   child: isLoading
                       ? const Center(
@@ -388,16 +402,9 @@ String _resolveAccountType(Map<String, dynamic>? data) {
                           ),
                         )
                       : SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(
-                            18,
-                            8,
-                            18,
-                            20,
-                          ),
+                          padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
                           child: Column(
                             children: [
-                              _buildProfileCard(),
-                              const SizedBox(height: 22),
                               _buildMenuSection(),
                               const SizedBox(height: 22),
                               _buildLogoutButton(),
@@ -407,9 +414,8 @@ String _resolveAccountType(Map<String, dynamic>? data) {
                           ),
                         ),
                 ),
-                const CustomNavBar(
-                  currentIndex: 3,
-                ),
+
+                const CustomNavBar(currentIndex: 3),
               ],
             ),
           ],
@@ -418,68 +424,30 @@ String _resolveAccountType(Map<String, dynamic>? data) {
     );
   }
 
- Widget _buildHeader() {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.fromLTRB(
-      20,
-      18,
-      20,
-      14,
-    ),
-    child: Row(
-      children: [
-        const SizedBox(width: 54),
-        const Expanded(
-          child: Text(
-            'Account',
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 34,
-              fontWeight: FontWeight.w800,
-              color: Color.fromARGB(255, 255, 255, 255),
-              letterSpacing: -1,
-            ),
-          ),
-        ),
-        SizedBox(
-          width: 54,
-          child: Align(
-            alignment: Alignment.centerRight,
-            child: Material(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(18),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(18),
-                onTap: () {},
-                child: Container(
-                  width: 54,
-                  height: 54,
-                  decoration: BoxDecoration(
-                    color: Colors.white,
-                    borderRadius: BorderRadius.circular(18),
-                    boxShadow: [
-                      BoxShadow(
-                        color: const Color.fromARGB(255, 249, 249, 249).withValues(alpha: 0.04),
-                        blurRadius: 14,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
-                  ),
-                  child: const Icon(
-                    Icons.settings_rounded,
-                    color: Color(0xFF4B63D2),
-                    size: 28,
-                  ),
-                ),
+  Widget _buildHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
+      child: const Row(
+        children: [
+          SizedBox(width: 54),
+          Expanded(
+            child: Text(
+              'Account',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 34,
+                fontWeight: FontWeight.w800,
+                color: Colors.white,
+                letterSpacing: -1,
               ),
             ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+          SizedBox(width: 54),
+        ],
+      ),
+    );
+  }
 
   Widget _buildProfileCard() {
     final roleColor = _roleColor(accountType);
@@ -489,19 +457,14 @@ String _resolveAccountType(Map<String, dynamic>? data) {
       padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [
-            Color(0xFF5B76F7),
-            Color(0xFF4564E8),
-          ],
+          colors: [Color(0xFF5B76F7), Color(0xFF4564E8)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(34),
         boxShadow: [
           BoxShadow(
-            color: const Color(0xFF5B76F7).withValues(
-              alpha: 0.30,
-            ),
+            color: const Color(0xFF5B76F7).withValues(alpha: 0.30),
             blurRadius: 26,
             offset: const Offset(0, 12),
           ),
@@ -516,9 +479,7 @@ String _resolveAccountType(Map<String, dynamic>? data) {
               width: 180,
               height: 180,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(
-                  alpha: 0.06,
-                ),
+                color: Colors.white.withValues(alpha: 0.06),
                 shape: BoxShape.circle,
               ),
             ),
@@ -545,9 +506,7 @@ String _resolveAccountType(Map<String, dynamic>? data) {
               width: 130,
               height: 130,
               decoration: BoxDecoration(
-                color: Colors.white.withValues(
-                  alpha: 0.05,
-                ),
+                color: Colors.white.withValues(alpha: 0.05),
                 shape: BoxShape.circle,
               ),
             ),
@@ -561,53 +520,17 @@ String _resolveAccountType(Map<String, dynamic>? data) {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            fullName,
-                            maxLines: 2,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              fontSize: 24,
-                              fontWeight: FontWeight.w800,
-                              color: Colors.white,
-                              letterSpacing: -0.4,
-                              height: 1.12,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        Material(
-                          color: Colors.transparent,
-                          borderRadius: BorderRadius.circular(14),
-                          child: InkWell(
-                            borderRadius: BorderRadius.circular(14),
-                            onTap: _openUserInformation,
-                            child: Container(
-                              padding: const EdgeInsets.symmetric(
-                                horizontal: 12,
-                                vertical: 7,
-                              ),
-                              decoration: BoxDecoration(
-                                borderRadius: BorderRadius.circular(14),
-                                border: Border.all(
-                                  color: Colors.white.withValues(alpha: 0.72),
-                                  width: 1.2,
-                                ),
-                              ),
-                              child: const Text(
-                                'Edit',
-                                style: TextStyle(
-                                  color: Colors.white,
-                                  fontWeight: FontWeight.w800,
-                                  fontSize: 12,
-                                ),
-                              ),
-                            ),
-                          ),
-                        ),
-                      ],
+                    Text(
+                      fullName,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        fontSize: 24,
+                        fontWeight: FontWeight.w800,
+                        color: Colors.white,
+                        letterSpacing: -0.4,
+                        height: 1.12,
+                      ),
                     ),
                     const SizedBox(height: 8),
                     Container(
@@ -668,12 +591,12 @@ String _resolveAccountType(Map<String, dynamic>? data) {
         _menuGroup(
           children: [
             _menuTile(
-  title: 'User Information',
-  icon: Icons.person_outline_rounded,
-  iconColor: const Color(0xFF4B63D2),
-  iconBg: const Color(0xFFE8EEFF),
-  onTap: _openUserInformation,
-),
+              title: 'User Information',
+              icon: Icons.person_outline_rounded,
+              iconColor: const Color(0xFF4B63D2),
+              iconBg: const Color(0xFFE8EEFF),
+              onTap: _openUserInformation,
+            ),
             _divider(),
             _menuTile(
               title: 'Change Password',
@@ -753,9 +676,7 @@ String _resolveAccountType(Map<String, dynamic>? data) {
     );
   }
 
-  Widget _menuGroup({
-    required List<Widget> children,
-  }) {
+  Widget _menuGroup({required List<Widget> children}) {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
@@ -769,87 +690,75 @@ String _resolveAccountType(Map<String, dynamic>? data) {
           ),
         ],
       ),
-      child: Column(
-        children: children,
-      ),
+      child: Column(children: children),
     );
   }
 
   Widget _divider() {
     return Padding(
       padding: const EdgeInsets.only(left: 82),
-      child: Container(
-        height: 1,
-        color: const Color(0xFFE9ECF5),
-      ),
+      child: Container(height: 1, color: const Color(0xFFE9ECF5)),
     );
   }
 
   Widget _menuTile({
-  required String title,
-  required IconData icon,
-  required Color iconColor,
-  required Color iconBg,
-  required VoidCallback onTap,
-}) {
-  return Material(
-    color: Colors.transparent,
-    child: InkWell(
-      borderRadius: BorderRadius.circular(28),
-      onTap: onTap,
-      child: SizedBox(
-        width: double.infinity,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 15,
-          ),
-          child: Row(
-            children: [
-              Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: iconBg,
-                  borderRadius: BorderRadius.circular(17),
+    required String title,
+    required IconData icon,
+    required Color iconColor,
+    required Color iconBg,
+    required VoidCallback onTap,
+  }) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        borderRadius: BorderRadius.circular(28),
+        onTap: onTap,
+        child: SizedBox(
+          width: double.infinity,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
+            child: Row(
+              children: [
+                Container(
+                  width: 50,
+                  height: 50,
+                  decoration: BoxDecoration(
+                    color: iconBg,
+                    borderRadius: BorderRadius.circular(17),
+                  ),
+                  child: Icon(icon, color: iconColor, size: 25),
                 ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 25,
-                ),
-              ),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Text(
-                  title,
-                  style: const TextStyle(
-                    fontSize: 16,
-                    fontWeight: FontWeight.w700,
-                    color: Color(0xFF1B2559),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Text(
+                    title,
+                    style: const TextStyle(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                      color: Color(0xFF1B2559),
+                    ),
                   ),
                 ),
-              ),
-              Container(
-                width: 30,
-                height: 30,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFF0F2FF),
-                  borderRadius: BorderRadius.circular(12),
+                Container(
+                  width: 30,
+                  height: 30,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFFF0F2FF),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: const Icon(
+                    Icons.arrow_forward_ios_rounded,
+                    size: 14,
+                    color: Color(0xFF7B739A),
+                  ),
                 ),
-                child: const Icon(
-                  Icons.arrow_forward_ios_rounded,
-                  size: 14,
-                  color: Color(0xFF7B739A),
-                ),
-              ),
-            ],
+              ],
+            ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildLogoutButton() {
     return SizedBox(
@@ -883,14 +792,13 @@ String _resolveAccountType(Map<String, dynamic>? data) {
                         fontWeight: FontWeight.w500,
                       ),
                     ),
-                    actionsPadding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                    actionsPadding:
+                        const EdgeInsets.fromLTRB(18, 0, 18, 18),
                     actions: [
                       TextButton(
                         onPressed: isLoggingOut
                             ? null
-                            : () {
-                                Navigator.pop(dialogContext);
-                              },
+                            : () => Navigator.pop(dialogContext),
                         child: const Text(
                           'Cancel',
                           style: TextStyle(
@@ -903,10 +811,7 @@ String _resolveAccountType(Map<String, dynamic>? data) {
                         onPressed: isLoggingOut
                             ? null
                             : () async {
-                                setDialogState(() {
-                                  isLoggingOut = true;
-                                });
-
+                                setDialogState(() => isLoggingOut = true);
                                 await _logout();
                               },
                         style: ElevatedButton.styleFrom(
@@ -928,9 +833,8 @@ String _resolveAccountType(Map<String, dynamic>? data) {
                               )
                             : const Text(
                                 'Log Out',
-                                style: TextStyle(
-                                  fontWeight: FontWeight.w800,
-                                ),
+                                style:
+                                    TextStyle(fontWeight: FontWeight.w800),
                               ),
                       ),
                     ],
@@ -940,10 +844,7 @@ String _resolveAccountType(Map<String, dynamic>? data) {
             },
           );
         },
-        icon: const Icon(
-          Icons.logout_rounded,
-          color: Color(0xFFE84D63),
-        ),
+        icon: const Icon(Icons.logout_rounded, color: Color(0xFFE84D63)),
         label: const Text(
           'Log Out',
           style: TextStyle(
@@ -953,13 +854,8 @@ String _resolveAccountType(Map<String, dynamic>? data) {
           ),
         ),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(
-            color: Color(0xFFE84D63),
-            width: 1.4,
-          ),
-          padding: const EdgeInsets.symmetric(
-            vertical: 17,
-          ),
+          side: const BorderSide(color: Color(0xFFE84D63), width: 1.4),
+          padding: const EdgeInsets.symmetric(vertical: 17),
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(24),
           ),

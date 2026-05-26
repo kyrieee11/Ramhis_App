@@ -331,26 +331,88 @@ class _SignupTermsConditionsWidgetState
   Widget build(BuildContext context) {
     final termsText = widget.accountType == 'doctor'
         ? '''
-Doctor Terms and Conditions
+TERMS AND CONDITIONS — Doctor Account
+Remote Area Medical (RAM) Philippines
 
-By submitting your registration, you confirm that all professional information provided is true and accurate.
+Welcome to the RAM Philippines Registration System. By completing your registration as a licensed healthcare professional, you acknowledge that you have read, understood, and agreed to the following terms.
 
-Your PRC license number, specialty, hospital or clinic details, and uploaded license proof will be reviewed by the RAMHIS admin team.
+1. Voluntary Participation
+All medical consultations, treatments, screenings, and related services provided through RAM are voluntary. Registration does not guarantee assignment to all requested activities. Participation is subject to available resources, operational capacity, and mission requirements.
 
-Your account may remain pending until approved by an administrator.
+2. Scope of Medical Services
+RAM Philippines provides limited healthcare services including medical consultations, basic treatment and medication, health assessments and screenings, and referral recommendations. Services are conducted based on professional clinical judgment, medical necessity, and available facilities.
 
-False or misleading information may result in rejection or account suspension.
+3. No Guarantee of Medical Outcomes
+While RAM Philippines strives to provide quality and compassionate healthcare, no guarantees are made regarding medical outcomes, diagnosis accuracy, or treatment effectiveness. Medical services may have inherent risks and limitations, especially in remote or resource-constrained environments.
+
+4. Accuracy and Truthfulness of Information
+You confirm that all professional information provided — including your PRC license number, specialty, hospital or clinic details, and uploaded license proof — is true, complete, and accurate. RAM Philippines shall not be held responsible for issues arising from false or misleading information, failure to disclose relevant credentials, or use of another person's identity. False information may result in rejection or permanent account suspension.
+
+5. Compliance with Clinic and Safety Procedures
+All healthcare professionals are expected to comply with registration procedures, clinic flow protocols, health and safety measures, and instructions from RAM personnel and site coordinators during medical missions.
+
+6. Privacy and Data Protection
+Your personal and professional information is handled in accordance with the Data Privacy Act of 2012. Information collected is used solely for patient registration, medical documentation, program monitoring, and operational reporting. Your data will not be sold or shared with unauthorized third parties.
+
+7. Patient Confidentiality
+All patient records, consultations, diagnoses, and medical information must be treated with strict confidentiality in accordance with applicable laws, ethical standards, and professional healthcare practices.
+
+8. Consent to Documentation and Media Use
+Photographs and videos may be taken during RAM missions for reporting, educational, and awareness purposes. RAM Philippines will protect patient and participant dignity and privacy. You may request exclusion from non-essential media documentation whenever reasonably possible.
+
+9. Limitation of Liability
+RAM Philippines shall not be liable for delays or interruptions in service, unavailability of medicines or equipment, adverse outcomes beyond reasonable control, or loss of personal belongings during missions. All services are provided in good faith within the limitations of available resources.
+
+10. Right to Refuse or Discontinue Services
+RAM Philippines reserves the right to refuse, suspend, or discontinue participation when false information is provided, safety rules are violated, or conduct endangers staff, volunteers, or patients.
+
+11. Amendments and Updates
+RAM Philippines may update these Terms and Conditions at any time. Continued use of the system constitutes acceptance of any revised terms.
+
+12. Acceptance of Terms
+By submitting your registration, you confirm that you have read and understood these Terms and Conditions, you voluntarily consent to the collection and processing of your information, you agree to comply with all applicable RAM Philippines policies and procedures, and you understand the nature and limitations of the medical services being provided.
 '''
         : '''
-Volunteer Terms and Conditions
+TERMS AND CONDITIONS — Volunteer Account
+Remote Area Medical (RAM) Philippines
 
-By submitting your registration, you confirm that your personal and volunteer information is true and accurate.
+Welcome to the RAM Philippines Registration System. By completing your registration as a volunteer, you acknowledge that you have read, understood, and agreed to the following terms.
 
-Your organization and skills may be used by RAMHIS to match you with appropriate medical mission activities.
+1. Voluntary Participation
+All services and activities performed through RAM Philippines are voluntary and free of charge to eligible communities. Registration does not guarantee assignment to all requested activities. Participation is subject to available resources, operational capacity, and mission requirements.
 
-You agree to follow RAMHIS guidelines, event rules, and volunteer responsibilities.
+2. Scope of Volunteer Activities
+Volunteer roles and assignments may vary depending on the availability of healthcare professionals, supplies, equipment, venue limitations, and local coordination support. RAM Philippines reserves the right to assign or reassign roles based on operational needs.
 
-False or misleading information may result in account suspension.
+3. No Guarantee of Outcomes
+Volunteer contributions and support activities are provided in good faith. Specific outcomes from medical missions cannot be guaranteed due to the nature of field healthcare operations.
+
+4. Accuracy and Truthfulness of Information
+You confirm that all personal and volunteer information provided — including your organization, skills, and identification details — is true, complete, and accurate. RAM Philippines shall not be held responsible for complications arising from false or misleading information, incomplete records, or use of another person's identity. False information may result in account suspension.
+
+5. Compliance with Rules and Procedures
+All volunteers are expected to comply with registration procedures, queueing and clinic flow protocols, health and safety measures, and instructions from RAM personnel, healthcare workers, and site coordinators. RAM Philippines reserves the right to deny or discontinue participation for individuals whose behavior is disruptive, abusive, threatening, or non-compliant with mission rules.
+
+6. Privacy and Data Protection
+Your personal information is handled in accordance with the Data Privacy Act of 2012. Information collected is used solely for volunteer registration, mission coordination, program monitoring, and operational reporting. Your data will not be sold or shared with unauthorized third parties.
+
+7. Patient Confidentiality
+Volunteers who access or encounter patient information during missions must treat all such information with strict confidentiality in accordance with applicable laws and RAM Philippines' privacy policies.
+
+8. Consent to Documentation and Media Use
+Photographs and videos may be taken during RAM missions for organizational reporting, educational, fundraising, and awareness purposes. RAM Philippines will protect participant dignity and privacy. You may request exclusion from non-essential media documentation whenever reasonably possible.
+
+9. Limitation of Liability
+RAM Philippines shall not be liable for delays or interruptions in activities, adverse outcomes beyond reasonable control, or loss, damage, or theft of personal belongings during missions. All activities are conducted in good faith within the limitations of available resources and field conditions.
+
+10. Right to Refuse or Discontinue Services
+RAM Philippines reserves the right to refuse, suspend, or discontinue volunteer participation when false information is provided, safety or operational rules are violated, or conduct endangers staff, healthcare workers, or patients.
+
+11. Amendments and Updates
+RAM Philippines may update these Terms and Conditions at any time. Continued use of the system constitutes acceptance of any revised terms.
+
+12. Acceptance of Terms
+By submitting your registration, you confirm that you have read and understood these Terms and Conditions, you voluntarily consent to the collection and processing of your information, you agree to comply with all applicable RAM Philippines policies, guidelines, and volunteer responsibilities, and you understand the nature and limitations of the services and activities provided.
 ''';
 
     return _SignupStepScaffold(

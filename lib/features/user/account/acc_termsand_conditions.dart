@@ -68,49 +68,76 @@ class AccTermsandConditionsWidget extends StatelessWidget {
                     _buildHeaderCard(),
                     const SizedBox(height: 18),
                     _buildSection(
-                      title: '1. Voluntary Participation',
+                      number: 1,
+                      title: 'Voluntary Participation',
                       body:
-                          'All services provided by Remote Area Medical (RAM) Philippines are voluntary and offered free of charge to eligible patients and communities.',
+                          'All medical consultations, treatments, screenings, and related services provided by RAM are voluntary and free of charge. Registration does not guarantee the availability or completion of all requested services. Services are provided based on available medical personnel, resources, operational capacity, and patient prioritization during medical missions.',
                     ),
                     _buildSection(
-                      title: '2. Scope of Services',
+                      number: 2,
+                      title: 'Scope of Medical Services',
                       body:
-                          'Services may vary depending on the availability of licensed healthcare professionals, supplies, equipment, venue limitations, and local coordination support.',
+                          'RAM Philippines provides limited healthcare services including, but not limited to, medical consultations, basic treatment and medication, health assessments and screenings, and referral recommendations when necessary. Services are conducted based on professional clinical judgment, medical necessity, available facilities, and operational limitations. RAM Philippines reserves the right to prioritize emergency and high-risk cases when necessary.',
                     ),
                     _buildSection(
-                      title: '3. No Guarantee of Outcomes',
+                      number: 3,
+                      title: 'No Guarantee of Medical Outcomes',
                       body:
-                          'Medical consultation, treatment, or follow-up recommendations are given in good faith, but specific outcomes cannot be guaranteed.',
+                          'While RAM Philippines strives to provide quality, ethical, and compassionate healthcare services, no guarantees or warranties are made regarding medical outcomes, recovery, diagnosis accuracy, or treatment effectiveness. Patients acknowledge that medical services may have inherent risks and limitations, especially in remote or resource-constrained environments.',
                     ),
                     _buildSection(
-                      title: '4. Accuracy of Information',
+                      number: 4,
+                      title: 'Accuracy and Truthfulness of Information',
                       body:
-                          'Patients and participants are responsible for providing complete, truthful, and accurate personal and medical information during registration and consultation.',
+                          'Users and patients agree to provide complete, truthful, and accurate personal and medical information during registration and consultation. RAM Philippines shall not be held responsible for medical complications, incorrect assessments, delayed treatment, or other issues arising from false or misleading information, failure to disclose relevant medical history, incomplete patient records, or use of another person\'s identity or information.',
                     ),
                     _buildSection(
-                      title: '5. Compliance with Rules',
+                      number: 5,
+                      title: 'Compliance with Clinic and Safety Procedures',
                       body:
-                          'All participants are expected to follow the instructions of RAM staff, partner volunteers, healthcare workers, and site coordinators during operations.',
+                          'All users, patients, guardians, and companions are expected to comply with registration procedures, queueing and clinic flow protocols, health and safety measures, and instructions from RAM personnel, volunteers, healthcare workers, and security staff. RAM Philippines reserves the right to deny or discontinue services to individuals whose behavior is disruptive, abusive, threatening, unsafe, or non-compliant with mission rules and regulations.',
                     ),
                     _buildSection(
-                      title: '6. Right to Refuse Services',
+                      number: 6,
+                      title: 'Privacy and Data Protection',
                       body:
-                          'RAM Philippines reserves the right to deny, suspend, or discontinue services when necessary for safety, policy enforcement, or operational limitations.',
+                          'RAM Philippines respects and protects the privacy and confidentiality of patient information in accordance with the Data Privacy Act of 2012. Personal and medical information collected through the RAM registration system may be used solely for patient registration and identification, medical consultation and treatment, healthcare documentation, program monitoring and reporting, statistical and operational analysis, and referral coordination and follow-up services. Patient information shall not be sold, shared, or disclosed to unauthorized third parties except when required by law, for legitimate medical and operational purposes, or with the consent of the patient or authorized representative.',
                     ),
                     _buildSection(
-                      title: '7. Privacy',
+                      number: 7,
+                      title: 'Patient Confidentiality',
                       body:
-                          'Personal information collected during registration and service delivery will be handled responsibly and in accordance with the organization’s privacy practices.',
+                          'All patient records, consultations, diagnoses, and medical information shall be treated with strict confidentiality by RAM staff, healthcare professionals, and volunteers. Only authorized personnel involved in patient care, registration, and operations may access necessary information in accordance with applicable laws, ethical standards, and healthcare confidentiality practices.',
                     ),
                     _buildSection(
-                      title: '8. Liability',
+                      number: 8,
+                      title: 'Consent to Documentation and Media Use',
                       body:
-                          'RAM Philippines shall not be held liable beyond the limits provided by applicable law for delays, interruptions, or service limitations caused by circumstances beyond reasonable control.',
+                          'During RAM medical missions, photographs, videos, and activity documentation may be taken for organizational reporting, transparency, educational, fundraising, and public awareness purposes. RAM Philippines will make reasonable efforts to protect patient dignity and privacy. Personally identifiable medical information shall not be publicly disclosed without appropriate consent unless otherwise permitted by law. Users may request exclusion from non-essential photography or media documentation whenever reasonably possible.',
                     ),
                     _buildSection(
-                      title: '9. Acceptance',
+                      number: 9,
+                      title: 'Limitation of Liability',
                       body:
-                          'By continuing to use the app and participating in RAM Philippines services, you acknowledge that you have read, understood, and agreed to these Terms and Conditions.',
+                          'To the fullest extent permitted by applicable law, RAM Philippines, its officers, healthcare professionals, staff, volunteers, partners, and affiliated organizations shall not be held liable for delays or interruptions in service, unavailability of medicines, equipment, or specialists, adverse medical outcomes beyond reasonable control, loss, damage, or theft of personal belongings during missions, or indirect, incidental, or consequential damages arising from participation in RAM activities. All services are provided in good faith and within the limitations of available resources and field conditions.',
+                    ),
+                    _buildSection(
+                      number: 10,
+                      title: 'Right to Refuse or Discontinue Services',
+                      body:
+                          'RAM Philippines reserves the right to refuse, suspend, limit, or discontinue services when false information is intentionally provided, safety and operational rules are violated, behavior endangers staff, volunteers, or other patients, abuse, harassment, or unlawful conduct occurs, or medical services exceed operational capabilities.',
+                    ),
+                    _buildSection(
+                      number: 11,
+                      title: 'Amendments and Updates',
+                      body:
+                          'RAM Philippines reserves the right to modify, update, or revise these Terms and Conditions at any time without prior notice to ensure compliance with operational requirements, healthcare standards, and applicable laws. Continued use of the RAM registration system constitutes acceptance of any updated Terms and Conditions.',
+                    ),
+                    _buildSection(
+                      number: 12,
+                      title: 'Acceptance of Terms',
+                      body:
+                          'By proceeding with registration and use of the RAM system, you confirm that you have read and understood these Terms and Conditions, you voluntarily consent to the collection and processing of your information, you agree to comply with all applicable policies and procedures of RAM Philippines, and you understand the nature and limitations of the medical services being provided.',
                       isLast: true,
                     ),
                     const SizedBox(height: 28),
@@ -239,15 +266,14 @@ class AccTermsandConditionsWidget extends StatelessWidget {
   }
 
   Widget _buildSection({
+    required int number,
     required String title,
     required String body,
     bool isLast = false,
   }) {
-    final int sectionNumber = int.tryParse(title.split('.').first) ?? 1;
-
-    final Color accentColor = sectionNumber <= 3
+    final Color accentColor = number <= 3
         ? _primaryBlue
-        : sectionNumber <= 6
+        : number <= 6
             ? _greenAccent
             : _purpleAccent;
 
@@ -294,7 +320,7 @@ class AccTermsandConditionsWidget extends StatelessWidget {
                             const SizedBox(width: 10),
                             Expanded(
                               child: Text(
-                                title,
+                                '$number. $title',
                                 style: const TextStyle(
                                   fontSize: 15.5,
                                   fontWeight: FontWeight.w800,

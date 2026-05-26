@@ -72,6 +72,42 @@ class AuthSession {
     }
   }
 
+
+  // ─────────────────────────────────────────────────────────────
+  // UPDATE CURRENT USER
+  // ─────────────────────────────────────────────────────────────
+
+  static Future<void> updateCurrentUser(
+    Map<String, dynamic> updates,
+  ) async {
+    final mergedUser = <String, dynamic>{
+      ...?currentUser,
+      ...updates,
+    };
+
+    currentUser = mergedUser;
+
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString(
+      _userKey,
+      jsonEncode(mergedUser),
+    );
+  }
+
+  static Future<void> setCurrentUser(
+    Map<String, dynamic> user,
+  ) async {
+    currentUser = Map<String, dynamic>.from(user);
+
+    final prefs = await SharedPreferences.getInstance();
+
+    await prefs.setString(
+      _userKey,
+      jsonEncode(currentUser),
+    );
+  }
+
   // ─────────────────────────────────────────────────────────────
   // UPDATE TOKENS
   // ─────────────────────────────────────────────────────────────
@@ -175,14 +211,13 @@ class AuthSession {
         jsonDecode(response.body),
       );
 
-      currentUser = data;
+      final resolvedUser = data['user'] is Map
+          ? Map<String, dynamic>.from(data['user'])
+          : data['data'] is Map
+              ? Map<String, dynamic>.from(data['data'])
+              : data;
 
-      final prefs = await SharedPreferences.getInstance();
-
-      await prefs.setString(
-        _userKey,
-        jsonEncode(data),
-      );
+      await setCurrentUser(resolvedUser);
 
       return data;
     } catch (error) {

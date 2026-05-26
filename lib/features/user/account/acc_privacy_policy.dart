@@ -66,34 +66,58 @@ class AccPrivacyPolicyWidget extends StatelessWidget {
                     _HeaderCard(),
                     SizedBox(height: 18),
                     _Section(
+                      number: 1,
                       title: 'Information We Collect',
                       body:
-                          'RAM Philippines may collect personal details such as name, age, sex, address, and contact information, as well as medical data necessary to provide proper care.',
+                          'During registration, consultation, and medical service delivery, RAM Philippines may collect personal details such as full name, age, sex, birthdate, address, and contact information, as well as medical and health-related information necessary for consultation, diagnosis, treatment, referral services, and medical documentation. Only information necessary for legitimate medical, operational, and healthcare-related purposes is collected.',
                     ),
                     _Section(
+                      number: 2,
                       title: 'How We Use Your Information',
                       body:
-                          'Your information is used to register you for services, provide consultation and treatment, maintain medical records, and improve services.',
+                          'Your personal and medical information may be used to register patients for RAM medical services, provide medical consultation, treatment, and healthcare support, maintain patient records for continuity of care, coordinate referrals and follow-up services, improve RAM healthcare programs and medical outreach services, conduct operational reporting and statistical analysis, and comply with applicable legal, regulatory, and reporting requirements. Your information shall not be used for unauthorized commercial, advertising, or marketing purposes.',
                     ),
                     _Section(
-                      title: 'Confidentiality and Protection',
+                      number: 3,
+                      title: 'Confidentiality and Data Protection',
                       body:
-                          'All personal and medical information is treated as confidential and protected against unauthorized access.',
+                          'RAM Philippines treats all personal and medical information with strict confidentiality. Reasonable organizational, physical, and technical security measures are implemented against unauthorized access, accidental disclosure, misuse or unlawful processing, and data loss, alteration, or destruction. Access to records is limited only to authorized RAM staff, healthcare professionals, volunteers, and personnel with legitimate operational or medical responsibilities.',
                     ),
                     _Section(
+                      number: 4,
                       title: 'Sharing of Information',
                       body:
-                          'RAM does not sell or share personal data with third parties except when required by law or necessary for safety.',
+                          'RAM Philippines does not sell, rent, or trade personal information to third parties. Information may only be shared when required by law or government authorities, when necessary to protect patient health, safety, or public welfare, for referrals or coordination with healthcare providers with patient consent when applicable, or for legitimate medical and operational purposes directly related to RAM services. Any authorized sharing shall comply with applicable privacy and confidentiality laws.',
                     ),
                     _Section(
+                      number: 5,
+                      title: 'Data Retention',
+                      body:
+                          'Personal and medical information shall be retained only for as long as necessary to fulfill medical, operational, legal, and regulatory purposes. RAM Philippines reserves the right to securely archive or dispose of records in accordance with applicable laws, healthcare standards, and organizational policies.',
+                    ),
+                    _Section(
+                      number: 6,
                       title: 'Your Rights',
                       body:
-                          'You may request corrections, ask questions, or refuse to provide data (with service limitations).',
+                          'Under the Data Privacy Act of 2012, you have the right to know how your personal information is collected and used, request access to your personal information, request correction of inaccurate or incomplete information, ask questions regarding the handling of your data, withdraw consent where applicable, and refuse to provide certain information, understanding that this may limit the services RAM Philippines can provide. Requests may be subject to verification and applicable legal or medical record retention requirements.',
                     ),
                     _Section(
+                      number: 7,
                       title: 'Consent',
                       body:
-                          'By registering, you agree to the collection and use of your data for medical purposes.',
+                          'By registering with Remote Area Medical (RAM) Philippines and using the RAM Mobile Application, you acknowledge that you have read and understood this Privacy Policy, you voluntarily provide your personal and medical information, and you consent to the collection, processing, storage, and use of your information for legitimate medical, operational, and program-related purposes.',
+                    ),
+                    _Section(
+                      number: 8,
+                      title: 'Updates to this Privacy Policy',
+                      body:
+                          'RAM Philippines reserves the right to update or modify this Privacy Policy at any time to ensure compliance with applicable laws, healthcare standards, operational requirements, and organizational policies. Continued use of the RAM system after updates constitutes acceptance of the revised Privacy Policy.',
+                    ),
+                    _Section(
+                      number: 9,
+                      title: 'Contact and Privacy Concerns',
+                      body:
+                          'For questions, concerns, corrections, or requests regarding your personal information and privacy rights, users may contact RAM Philippines through its official communication channels or designated system administrators.',
                       isLast: true,
                     ),
                     SizedBox(height: 28),
@@ -199,7 +223,7 @@ class _HeaderCard extends StatelessWidget {
               ),
               SizedBox(height: 16),
               Text(
-                'This policy explains how RAM Philippines handles your data.',
+                'This policy explains how RAM Philippines handles your data in compliance with the Data Privacy Act of 2012.',
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.5,
@@ -228,34 +252,17 @@ class _HeaderCard extends StatelessWidget {
 }
 
 class _Section extends StatelessWidget {
+  final int number;
   final String title;
   final String body;
   final bool isLast;
 
   const _Section({
+    required this.number,
     required this.title,
     required this.body,
     this.isLast = false,
   });
-
-  int get _sectionNumber {
-    switch (title) {
-      case 'Information We Collect':
-        return 1;
-      case 'How We Use Your Information':
-        return 2;
-      case 'Confidentiality and Protection':
-        return 3;
-      case 'Sharing of Information':
-        return 4;
-      case 'Your Rights':
-        return 5;
-      case 'Consent':
-        return 6;
-      default:
-        return 0;
-    }
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -300,7 +307,7 @@ class _Section extends StatelessWidget {
                                 shape: BoxShape.circle,
                               ),
                               child: Text(
-                                _sectionNumber.toString(),
+                                number.toString(),
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 14,

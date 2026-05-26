@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
+import 'package:flutter/services.dart';
 
 import 'package:flutter/material.dart';
 import 'package:image_cropper/image_cropper.dart';
@@ -29,27 +30,136 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
 
   bool isSaving = false;
   bool isUploadingImage = false;
+  bool isEditing = false;
+
+  String _origFullName = '';
+  String _origEmail = '';
+  String _origBirthdate = '';
+  String _origContact = '';
 
   File? selectedImage;
   String profileImageUrl = '';
+
+  String _readValue(List<String> keys) {
+  final sources = <Map<String, dynamic>>[
+    widget.userData,
+    if (AuthSession.currentUser != null) AuthSession.currentUser!,
+    if (widget.userData['user'] is Map)
+      Map<String, dynamic>.from(widget.userData['user']),
+    if (widget.userData['data'] is Map)
+      Map<String, dynamic>.from(widget.userData['data']),
+  ];
+
+  for (final source in sources) {
+    for (final key in keys) {
+      final value = source[key];
+
+      if (value != null && value.toString().trim().isNotEmpty) {
+        return value.toString().trim();
+      }
+    }
+  }
+
+  return '';
+}
+
+  String get _currentUserId {
+    final value = widget.userData['_id'] ??
+        widget.userData['id'] ??
+        widget.userData['userId'] ??
+        AuthSession.currentUser?['_id'] ??
+        AuthSession.currentUser?['id'] ??
+        AuthSession.currentUser?['userId'] ??
+        '';
+
+    return value.toString().trim();
+  }
+
+  String _userApiUrl(String userId) {
+    final base = AppConfig.baseUrl.replaceAll(RegExp(r'/+$'), '');
+
+    if (base.endsWith('/api')) {
+      return '$base/users/$userId';
+    }
+
+    return '$base/api/users/$userId';
+  }
+
+  Map<String, dynamic> _decodeJsonMap(http.Response response) {
+    final body = response.body.trim();
+
+    debugPrint('PROFILE URL: ${response.request?.url}');
+    debugPrint('PROFILE STATUS: ${response.statusCode}');
+    debugPrint('PROFILE BODY: $body');
+
+    if (body.isEmpty) {
+      return <String, dynamic>{};
+    }
+
+    if (!body.startsWith('{') && !body.startsWith('[')) {
+      throw FormatException(
+        'Backend returned non-JSON. Check API URL: ${response.request?.url}',
+      );
+    }
+
+    final decoded = jsonDecode(body);
+
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+
+    if (decoded is Map) {
+      return Map<String, dynamic>.from(decoded);
+    }
+
+    return <String, dynamic>{};
+  }
 
   @override
   void initState() {
     super.initState();
 
     fullNameController = TextEditingController(
-      text: (widget.userData['full_name'] ?? '').toString(),
+      text: _readValue([
+        'full_name',
+        'fullName',
+        'name',
+        'username',
+      ]),
     );
+
     emailController = TextEditingController(
-      text: (widget.userData['email'] ?? '').toString(),
+      text: _readValue([
+        'email',
+      ]),
     );
+
     birthdateController = TextEditingController(
-      text: (widget.userData['birthdate'] ?? '').toString(),
+      text: _readValue([
+        'birthdate',
+        'birthDate',
+        'bdate',
+        'dateOfBirth',
+      ]),
     );
+
     contactController = TextEditingController(
-      text: (widget.userData['contact_number'] ?? '').toString(),
+      text: _readValue([
+        'contact_number',
+        'contactNumber',
+        'phone',
+        'phoneNumber',
+        'mobile',
+      ]),
     );
-    profileImageUrl = (widget.userData['profile_image_url'] ?? '').toString();
+
+    profileImageUrl = _readValue([
+      'profile_image_url',
+      'profileImageUrl',
+      'profileImage',
+      'imageUrl',
+      'avatar',
+    ]);
   }
 
   @override
@@ -62,12 +172,21 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
   }
 
   String _resolveImageUrl(String url) {
-    if (url.isEmpty) return '';
-    if (url.startsWith('http://') || url.startsWith('https://')) {
-      return url;
-    }
-    return '${AppConfig.baseUrl}$url';
+  final cleanUrl = url.trim();
+
+  if (cleanUrl.isEmpty) return '';
+
+  if (cleanUrl.startsWith('http://') ||
+      cleanUrl.startsWith('https://')) {
+    return cleanUrl;
   }
+
+  if (cleanUrl.startsWith('/')) {
+    return '${AppConfig.baseUrl}$cleanUrl';
+  }
+
+  return '${AppConfig.baseUrl}/$cleanUrl';
+}
 
   Future<File?> _cropImage(String imagePath) async {
     final cropped = await ImageCropper().cropImage(
@@ -97,7 +216,7 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
   }
 
   Future<void> _pickAndUploadImage() async {
-    final userId = (widget.userData['_id'] ?? '').toString();
+    final userId = _currentUserId;
 
     if (userId.isEmpty) {
       if (!mounted) return;
@@ -129,25 +248,41 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
       final base64Image = base64Encode(bytes);
 
       final response = await http.put(
-        Uri.parse('${AuthSession.baseUrl}/users/$userId'),
-        headers: AuthSession.headers(),
-        body: jsonEncode({
-          'imageBase64': base64Image,
-          'fileName': croppedFile.path.split('/').last,
-        }),
-      );
+ Uri.parse('${AppConfig.baseUrl}/users/$userId'),
+  headers: {
+    ...AuthSession.headers(),
+    'Content-Type': 'application/json',
+  },
+  body: jsonEncode({
+    'imageBase64': base64Image,
+    'fileName': croppedFile.path.split('/').last,
+  }),
+);
 
-      final data = jsonDecode(response.body);
+      final data = _decodeJsonMap(response);
 
       if (!mounted) return;
 
       if (response.statusCode == 200 && data != null) {
         setState(() {
-          profileImageUrl = (data['imageUrl'] ?? '').toString();
+          profileImageUrl = (
+            data['imageUrl'] ??
+                data['profile_image_url'] ??
+                data['profileImageUrl'] ??
+                profileImageUrl
+          ).toString();
         });
 
         if (data['user'] is Map) {
-          AuthSession.currentUser = Map<String, dynamic>.from(data['user']);
+          await AuthSession.updateCurrentUser(
+            Map<String, dynamic>.from(data['user']),
+          );
+        } else {
+          await AuthSession.updateCurrentUser({
+            'profile_image_url': profileImageUrl,
+            'profileImageUrl': profileImageUrl,
+            'profileImage': profileImageUrl,
+          });
         }
 
         if (!mounted) return;
@@ -158,7 +293,7 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(
-              (data?['message'] ?? 'Image upload failed').toString(),
+              (data['message'] ?? 'Image upload failed').toString(),
             ),
           ),
         );
@@ -177,8 +312,31 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
     }
   }
 
+  void _enterEditMode() {
+    _origFullName = fullNameController.text;
+    _origEmail = emailController.text;
+    _origBirthdate = birthdateController.text;
+    _origContact = contactController.text;
+
+    setState(() {
+      isEditing = true;
+    });
+  }
+
+  void _cancelEdit() {
+    fullNameController.text = _origFullName;
+    emailController.text = _origEmail;
+    birthdateController.text = _origBirthdate;
+    contactController.text = _origContact;
+
+    setState(() {
+      isEditing = false;
+    });
+  }
+  
+
   Future<void> _save() async {
-    final userId = (widget.userData['_id'] ?? '').toString();
+    final userId = _currentUserId;
 
     if (userId.isEmpty) {
       if (!mounted) return;
@@ -188,16 +346,27 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
       return;
     }
 
-    if (fullNameController.text.trim().isEmpty ||
-        emailController.text.trim().isEmpty ||
-        birthdateController.text.trim().isEmpty ||
-        contactController.text.trim().isEmpty) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please fill all fields')),
-      );
-      return;
-    }
+    final fullName = fullNameController.text.trim();
+    final email = emailController.text.trim();
+    final birthdate = birthdateController.text.trim();
+    final contactNumber = contactController.text.trim();
+
+    final isValidContact =
+    RegExp(r'^09\d{9}$').hasMatch(contactNumber);
+
+if (!isValidContact) {
+  if (!mounted) return;
+
+  ScaffoldMessenger.of(context).showSnackBar(
+    const SnackBar(
+      content: Text(
+        'Please enter a valid 11-digit contact number starting with 09',
+      ),
+    ),
+  );
+
+  return;
+}
 
     if (!mounted) return;
     setState(() => isSaving = true);
@@ -205,41 +374,93 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
     try {
       final response = await http.put(
         Uri.parse('${AppConfig.baseUrl}/users/$userId'),
-        headers: AuthSession.headers(),
+        headers: {
+          ...AuthSession.headers(),
+          'Content-Type': 'application/json',
+        },
         body: jsonEncode({
-          'full_name': fullNameController.text.trim(),
-          'email': emailController.text.trim(),
-          'contact_number': contactController.text.trim(),
-          'birthdate': birthdateController.text.trim(),
+          'full_name': fullName,
+          'fullName': fullName,
+          'name': fullName,
+          'email': email,
+          'contact_number': contactNumber,
+          'contactNumber': contactNumber,
+          'phone': contactNumber,
+          'birthdate': birthdate,
+          'birthDate': birthdate,
+          'bdate': birthdate,
         }),
       );
 
-      final data = jsonDecode(response.body);
+      final data = _decodeJsonMap(response);
 
       if (!mounted) return;
 
-      if (response.statusCode == 200) {
-        if (data != null && data['user'] is Map) {
-          AuthSession.currentUser = Map<String, dynamic>.from(data['user']);
-        }
+      if (response.statusCode == 200 || response.statusCode == 201) {
+        final updatedUser = {
+          ...?AuthSession.currentUser,
+          '_id': userId,
+          'id': userId,
+          'name': fullName,
+          'full_name': fullName,
+          'email': email,
+          'birthdate': birthdate,
+          'birthDate': birthdate,
+          'birthday': birthdate,
+          'bdate': birthdate,
+          'contact_number': contactNumber,
+          'contactNumber': contactNumber,
+          'phone': contactNumber,
+          'phoneNumber': contactNumber,
+          'profileImage': profileImageUrl,
+          'profileImageUrl': profileImageUrl,
+          'profile_image_url': profileImageUrl,
+          'avatar': profileImageUrl,
+        };
+
+        AuthSession.currentUser = updatedUser;
 
         if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Profile updated successfully')),
-        );
 
-        Navigator.pop(context, true);
+        setState(() {
+          isEditing = false;
+        });
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Profile updated successfully'),
+          ),
+        );
       } else {
+        final message = data['message']?.toString().trim();
+
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text((data?['message'] ?? 'Update failed').toString()),
+            content: Text(
+              message != null && message.isNotEmpty
+                  ? message
+                  : 'Failed to save profile. Please try again.',
+            ),
           ),
         );
       }
-    } catch (_) {
+    } catch (error) {
       if (!mounted) return;
+
+      final rawMessage = error.toString();
+      final friendlyMessage = rawMessage
+          .replaceFirst('Exception: ', '')
+          .replaceFirst('FormatException: ', '')
+          .trim();
+
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Connection error. Please try again.')),
+        SnackBar(
+          content: Text(
+            friendlyMessage.isNotEmpty
+                ? friendlyMessage
+                : 'Unable to save profile. Please try again.',
+          ),
+        ),
       );
     } finally {
       if (mounted) {
@@ -493,14 +714,16 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
   }
 
   Widget _formField({
-    required String label,
-    required TextEditingController controller,
-    required IconData icon,
-    required String hint,
-    TextInputType? keyboardType,
-    bool readOnly = false,
-    VoidCallback? onTap,
-  }) {
+  required String label,
+  required TextEditingController controller,
+  required IconData icon,
+  required String hint,
+  TextInputType? keyboardType,
+  bool readOnly = false,
+  VoidCallback? onTap,
+  List<TextInputFormatter>? inputFormatters,
+  int? maxLength,
+}) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -510,6 +733,8 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
           keyboardType: keyboardType,
           readOnly: readOnly,
           onTap: onTap,
+          inputFormatters: inputFormatters,
+maxLength: maxLength,
           style: const TextStyle(
             color: Color(0xFF1B2559),
             fontSize: 15,
@@ -521,252 +746,317 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
     );
   }
 
-  Widget _buildSaveButton() {
-    return Container(
-      width: double.infinity,
-      height: 58,
-      decoration: BoxDecoration(
-        gradient: isSaving
-            ? null
-            : const LinearGradient(
+  @override
+Widget build(BuildContext context) {
+  return Scaffold(
+    backgroundColor: const Color(0xFFF0F2FF),
+    appBar: AppBar(
+      title: const Text(
+        'Edit Profile',
+        style: TextStyle(
+          color: Colors.white,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+      backgroundColor: Colors.transparent,
+      foregroundColor: Colors.white,
+      elevation: 0,
+      centerTitle: true,
+      flexibleSpace: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF5B76F7),
+              Color(0xFF4564E8),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
+        ),
+      ),
+      actions: [
+  TextButton(
+    onPressed: isSaving
+        ? null
+        : () {
+            showDialog(
+              context: context,
+              builder: (_) {
+                return Dialog(
+                  backgroundColor: Colors.transparent,
+                  child: Container(
+                    padding: const EdgeInsets.all(22),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius:
+                          BorderRadius.circular(26),
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          isEditing
+                              ? 'Save Changes?'
+                              : 'Edit Profile?',
+                          style: const TextStyle(
+                            color: Color(0xFF1B2559),
+                            fontSize: 24,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+
+                        const SizedBox(height: 14),
+
+                        Text(
+                          isEditing
+                              ? 'Do you want to save your profile changes?'
+                              : 'Do you want to edit your profile?',
+                          textAlign: TextAlign.center,
+                          style: const TextStyle(
+                            color: Color(0xFF6B7280),
+                            fontSize: 15,
+                            fontWeight: FontWeight.w500,
+                          ),
+                        ),
+
+                        const SizedBox(height: 26),
+
+                        Row(
+                          children: [
+                            Expanded(
+                              child: SizedBox(
+                                height: 48,
+                                child: TextButton(
+                                  onPressed: () {
+                                    Navigator.pop(context);
+
+                                    if (isEditing) {
+                                      _cancelEdit();
+                                    }
+                                  },
+                                  child: const Text(
+                                    'Cancel',
+                                    style: TextStyle(
+                                      color:
+                                          Color(0xFF7B8BB2),
+                                      fontWeight:
+                                          FontWeight.w700,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+
+                            const SizedBox(width: 12),
+
+                            Expanded(
+                              child: SizedBox(
+                                height: 48,
+                                child: ElevatedButton(
+                                  onPressed: () async {
+                                    Navigator.pop(context);
+
+                                    if (isEditing) {
+                                      await _save();
+                                    } else {
+                                      _enterEditMode();
+                                    }
+                                  },
+                                  style:
+                                      ElevatedButton.styleFrom(
+                                    backgroundColor:
+                                        const Color(
+                                            0xFFEF5A6F),
+                                    elevation: 0,
+                                    shape:
+                                        RoundedRectangleBorder(
+                                      borderRadius:
+                                          BorderRadius
+                                              .circular(14),
+                                    ),
+                                  ),
+                                  child: Text(
+                                    isEditing
+                                        ? 'Save'
+                                        : 'Edit',
+                                    style: const TextStyle(
+                                      color: Colors.white,
+                                      fontWeight:
+                                          FontWeight.w800,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              },
+            );
+          },
+    child: isSaving
+        ? const SizedBox(
+            width: 18,
+            height: 18,
+            child: CircularProgressIndicator(
+              strokeWidth: 2,
+              color: Colors.white,
+            ),
+          )
+        : Text(
+            isEditing ? 'Edit' : 'Edit',
+            style: const TextStyle(
+              color: Colors.white,
+              fontWeight: FontWeight.w800,
+              fontSize: 15,
+            ),
+          ),
+  ),
+
+  const SizedBox(width: 8),
+],
+    ),
+    body: SingleChildScrollView(
+      child: Column(
+        children: [
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.fromLTRB(
+              24,
+              24,
+              24,
+              42,
+            ),
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
                 colors: [
                   Color(0xFF5B76F7),
                   Color(0xFF4564E8),
                 ],
-                begin: Alignment.centerLeft,
-                end: Alignment.centerRight,
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
               ),
-        color: isSaving ? const Color(0xFFB8C2EA) : null,
-        borderRadius: BorderRadius.circular(20),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF4564E8).withValues(alpha: 0.24),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
-      child: ElevatedButton(
-        onPressed: isSaving ? null : _save,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: Colors.transparent,
-          disabledBackgroundColor: Colors.transparent,
-          shadowColor: Colors.transparent,
-          foregroundColor: Colors.white,
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-        ),
-        child: isSaving
-            ? const SizedBox(
-                height: 20,
-                width: 20,
-                child: CircularProgressIndicator(
-                  strokeWidth: 2.3,
-                  color: Colors.white,
-                ),
-              )
-            : const Text(
-                'Save Changes',
-                style: TextStyle(
-                  fontSize: 16,
-                  fontWeight: FontWeight.w800,
-                ),
+              borderRadius: BorderRadius.only(
+                bottomLeft: Radius.circular(34),
+                bottomRight: Radius.circular(34),
               ),
-      ),
-    );
-  }
-
-  Widget _buildCancelButton() {
-    return SizedBox(
-      width: double.infinity,
-      height: 56,
-      child: OutlinedButton(
-        onPressed: () => Navigator.pop(context),
-        style: OutlinedButton.styleFrom(
-          foregroundColor: const Color(0xFF7B8BB2),
-          side: const BorderSide(
-            color: Color(0xFFD8DEEF),
-            width: 1.2,
-          ),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          backgroundColor: Colors.white,
-        ),
-        child: const Text(
-          'Cancel',
-          style: TextStyle(
-            fontSize: 16,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-      ),
-    );
-  }
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      backgroundColor: const Color(0xFFF0F2FF),
-      appBar: AppBar(
-        title: const Text(
-          'Edit Profile',
-          style: TextStyle(
-            color: Colors.white,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
-        backgroundColor: Colors.transparent,
-        foregroundColor: Colors.white,
-        elevation: 0,
-        centerTitle: true,
-        flexibleSpace: Container(
-          decoration: const BoxDecoration(
-            gradient: LinearGradient(
-              colors: [
-                Color(0xFF5B76F7),
-                Color(0xFF4564E8),
+            ),
+            child: Column(
+              children: [
+                _buildAvatar(),
+                const SizedBox(height: 14),
+                const Text(
+                  'Change Photo',
+                  style: TextStyle(
+                    color: Color(0xFFEAF0FF),
+                    fontSize: 13,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
             ),
           ),
-        ),
-        actions: [
-          TextButton(
-            onPressed: isSaving ? null : _save,
-            child: isSaving
-                ? const SizedBox(
-                    width: 18,
-                    height: 18,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Colors.white,
-                    ),
-                  )
-                : const Text(
-                    'Save',
-                    style: TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w800,
-                      fontSize: 15,
-                    ),
+
+          Padding(
+            padding: const EdgeInsets.fromLTRB(
+              20,
+              22,
+              20,
+              26,
+            ),
+            child: Column(
+              children: [
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(20),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(24),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(
+                          alpha: 0.06,
+                        ),
+                        blurRadius: 20,
+                        offset: const Offset(0, 8),
+                      ),
+                    ],
                   ),
+                  child: Column(
+                    crossAxisAlignment:
+                        CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'Personal Information',
+                        style: TextStyle(
+                          color: Color(0xFF1B2559),
+                          fontSize: 18,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+
+                      const SizedBox(height: 20),
+
+                      _formField(
+                        label: 'Full Name',
+                        controller: fullNameController,
+                        icon: Icons.person_rounded,
+                        hint: 'Enter full name',
+                        keyboardType: TextInputType.name,
+                        readOnly: !isEditing,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      _formField(
+                        label: 'Email',
+                        controller: emailController,
+                        icon: Icons.email_rounded,
+                        hint: 'Enter email address',
+                        keyboardType:
+                            TextInputType.emailAddress,
+                        readOnly: !isEditing,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      _formField(
+                        label: 'Birthdate',
+                        controller: birthdateController,
+                        icon: Icons.cake_rounded,
+                        hint: 'Select birthdate',
+                        readOnly: !isEditing,
+                        onTap: isEditing
+                            ? _showBirthdatePicker
+                            : null,
+                      ),
+
+                      const SizedBox(height: 16),
+
+                      _formField(
+  label: 'Contact Number',
+  controller: contactController,
+  icon: Icons.phone_rounded,
+  hint: 'Enter contact number',
+  keyboardType: TextInputType.number,
+  readOnly: !isEditing,
+  maxLength: 11,
+  inputFormatters: [
+    FilteringTextInputFormatter.digitsOnly,
+  ],
+),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(width: 8),
         ],
       ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: [
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.fromLTRB(24, 24, 24, 42),
-              decoration: const BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    Color(0xFF5B76F7),
-                    Color(0xFF4564E8),
-                  ],
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                ),
-                borderRadius: BorderRadius.only(
-                  bottomLeft: Radius.circular(34),
-                  bottomRight: Radius.circular(34),
-                ),
-              ),
-              child: Column(
-                children: [
-                  _buildAvatar(),
-                  const SizedBox(height: 14),
-                  const Text(
-                    'Change Photo',
-                    style: TextStyle(
-                      color: Color(0xFFEAF0FF),
-                      fontSize: 13,
-                      fontWeight: FontWeight.w700,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(20, 22, 20, 26),
-              child: Column(
-                children: [
-                  Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(20),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(24),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.06),
-                          blurRadius: 20,
-                          offset: const Offset(0, 8),
-                        ),
-                      ],
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'Personal Information',
-                          style: TextStyle(
-                            color: Color(0xFF1B2559),
-                            fontSize: 18,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                        const SizedBox(height: 20),
-                        _formField(
-                          label: 'Full Name',
-                          controller: fullNameController,
-                          icon: Icons.person_rounded,
-                          hint: 'Enter full name',
-                          keyboardType: TextInputType.name,
-                        ),
-                        const SizedBox(height: 16),
-                        _formField(
-                          label: 'Email',
-                          controller: emailController,
-                          icon: Icons.email_rounded,
-                          hint: 'Enter email address',
-                          keyboardType: TextInputType.emailAddress,
-                        ),
-                        const SizedBox(height: 16),
-                        _formField(
-                          label: 'Birthdate',
-                          controller: birthdateController,
-                          icon: Icons.cake_rounded,
-                          hint: 'Select birthdate',
-                          readOnly: true,
-                          onTap: _showBirthdatePicker,
-                        ),
-                        const SizedBox(height: 16),
-                        _formField(
-                          label: 'Contact Number',
-                          controller: contactController,
-                          icon: Icons.phone_rounded,
-                          hint: 'Enter contact number',
-                          keyboardType: TextInputType.phone,
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(height: 24),
-                  _buildSaveButton(),
-                  const SizedBox(height: 12),
-                  _buildCancelButton(),
-                ],
-              ),
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+    ),
+  );
+}
 }
