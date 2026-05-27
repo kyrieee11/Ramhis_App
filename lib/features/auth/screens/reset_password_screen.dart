@@ -38,75 +38,82 @@ class _ResetPasswordScreenState
   }
 
   Future<void> _handleResetPassword()
-      async {
-    final password =
-        _passwordController.text.trim();
+    async {
+  final password =
+      _passwordController.text.trim();
 
-    final confirm =
-        _confirmController.text.trim();
+  final confirm =
+      _confirmController.text.trim();
 
-    if (password.isEmpty ||
-        confirm.isEmpty) {
-      _showSnackBar(
-        'Please complete all fields.',
-      );
-      return;
-    }
+  if (widget.token.isEmpty) {
+    _showSnackBar(
+      'Invalid or missing reset token.',
+    );
+    return;
+  }
 
-    if (password.length < 6) {
-      _showSnackBar(
-        'Password must be at least 6 characters.',
-      );
-      return;
-    }
+  if (password.isEmpty ||
+      confirm.isEmpty) {
+    _showSnackBar(
+      'Please complete all fields.',
+    );
+    return;
+  }
 
-    if (password != confirm) {
-      _showSnackBar(
-        'Passwords do not match.',
-      );
-      return;
-    }
+  if (password.length < 6) {
+    _showSnackBar(
+      'Password must be at least 6 characters.',
+    );
+    return;
+  }
 
-    setState(() {
-      _loading = true;
-    });
+  if (password != confirm) {
+    _showSnackBar(
+      'Passwords do not match.',
+    );
+    return;
+  }
 
-    try {
-      final response =
-          await AuthService.resetPassword(
-        token: widget.token,
-        newPassword: password,
-      );
+  setState(() {
+    _loading = true;
+  });
 
-      if (!mounted) return;
+  try {
+    final response =
+        await AuthService.resetPassword(
+      token: widget.token,
+      newPassword: password,
+    );
 
-      _showSnackBar(
-        response['message'] ??
-            'Password reset successful.',
-      );
+    if (!mounted) return;
 
-      Navigator.pushNamedAndRemoveUntil(
-        context,
-        '/login',
-        (route) => false,
-      );
-    } catch (e) {
-      if (!mounted) return;
+    _showSnackBar(
+      response['message'] ??
+          'Password reset successful.',
+    );
 
-      _showSnackBar(
-        e.toString().replaceFirst(
-          'Exception: ',
-          '',
-        ),
-      );
-    } finally {
-      if (mounted) {
-        setState(() {
-          _loading = false;
-        });
-      }
+    Navigator.pushNamedAndRemoveUntil(
+      context,
+      '/login',
+      (route) => false,
+    );
+  } catch (e) {
+    if (!mounted) return;
+
+    _showSnackBar(
+      e.toString().replaceFirst(
+        'Exception: ',
+        '',
+      ),
+    );
+  } finally {
+    if (mounted) {
+      setState(() {
+        _loading = false;
+      });
     }
   }
+}
 
   void _showSnackBar(String message) {
     ScaffoldMessenger.of(context)

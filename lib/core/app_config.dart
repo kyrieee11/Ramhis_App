@@ -1,6 +1,6 @@
 class AppConfig {
   static const String productionUrl =
-      'http://10.0.2.2:5000';
+      'https://ramhis-v2-1.onrender.com';
 
   static const String apiBaseUrl =
       '$productionUrl/api';
@@ -14,7 +14,7 @@ class AppConfig {
   static const String uploadsBaseUrl =
       '$productionUrl/uploads';
 
-  static bool get isLocal => true;
+  static bool get isLocal => false;
 
-  static bool get isProduction => false;
+  static bool get isProduction => true;
 }

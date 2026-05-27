@@ -34,6 +34,8 @@ class _EventsWidgetState extends State<EventsWidget> {
   final Map<String, bool> acceptedTerms = {};
 
   String selectedFilter = 'All';
+  String _searchQuery = '';
+  final TextEditingController _searchController = TextEditingController();
 
   io.Socket? _socket;
   Timer? _statusTimer;
@@ -59,6 +61,7 @@ class _EventsWidgetState extends State<EventsWidget> {
 
   @override
   void dispose() {
+    _searchController.dispose();
     _statusTimer?.cancel();
     _socket?.off('events_updated');
     _socket?.disconnect();
@@ -239,11 +242,30 @@ class _EventsWidgetState extends State<EventsWidget> {
   }
 
   List<EventModel> get filteredEvents {
-    if (selectedFilter == 'All') return events;
+    // 1. Apply status filter
+    List<EventModel> filtered = selectedFilter == 'All'
+        ? List.from(events)
+        : events.where((event) {
+            return _statusText(event).toLowerCase() ==
+                selectedFilter.toLowerCase();
+          }).toList();
 
-    return events.where((event) {
-      return _statusText(event).toLowerCase() == selectedFilter.toLowerCase();
-    }).toList();
+    // 2. Apply search query across all event fields
+    if (_searchQuery.trim().isNotEmpty) {
+      final query = _searchQuery.trim().toLowerCase();
+      filtered = filtered.where((event) {
+        return event.title.toLowerCase().contains(query) ||
+            _descriptionText(event).toLowerCase().contains(query) ||
+            _typeText(event).toLowerCase().contains(query) ||
+            _statusText(event).toLowerCase().contains(query) ||
+            _eventDate(event).toLowerCase().contains(query) ||
+            _eventTime(event).toLowerCase().contains(query) ||
+            _eventLocation(event).toLowerCase().contains(query) ||
+            _organizerName(event).toLowerCase().contains(query);
+      }).toList();
+    }
+
+    return filtered;
   }
 
   String _safeText(dynamic value) {
@@ -529,7 +551,9 @@ class _EventsWidgetState extends State<EventsWidget> {
                         else if (list.isEmpty)
                           Padding(
                             padding: const EdgeInsets.symmetric(horizontal: 16),
-                            child: _buildFilteredEmptyState(),
+                            child: _searchQuery.isNotEmpty
+                                ? _buildSearchEmptyState()
+                                : _buildFilteredEmptyState(),
                           )
                         else
                           Column(
@@ -675,7 +699,9 @@ class _EventsWidgetState extends State<EventsWidget> {
           color: Colors.white,
           borderRadius: BorderRadius.circular(30),
           border: Border.all(
-            color: Colors.grey.withValues(alpha: 0.12),
+            color: _searchQuery.isNotEmpty
+                ? _kPrimary.withValues(alpha: 0.35)
+                : Colors.grey.withValues(alpha: 0.12),
           ),
           boxShadow: [
             BoxShadow(
@@ -685,18 +711,40 @@ class _EventsWidgetState extends State<EventsWidget> {
             ),
           ],
         ),
-        child: const TextField(
+        child: TextField(
+          controller: _searchController,
+          onChanged: (value) {
+            setState(() {
+              _searchQuery = value;
+            });
+          },
           decoration: InputDecoration(
             border: InputBorder.none,
-            prefixIcon: Icon(
+            prefixIcon: const Icon(
               Icons.search_rounded,
               color: _kTextSecondary,
             ),
-            hintText: 'Search events...',
-            hintStyle: TextStyle(
+            hintText: 'Search by title, type, date, location...',
+            hintStyle: const TextStyle(
               color: _kTextSecondary,
               fontWeight: FontWeight.w500,
+              fontSize: 13,
             ),
+            suffixIcon: _searchQuery.isNotEmpty
+                ? IconButton(
+                    icon: const Icon(
+                      Icons.close_rounded,
+                      color: _kTextSecondary,
+                      size: 20,
+                    ),
+                    onPressed: () {
+                      setState(() {
+                        _searchQuery = '';
+                        _searchController.clear();
+                      });
+                    },
+                  )
+                : null,
           ),
         ),
       ),
@@ -958,6 +1006,88 @@ Row(
             style: TextStyle(
               color: Colors.white,
               fontSize: 13,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSearchEmptyState() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: const Color(0xFFE8ECFF)),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.04),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          Container(
+            width: 64,
+            height: 64,
+            decoration: BoxDecoration(
+              color: _kPrimary.withValues(alpha: 0.08),
+              shape: BoxShape.circle,
+            ),
+            child: const Icon(
+              Icons.search_off_rounded,
+              size: 34,
+              color: _kPrimary,
+            ),
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            'No results found',
+            style: TextStyle(
+              color: _kTextPrimary,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 8),
+          Text(
+            'No events matched "\$_searchQuery".\nTry a different keyword.',
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: _kTextSecondary,
+              fontSize: 13,
+              height: 1.5,
+            ),
+          ),
+          const SizedBox(height: 18),
+          GestureDetector(
+            onTap: () {
+              setState(() {
+                _searchQuery = '';
+                _searchController.clear();
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 22,
+                vertical: 11,
+              ),
+              decoration: BoxDecoration(
+                color: _kPrimary,
+                borderRadius: BorderRadius.circular(999),
+              ),
+              child: const Text(
+                'Clear search',
+                style: TextStyle(
+                  color: Colors.white,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 13,
+                ),
+              ),
             ),
           ),
         ],

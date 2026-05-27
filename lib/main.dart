@@ -62,23 +62,37 @@ class _MyAppState extends State<MyApp> {
     if (mounted) setState(() {});
   }
 
-  void _initDeepLinks() {
-    final appLinks = AppLinks();
+  Future<void> _initDeepLinks() async {
+  final appLinks = AppLinks();
 
-    _linkSubscription = appLinks.uriLinkStream.listen((uri) {
-      if (uri.path.contains('reset-password')) {
-        final token = uri.queryParameters['token'];
+  final initialUri = await appLinks.getInitialLink();
 
-        if (token != null && token.isNotEmpty) {
-          navigatorKey.currentState?.push(
-            MaterialPageRoute(
-              builder: (_) => ResetPasswordScreen(token: token),
-            ),
-          );
-        }
-      }
-    });
+  if (initialUri != null) {
+    _handleDeepLink(initialUri);
   }
+
+  _linkSubscription = appLinks.uriLinkStream.listen((uri) {
+    _handleDeepLink(uri);
+  });
+}
+
+void _handleDeepLink(Uri uri) {
+  final isResetPasswordLink =
+      uri.host == 'reset-password' ||
+      uri.path.contains('reset-password');
+
+  if (!isResetPasswordLink) return;
+
+  final token = uri.queryParameters['token'];
+
+  if (token == null || token.isEmpty) return;
+
+  navigatorKey.currentState?.push(
+    MaterialPageRoute(
+      builder: (_) => ResetPasswordScreen(token: token),
+    ),
+  );
+}
 
   @override
   void dispose() {
@@ -101,15 +115,18 @@ class _MyAppState extends State<MyApp> {
   debugShowCheckedModeBanner: false,
   home: _startScreen(),
   routes: {
-    '/reset-password': (context) {
-      final token =
-          ModalRoute.of(context)!.settings.arguments as String;
+  '/reset-password': (context) {
+    final args =
+        ModalRoute.of(context)?.settings.arguments;
 
-      return ResetPasswordScreen(
-        token: token,
-      );
-    },
+    final token =
+        args is String ? args : '';
+
+    return ResetPasswordScreen(
+      token: token,
+    );
   },
+},
 );
   }
 }

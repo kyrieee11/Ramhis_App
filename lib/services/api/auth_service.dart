@@ -176,7 +176,8 @@ refresh:
   static Future<Map<String, dynamic>> forgotPassword({
     required String email,
   }) async {
-    final response = await http.post(
+    final response = await http
+    .post(
       Uri.parse('$baseUrl/auth/forgot-password'),
       headers: {
         'Content-Type': 'application/json',
@@ -197,28 +198,36 @@ refresh:
 
   // ── Reset Password: POST /auth/reset-password ───────────────────────────────
   static Future<Map<String, dynamic>> resetPassword({
-    required String token,
-    required String newPassword,
-  }) async {
-    final response = await http.post(
-      Uri.parse('$baseUrl/auth/reset-password'),
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: jsonEncode({
-  'token': token,
-  'password': newPassword,
-}),
+  required String token,
+  required String newPassword,
+}) async {
+  final response = await http
+      .post(
+        Uri.parse('$baseUrl/auth/reset-password'),
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'token': token,
+          'newPassword': newPassword,
+        }),
+      )
+      .timeout(
+        const Duration(seconds: 60),
+      );
+
+  final data = jsonDecode(response.body);
+
+  if (response.statusCode < 200 ||
+      response.statusCode >= 300) {
+    throw Exception(
+      data['message'] ??
+          'Reset password failed.',
     );
-
-    final data = jsonDecode(response.body);
-
-    if (response.statusCode < 200 || response.statusCode >= 300) {
-      throw Exception(data['message'] ?? 'Reset password failed.');
-    }
-
-    return data;
   }
+
+  return data;
+}
 
   // ── Get Me ─────────────────────────────────────────────────────────────────
   static Future<Map<String, dynamic>> fetchMe() async {
