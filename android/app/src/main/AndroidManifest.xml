@@ -5,7 +5,7 @@
 
 
     <application
-    android:label="Complete Login UI"
+    android:label="RAMHIS"
     tools:replace="android:label"
     android:icon="@mipmap/ic_launcher"
     android:requestLegacyExternalStorage="true"
