@@ -8,6 +8,7 @@ import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import 'package:ramhis_app/core/app_config.dart';
 import 'package:ramhis_app/core/session_manager.dart';
+import 'package:ramhis_app/core/online_status_manager.dart';
 import 'package:ramhis_app/models/chat_message_model.dart';
 import 'package:ramhis_app/services/api/chat_service.dart';
 
@@ -16,10 +17,16 @@ class ChatRoomWidget extends StatefulWidget {
     super.key,
     required this.threadId,
     required this.threadTitle,
+    this.otherUserId = '',
+    this.isOnline = false,
+    this.lastSeen = '',
   });
 
   final String threadId;
   final String threadTitle;
+  final String otherUserId;
+  final bool isOnline;
+  final String lastSeen;
 
   @override
   State<ChatRoomWidget> createState() => _ChatRoomWidgetState();
@@ -38,17 +45,32 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
   bool _socketInitialized = false;
   bool _showScrollToBottom = false;
 
+  bool otherUserOnline = false;
+  DateTime? otherUserLastSeen;
+
   String currentUserId = '';
 
   List<ChatMessageModel> messages = [];
 
-  // ── Lifecycle ───────────────────────────────────────────────
-
   @override
   void initState() {
     super.initState();
+
+    otherUserOnline = widget.isOnline;
+
+    if (widget.lastSeen.trim().isNotEmpty) {
+      otherUserLastSeen = DateTime.tryParse(widget.lastSeen);
+    }
+
+    if (widget.otherUserId.trim().isNotEmpty) {
+      OnlineStatusManager.setStatus(
+        widget.otherUserId,
+        widget.isOnline,
+        otherUserLastSeen,
+      );
+    }
+
     _initSocket();
-    // FIX: await user ID before rendering messages so _isMine() works correctly
     _loadCurrentUserThenMessages();
   }
 
@@ -57,6 +79,7 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
     if (_socketInitialized) {
       socket
         ..off('receive_message')
+        ..off('user_status_changed')
         ..disconnect()
         ..dispose();
     }
@@ -65,18 +88,13 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
     super.dispose();
   }
 
-  /// Loads current user ID first, then messages — prevents the race condition
-  /// where messages render before [currentUserId] is populated.
   Future<void> _loadCurrentUserThenMessages() async {
     await _loadCurrentUser();
     await _loadMessages();
   }
 
-  // ── User ID ─────────────────────────────────────────────────
-
   Future<void> _loadCurrentUser() async {
     try {
-      // 1. Try local session first (fastest, no network)
       final localUser = AuthSession.currentUser;
       final localId = (
         localUser?['_id'] ??
@@ -91,7 +109,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
         return;
       }
 
-      // 2. Fallback: try common /me endpoints
       final possibleUrls = [
         '${AppConfig.baseUrl}/auth/me',
         '${AppConfig.baseUrl}/me',
@@ -133,8 +150,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
     }
   }
 
-  // ── Socket ──────────────────────────────────────────────────
-
   void _initSocket() {
     socket = io.io(
       AppConfig.socketBaseUrl,
@@ -159,7 +174,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
         Map<String, dynamic>.from(data),
       );
 
-      // Deduplicate: skip if this exact message is already in the list
       final alreadyExists = messages.any((m) =>
           m.senderId == incoming.senderId &&
           m.message == incoming.message &&
@@ -171,10 +185,33 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
       _scrollToBottom();
     });
 
+    socket.on('user_status_changed', (data) {
+      if (data is! Map) return;
+
+      final changedUserId = data['userId']?.toString() ?? '';
+      final isOnline = data['isOnline'] == true;
+      final lastSeenString = data['lastSeen']?.toString();
+
+      final parsedLastSeen = lastSeenString != null
+          ? DateTime.tryParse(lastSeenString)
+          : null;
+
+      OnlineStatusManager.setStatus(
+        changedUserId,
+        isOnline,
+        parsedLastSeen,
+      );
+
+      if (changedUserId == widget.otherUserId && mounted) {
+        setState(() {
+          otherUserOnline = isOnline;
+          otherUserLastSeen = parsedLastSeen;
+        });
+      }
+    });
+
     socket.onDisconnect((_) => debugPrint('❌ Socket disconnected'));
   }
-
-  // ── Data ────────────────────────────────────────────────────
 
   Future<void> _loadMessages() async {
     if (!mounted) return;
@@ -197,8 +234,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
       });
     }
   }
-
-  // ── Send ────────────────────────────────────────────────────
 
   Future<void> _sendMessage() async {
     final text = _controller.text.trim();
@@ -279,17 +314,15 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
     }
   }
 
-  // ── File helpers ────────────────────────────────────────────
-
   String _absoluteFileUrl(String rawUrl) {
     final url = rawUrl.trim();
     if (url.isEmpty) return '';
 
-    // Emulator localhost rewrite
     if (url.startsWith('http://localhost') &&
         AppConfig.baseUrl.contains('10.0.2.2')) {
       return url.replaceFirst('http://localhost', 'http://10.0.2.2');
     }
+
     if (url.startsWith('http://127.0.0.1') &&
         AppConfig.baseUrl.contains('10.0.2.2')) {
       return url.replaceFirst('http://127.0.0.1', 'http://10.0.2.2');
@@ -323,8 +356,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
     return '${(bytes / (1024 * 1024)).toStringAsFixed(1)} MB';
   }
 
-  // ── Scroll ──────────────────────────────────────────────────
-
   void _scrollToBottom() {
     Future.delayed(const Duration(milliseconds: 100), () {
       if (!_scrollController.hasClients) return;
@@ -345,10 +376,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
     return false;
   }
 
-  // ── isMine ──────────────────────────────────────────────────
-
-  /// Normalizes a sender value that may be a plain String or a populated
-  /// Map object (e.g. { "_id": "...", "name": "..." }) into a bare ID string.
   String _normalizeId(dynamic value) {
     if (value == null) return '';
     if (value is Map) {
@@ -359,16 +386,12 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
     return value.toString().trim();
   }
 
-  /// FIX: uses _normalizeId so it works whether senderId is a String or a
-  /// populated user object, and guards against an empty currentUserId.
   bool _isMine(ChatMessageModel msg) {
     final senderId = _normalizeId(msg.senderId);
     final myId = _normalizeId(currentUserId);
     if (senderId.isEmpty || myId.isEmpty) return false;
     return senderId == myId;
   }
-
-  // ── Formatting helpers ──────────────────────────────────────
 
   String _formatTime(String raw) {
     if (raw.isEmpty) return '';
@@ -434,13 +457,30 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
     final now = DateTime.now();
     final today = DateTime(now.year, now.month, now.day);
     final day = DateTime(date.year, date.month, date.day);
+
     if (day == today) return 'Today';
     if (day == today.subtract(const Duration(days: 1))) return 'Yesterday';
+
     const months = [
       'January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December',
     ];
+
     return '${months[date.month - 1]} ${date.day}, ${date.year}';
+  }
+
+  String _statusText() {
+    if (widget.otherUserId.trim().isEmpty) {
+      return otherUserOnline ? 'Online' : 'Offline';
+    }
+
+    return OnlineStatusManager.getLastSeen(widget.otherUserId);
+  }
+
+  Color _statusColor() {
+    return otherUserOnline
+        ? const Color(0xFF22C55E)
+        : const Color(0xFFEAF0FF);
   }
 
   void _showSnack(String msg) {
@@ -448,8 +488,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
       SnackBar(content: Text(msg), behavior: SnackBarBehavior.floating),
     );
   }
-
-  // ── Build ───────────────────────────────────────────────────
 
   @override
   Widget build(BuildContext context) {
@@ -488,7 +526,9 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
                     width: 11,
                     height: 11,
                     decoration: BoxDecoration(
-                      color: const Color(0xFF22C55E),
+                      color: otherUserOnline
+                          ? const Color(0xFF22C55E)
+                          : const Color(0xFF9CA3AF),
                       shape: BoxShape.circle,
                       border: Border.all(
                         color: const Color(0xFF3949AB),
@@ -515,10 +555,10 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
                     ),
                   ),
                   const SizedBox(height: 2),
-                  const Text(
-                    'Online',
+                  Text(
+                    _statusText(),
                     style: TextStyle(
-                      color: Color(0xFFEAF0FF),
+                      color: _statusColor(),
                       fontSize: 12,
                       fontWeight: FontWeight.w500,
                     ),
@@ -556,8 +596,7 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
                             onNotification: _handleScrollNotification,
                             child: ListView.builder(
                               controller: _scrollController,
-                              padding: const EdgeInsets.fromLTRB(
-                                  14, 16, 14, 20),
+                              padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
                               itemCount: messages.length,
                               itemBuilder: (context, index) {
                                 final msg = messages[index];
@@ -565,8 +604,7 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
                                   children: [
                                     if (_shouldShowDateSeparator(index))
                                       _buildDateSeparator(
-                                        _dateLabel(
-                                            msg.createdAt.toString()),
+                                        _dateLabel(msg.createdAt.toString()),
                                       ),
                                     _buildMessageBubble(msg),
                                   ],
@@ -613,8 +651,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
     );
   }
 
-  // ── Message bubble ──────────────────────────────────────────
-
   Widget _buildMessageBubble(ChatMessageModel msg) {
     final isMine = _isMine(msg);
 
@@ -642,12 +678,9 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
                 ),
               ),
             Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 14, vertical: 11),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               decoration: BoxDecoration(
-                color: isMine
-                    ? const Color(0xFF3949AB)
-                    : Colors.white,
+                color: isMine ? const Color(0xFF3949AB) : Colors.white,
                 borderRadius: BorderRadius.only(
                   topLeft: Radius.circular(isMine ? 18 : 4),
                   topRight: Radius.circular(isMine ? 4 : 18),
@@ -664,8 +697,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
                         ),
                       ],
               ),
-              // FIX: was `Text(child: ...)` — Text has no child param.
-              // Now correctly branches on msg.isFile.
               child: msg.isFile
                   ? _buildFileMessageContent(msg, isMine)
                   : Text(
@@ -715,7 +746,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
         : 'Attachment';
     final fileSize = _formatFileSize(msg.fileSize);
 
-    // Image preview
     if (msg.isImage && fileUrl.isNotEmpty) {
       return Column(
         crossAxisAlignment:
@@ -769,7 +799,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
       );
     }
 
-    // Generic file attachment
     return InkWell(
       onTap: () => _openFile(msg),
       borderRadius: BorderRadius.circular(14),
@@ -823,7 +852,9 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    fileSize.isEmpty ? 'Tap to open' : '$fileSize • Tap to open',
+                    fileSize.isEmpty
+                        ? 'Tap to open'
+                        : '$fileSize • Tap to open',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
@@ -857,8 +888,6 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
       ),
     );
   }
-
-  // ── Supporting widgets ──────────────────────────────────────
 
   Widget _buildDateSeparator(String label) {
     if (label.isEmpty) return const SizedBox.shrink();

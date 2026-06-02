@@ -214,7 +214,7 @@ class _SignupPersonalInformationWidgetState
             hintText: 'Enter your full name',
             icon: Icons.person_outline_rounded,
           ),
-          const Spacer(),
+         const SizedBox(height: 6),
           _buildLabel('Email'),
           _buildTextField(
             controller: _emailController,
@@ -222,7 +222,7 @@ class _SignupPersonalInformationWidgetState
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
           ),
-          const Spacer(),
+          const SizedBox(height: 10),
           _buildLabel('Contact number'),
           _buildTextField(
             controller: _contactController,
@@ -230,7 +230,7 @@ class _SignupPersonalInformationWidgetState
             icon: Icons.phone_outlined,
             keyboardType: TextInputType.phone,
           ),
-          const Spacer(),
+         const SizedBox(height: 10),
           _buildLabel('Birthdate'),
           GestureDetector(
             onTap: _pickBirthdate,
@@ -243,9 +243,9 @@ class _SignupPersonalInformationWidgetState
               ),
             ),
           ),
-          const Spacer(flex: 2),
+          const SizedBox(height: 14),
           SizedBox(
-            height: 52,
+            height: 46,
             child: ElevatedButton.icon(
               onPressed: _goNext,
               icon: const Icon(Icons.navigate_next_rounded, size: 26),
@@ -323,7 +323,7 @@ class _SignupPersonalInformationWidgetState
               ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 14,
+          vertical: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
@@ -363,6 +363,7 @@ class _SignupStepScaffold extends StatelessWidget {
     final progress = currentStep / totalSteps;
 
     return Scaffold(
+       resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -381,8 +382,9 @@ class _SignupStepScaffold extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 430),
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
+  mainAxisSize: MainAxisSize.max,
+  crossAxisAlignment: CrossAxisAlignment.stretch,
+  children: [
                     Align(
                       alignment: Alignment.centerLeft,
                       child: InkWell(
@@ -456,7 +458,7 @@ class _SignupStepScaffold extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 12),
-                    Expanded(
+                      Expanded(
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
@@ -464,9 +466,11 @@ class _SignupStepScaffold extends StatelessWidget {
                           color: const Color(0xFFEAF4FF),
                           borderRadius: BorderRadius.circular(30),
                         ),
+                        child: SingleChildScrollView(
                         child: child,
                       ),
                     ),
+                      ),
                   ],
                 ),
               ),

@@ -247,8 +247,7 @@ refresh:
       data['data'] ?? data,
     );
 
-AuthSession.currentUser = userData;
-
+await AuthSession.setCurrentUser(userData);
 return userData;
   }
 

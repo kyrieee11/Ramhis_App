@@ -2,6 +2,7 @@ import 'dart:async';
 import 'dart:io';
 
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:ramhis_app/core/session_manager.dart';
 import 'package:ramhis_app/features/user/screens/home_screen.dart';
@@ -28,6 +29,17 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
   Timer? _loadingTimer10;
   Timer? _loadingTimer30;
 
+  static const String _rememberEmailKey = 'remembered_email';
+  
+ 
+ 
+
+  @override
+  void initState() {
+    super.initState();
+    _loadRememberedCredentials();
+  }
+
   @override
   void dispose() {
     _loadingTimer10?.cancel();
@@ -36,6 +48,32 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
     passwordController.dispose();
     super.dispose();
   }
+
+  Future<void> _loadRememberedCredentials() async {
+  final prefs = await SharedPreferences.getInstance();
+
+  final savedEmail =
+      prefs.getString(_rememberEmailKey) ?? '';
+
+  if (!mounted) return;
+
+  setState(() {
+    emailController.text = savedEmail;
+  });
+}
+
+  Future<void> _saveRememberedCredentials({
+  required String email,
+}) async {
+  final prefs = await SharedPreferences.getInstance();
+
+  await prefs.setString(
+    _rememberEmailKey,
+    email,
+  );
+}
+
+  
 
   void _startLoadingTimers() {
     _loadingTimer10?.cancel();
@@ -120,34 +158,25 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
           result['accessToken'] != null ||
           result['access_token'] != null;
 
-      final String message = (result['msg'] ??
-              result['message'] ??
-              result['error'] ??
-              '')
-          .toString()
-          .toLowerCase();
+      final String message =
+          (result['msg'] ?? result['message'] ?? result['error'] ?? '')
+              .toString()
+              .toLowerCase();
 
       final Map<String, dynamic>? user =
           result['user'] is Map<String, dynamic>
               ? Map<String, dynamic>.from(result['user'])
               : AuthSession.currentUser;
 
-      final String role = (user?['role'] ??
-              user?['account_type'] ??
-              '')
-          .toString()
-          .toLowerCase();
+      final String role =
+          (user?['role'] ?? user?['account_type'] ?? '').toString().toLowerCase();
 
-      final String status =
-          (user?['status'] ?? '').toString().toLowerCase();
+      final String status = (user?['status'] ?? '').toString().toLowerCase();
 
       final String verificationStatus =
-          (user?['verificationStatus'] ?? '')
-              .toString()
-              .toLowerCase();
+          (user?['verificationStatus'] ?? '').toString().toLowerCase();
 
-      final bool mustChangePassword =
-          user?['mustChangePassword'] == true;
+      final bool mustChangePassword = user?['mustChangePassword'] == true;
 
       if (!loginSuccess &&
           (message.contains('invalid') ||
@@ -192,8 +221,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
       }
 
       if ((!loginSuccess &&
-              (message.contains('pending') ||
-                  message.contains('approval'))) ||
+              (message.contains('pending') || message.contains('approval'))) ||
           verificationStatus == 'pending' ||
           status == 'pending') {
         _stopLoading();
@@ -208,8 +236,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
         return;
       }
 
-      if (verificationStatus == 'rejected' ||
-          status == 'rejected') {
+      if (verificationStatus == 'rejected' || status == 'rejected') {
         _stopLoading();
 
         _showAuthDialog(
@@ -239,8 +266,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
         return;
       }
 
-      if (loginSuccess &&
-          (role == 'admin' || role == 'pharmacist')) {
+      if (loginSuccess && (role == 'admin' || role == 'pharmacist')) {
         await AuthSession.clearSession();
 
         _stopLoading();
@@ -255,16 +281,13 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
         return;
       }
 
-      final bool allowedMobileRole =
-          role == 'doctor' || role == 'volunteer';
+      final bool allowedMobileRole = role == 'doctor' || role == 'volunteer';
 
       if (!loginSuccess || user == null) {
         _stopLoading();
 
         _showSnackBar(
-          message.isNotEmpty
-              ? message
-              : 'Login failed. Please try again.',
+          message.isNotEmpty ? message : 'Login failed. Please try again.',
         );
         return;
       }
@@ -294,6 +317,10 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
         return;
       }
 
+      await _saveRememberedCredentials(
+  email: email,
+);
+
       try {
         await AuthService.fetchMe();
       } catch (e) {
@@ -302,8 +329,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
 
       _stopLoading();
 
-      final String name =
-          (user['name'] ?? user['full_name'] ?? 'User').toString();
+      final String name = (user['name'] ?? user['full_name'] ?? 'User').toString();
 
       _showSnackBar('Welcome back, $name! 👋');
 
@@ -443,8 +469,8 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                 children: [
                   if (secondButtonText != null) ...[
                     TextButton(
-                      onPressed: onSecondPressed ??
-                          () => Navigator.pop(context),
+                      onPressed:
+                          onSecondPressed ?? () => Navigator.pop(context),
                       child: Text(
                         secondButtonText,
                         style: const TextStyle(
@@ -463,8 +489,7 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                     ),
-                    onPressed:
-                        onPressed ?? () => Navigator.pop(context),
+                    onPressed: onPressed ?? () => Navigator.pop(context),
                     child: Text(buttonText),
                   ),
                 ],
@@ -482,9 +507,9 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
     final bool isMobile = width < 700;
 
     return GestureDetector(
-  onTap: () => FocusScope.of(context).unfocus(),
-  child: Scaffold(
-    resizeToAvoidBottomInset: false,
+      onTap: () => FocusScope.of(context).unfocus(),
+      child: Scaffold(
+        resizeToAvoidBottomInset: false,
         body: Container(
           width: double.infinity,
           height: double.infinity,
@@ -514,8 +539,8 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                     child: ConstrainedBox(
                       constraints: const BoxConstraints(maxWidth: 430),
                       child: SizedBox(
-                        height: constraints.maxHeight -
-                            (outerVerticalPadding * 2),
+                        height:
+                            constraints.maxHeight - (outerVerticalPadding * 2),
                         child: Container(
                           padding: EdgeInsets.symmetric(
                             horizontal: cardHorizontalPadding,
@@ -599,38 +624,36 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                                   ),
                                 ),
                               ),
-                              SizedBox(height: isMobile ? 2 : 8),
-                              Align(
-                                alignment: Alignment.centerRight,
-                                child: TextButton(
-                                  style: TextButton.styleFrom(
-                                    padding: EdgeInsets.zero,
-                                    minimumSize: Size.zero,
-                                    tapTargetSize:
-                                        MaterialTapTargetSize.shrinkWrap,
-                                  ),
-                                  onPressed: () {
-                                    Navigator.push(
-                                      context,
-                                      MaterialPageRoute(
-                                        builder: (_) =>
-                                            const ForgotPasswordScreen(),
-                                      ),
-                                    );
-                                  },
-                                  child: const Text(
-                                    'Forgot Password?',
-                                    style: TextStyle(
-                                      color: Colors.white,
-                                      fontSize: 13,
-                                      fontWeight: FontWeight.w700,
-                                      decoration: TextDecoration.underline,
-                                      decorationColor: Colors.white,
-                                    ),
-                                  ),
-                                ),
-                              ),
-                              SizedBox(height: isMobile ? 16 : 22),
+                              SizedBox(height: isMobile ? 4 : 8),
+Align(
+  alignment: Alignment.centerRight,
+  child: TextButton(
+    style: TextButton.styleFrom(
+      padding: EdgeInsets.zero,
+      minimumSize: Size.zero,
+      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+    ),
+    onPressed: () {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => const ForgotPasswordScreen(),
+        ),
+      );
+    },
+    child: const Text(
+      'Forgot Password?',
+      style: TextStyle(
+        color: Colors.white,
+        fontSize: 13,
+        fontWeight: FontWeight.w700,
+        decoration: TextDecoration.underline,
+        decorationColor: Colors.white,
+      ),
+    ),
+  ),
+),
+SizedBox(height: isMobile ? 14 : 22),
                               SizedBox(
                                 width: double.infinity,
                                 height: isMobile ? 52 : 58,
@@ -744,21 +767,21 @@ class _LandingpageWidgetState extends State<LandingpageWidget> {
                                   ),
                                 ),
                               ),
-                              const Spacer(flex: 1),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
-                  ),
-                );
-              },
-            ),
-          ),
-        ),
-      ),
-    );
-  }
+                             const Spacer(flex: 1),
+                            ],          // ← closes children list
+                          ),            // ← closes Column
+                        ),              // ← closes Container
+                      ),                // ← closes SizedBox
+                    ),                  // ← closes ConstrainedBox
+                  ),                    // ← closes Center
+                );                      // ← closes Padding (return value)
+              },                        // ← closes LayoutBuilder builder
+            ),                          // ← closes LayoutBuilder
+          ),                            // ← closes SafeArea
+        ),                              // ← closes Container (gradient)
+      ),                                // ← closes Scaffold
+    );                                  // ← closes GestureDetector (return)
+  }               
 
   Widget _buildLogo() {
     return SizedBox(

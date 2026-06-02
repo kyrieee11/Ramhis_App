@@ -173,64 +173,86 @@ class _SignupProfessionalVerificationWidgetState
   }
 
   @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF4169D8),
-                  Color(0xFF234AB3),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
-            child: SafeArea(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  children: [
-                    const SizedBox(height: 82),
-                    const Text(
-                      'Create',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w300,
-                      ),
-                    ),
-                    Text(
-                      _accountTitle,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 24),
-                    const LinearProgressIndicator(
-                      value: 3 / 4,
-                      color: Color(0xFFF05261),
-                      backgroundColor: Colors.white24,
-                      minHeight: 6,
-                    ),
-                    const SizedBox(height: 18),
-                    Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 24,
-                          backgroundColor: Colors.white24,
-                          child: Icon(
-                            Icons.verified_user_outlined,
-                            color: Colors.white,
-                          ),
+Widget build(BuildContext context) {
+  return Scaffold(
+    resizeToAvoidBottomInset: true,
+    body: Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF4169D8),
+            Color(0xFF234AB3),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: SafeArea(
+        child: Center(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: ConstrainedBox(
+              constraints: const BoxConstraints(maxWidth: 430),
+              child: Column(
+                children: [
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: InkWell(
+                      onTap: () => Navigator.pop(context),
+                      borderRadius: BorderRadius.circular(16),
+                      child: Container(
+                        width: 50,
+                        height: 50,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.9),
+                          borderRadius: BorderRadius.circular(16),
                         ),
-                        const SizedBox(width: 12),
-                        Text(
+                        child: const Icon(
+                          Icons.arrow_back,
+                          color: Color(0xFF4267D6),
+                        ),
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'Create',
+                    style: TextStyle(
+                      color: Colors.white70,
+                      fontSize: 24,
+                      fontWeight: FontWeight.w300,
+                    ),
+                  ),
+                  Text(
+                    _accountTitle,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 32,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  const LinearProgressIndicator(
+                    value: 3 / 4,
+                    color: Color(0xFFF05261),
+                    backgroundColor: Colors.white24,
+                    minHeight: 6,
+                  ),
+                  const SizedBox(height: 10),
+                  Row(
+                    children: [
+                      const CircleAvatar(
+                        radius: 24,
+                        backgroundColor: Colors.white24,
+                        child: Icon(
+                          Icons.verified_user_outlined,
+                          color: Colors.white,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Expanded(
+                        child: Text(
                           'Step 3 of 4\n${_isDoctor ? 'Professional Verification' : _isVolunteer ? 'Volunteer Verification' : 'Account Verification'}',
                           style: const TextStyle(
                             color: Colors.white,
@@ -238,69 +260,43 @@ class _SignupProfessionalVerificationWidgetState
                             fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 22),
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(20),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEAF4FF),
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.18),
-                              blurRadius: 24,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
-                        ),
-                        child: SingleChildScrollView(
-                          child: _isDoctor
-                              ? _buildDoctorFields()
-                              : _isVolunteer
-                                  ? _buildVolunteerFields()
-                                  : _buildRegularUserFields(),
-                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 12),
+                  Expanded(
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF4FF),
+                        borderRadius: BorderRadius.circular(30),
+                        boxShadow: [
+                          BoxShadow(
+                            color: Colors.black.withValues(alpha: 0.18),
+                            blurRadius: 24,
+                            offset: const Offset(0, 12),
+                          ),
+                        ],
+                      ),
+                      child: SingleChildScrollView(
+                        child: _isDoctor
+                            ? _buildDoctorFields()
+                            : _isVolunteer
+                                ? _buildVolunteerFields()
+                                : _buildRegularUserFields(),
                       ),
                     ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
           ),
-          Positioned(
-            top: 58,
-            left: 24,
-            child: InkWell(
-              onTap: () => Navigator.pop(context),
-              borderRadius: BorderRadius.circular(16),
-              child: Container(
-                width: 50,
-                height: 50,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.9),
-                  borderRadius: BorderRadius.circular(16),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.15),
-                      blurRadius: 10,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: const Icon(
-                  Icons.arrow_back,
-                  color: Color(0xFF4267D6),
-                ),
-              ),
-            ),
-          ),
-        ],
+        ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildDoctorFields() {
     return Column(
@@ -455,7 +451,7 @@ class _SignupProfessionalVerificationWidgetState
   Widget _nextButton() {
     return SizedBox(
       width: double.infinity,
-      height: 58,
+      height: 46,
       child: ElevatedButton.icon(
         onPressed: _goNext,
         icon: const Icon(Icons.navigate_next),
@@ -509,7 +505,7 @@ class _SignupProfessionalVerificationWidgetState
         ),
         contentPadding: const EdgeInsets.symmetric(
           horizontal: 16,
-          vertical: 18,
+          vertical: 12,
         ),
         border: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),

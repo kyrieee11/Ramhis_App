@@ -533,7 +533,7 @@ void _showInsightModal({
               ),
             ),
 
-            const SizedBox(height: 28),
+            const SizedBox(height: 20),
           ],
         ),
       );
@@ -593,7 +593,6 @@ void _showInsightModal({
     // ↓ CHANGED: wrap the entire Scaffold with LogoLoadingOverlay
     return LogoLoadingOverlay(
       isLoading: isLoading,
-      message: 'Loading dashboard...',
       child: Scaffold(
         backgroundColor: const Color(0xFFF4F6FB),
         body: SafeArea(
@@ -604,7 +603,7 @@ void _showInsightModal({
             // ↓ CHANGED: removed the isLoading ternary — overlay handles it
             child: SingleChildScrollView(
               physics: const AlwaysScrollableScrollPhysics(),
-              padding: const EdgeInsets.fromLTRB(18, 18, 18, 30),
+              padding: const EdgeInsets.fromLTRB(16, 16, 16, 96),
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
@@ -636,90 +635,113 @@ void _showInsightModal({
   }
 
 Widget _buildHeader() {
-  final displayName = _readString(
+  final rawDisplayName = _readString(
     summary,
     ['firstName', 'first_name', 'name', 'userName'],
-  );
+  ).trim();
 
-  return Row(
-    children: [
-      Expanded(
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text(
-              displayName.isNotEmpty
-                  ? 'Hello, $displayName 👋'
-                  : 'Hello, VOLUNTEERS 👋',
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 27,
-                fontWeight: FontWeight.w900,
-                color: Color(0xFF111827),
-                letterSpacing: -0.7,
-              ),
-            ),
-            const SizedBox(height: 7),
-            const Text(
-              'Community Health Dashboard',
-              style: TextStyle(
-                fontSize: 14,
-                fontWeight: FontWeight.w600,
-                color: Color(0xFF7C86A5),
-                letterSpacing: 0.1,
-              ),
-            ),
-          ],
-        ),
-      ),
-      Container(
-        width: 52,
-        height: 52,
-        decoration: BoxDecoration(
-          color: Colors.white.withValues(alpha: 0.92),
-          borderRadius: BorderRadius.circular(20),
-          border: Border.all(
-            color: Colors.white.withValues(alpha: 0.9),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: const Color(0xFF4F46E5).withValues(alpha: 0.10),
-              blurRadius: 22,
-              offset: const Offset(0, 10),
-            ),
-          ],
-        ),
-        child: Stack(
-          clipBehavior: Clip.none,
-          children: [
-            const Center(
-              child: Icon(
-                Icons.notifications_none_rounded,
-                color: Color(0xFF5D74DA),
-                size: 26,
-              ),
-            ),
-            Positioned(
-              top: 12,
-              right: 13,
-              child: Container(
-                width: 9,
-                height: 9,
-                decoration: BoxDecoration(
-                  color: const Color(0xFFEF4444),
-                  shape: BoxShape.circle,
-                  border: Border.all(
-                    color: Colors.white,
-                    width: 1.6,
+  String displayName = rawDisplayName.isNotEmpty ? rawDisplayName : 'Volunteer';
+
+  if (displayName.length > 22) {
+    final parts = displayName.split(RegExp(r'\s+'));
+    displayName = parts.isNotEmpty && parts.first.isNotEmpty
+        ? parts.first
+        : 'Volunteer';
+  }
+
+  final greeting = 'Hello, $displayName 👋';
+
+  return LayoutBuilder(
+    builder: (context, constraints) {
+      final isNarrow = constraints.maxWidth < 360;
+
+      return Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                FittedBox(
+                  fit: BoxFit.scaleDown,
+                  alignment: Alignment.centerLeft,
+                  child: Text(
+                    greeting,
+                    maxLines: 1,
+                    softWrap: false,
+                    style: TextStyle(
+                      fontSize: isNarrow ? 23 : 27,
+                      fontWeight: FontWeight.w900,
+                      color: const Color(0xFF111827),
+                      letterSpacing: -0.7,
+                    ),
                   ),
                 ),
-              ),
+                const SizedBox(height: 7),
+                Text(
+                  'Community Health Dashboard',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    fontSize: isNarrow ? 12.5 : 14,
+                    fontWeight: FontWeight.w600,
+                    color: const Color(0xFF7C86A5),
+                    letterSpacing: 0.1,
+                  ),
+                ),
+              ],
             ),
-          ],
-        ),
-      ),
-    ],
+          ),
+          const SizedBox(width: 12),
+          Container(
+            width: isNarrow ? 46 : 52,
+            height: isNarrow ? 46 : 52,
+            decoration: BoxDecoration(
+              color: Colors.white.withValues(alpha: 0.92),
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: Colors.white.withValues(alpha: 0.9),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: const Color(0xFF4F46E5).withValues(alpha: 0.10),
+                  blurRadius: 22,
+                  offset: const Offset(0, 10),
+                ),
+              ],
+            ),
+            child: Stack(
+              clipBehavior: Clip.none,
+              children: [
+                Center(
+                  child: Icon(
+                    Icons.notifications_none_rounded,
+                    color: const Color(0xFF5D74DA),
+                    size: isNarrow ? 24 : 26,
+                  ),
+                ),
+                Positioned(
+                  top: 12,
+                  right: 13,
+                  child: Container(
+                    width: 9,
+                    height: 9,
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEF4444),
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 1.6,
+                      ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      );
+    },
   );
 }
 
@@ -753,7 +775,7 @@ Widget _buildMainInsightCard() {
       child: Stack(
         children: [
           Container(
-            padding: const EdgeInsets.all(24),
+            padding: const EdgeInsets.all(20),
             decoration: const BoxDecoration(
               gradient: LinearGradient(
                 begin: Alignment.topLeft,
@@ -772,8 +794,8 @@ Widget _buildMainInsightCard() {
                 Row(
                   children: [
                     Container(
-                      width: 72,
-                      height: 72,
+                      width: 60,
+                      height: 60,
                       decoration: BoxDecoration(
                         borderRadius:
                             BorderRadius.circular(24),
@@ -794,11 +816,11 @@ Widget _buildMainInsightCard() {
                       child: const Icon(
                         Icons.shield_rounded,
                         color: Colors.white,
-                        size: 38,
+                        size: 32,
                       ),
                     ),
 
-                    const SizedBox(width: 18),
+                    const SizedBox(width: 14),
 
                     const Expanded(
                       child: Text(
@@ -868,22 +890,20 @@ Widget _buildMainInsightCard() {
                           Expanded(
                             child: Row(
                               children: [
-                                Flexible(
-                                  child: Text(
-                                    '$totalPatients',
-                                    maxLines: 1,
-                                    overflow:
-                                        TextOverflow
-                                            .ellipsis,
-                                    style:
-                                        const TextStyle(
-                                      color:
-                                          Colors.white,
-                                      fontSize: 52,
-                                      fontWeight:
-                                          FontWeight
-                                              .w900,
-                                      height: 1,
+                                Expanded(
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    alignment: Alignment.centerLeft,
+                                    child: Text(
+                                      '$totalPatients',
+                                      maxLines: 1,
+                                      softWrap: false,
+                                      style: const TextStyle(
+                                        color: Colors.white,
+                                        fontSize: 48,
+                                        fontWeight: FontWeight.w900,
+                                        height: 1,
+                                      ),
                                     ),
                                   ),
                                 ),
@@ -892,9 +912,8 @@ Widget _buildMainInsightCard() {
 
                                 const Icon(
                                   Icons.trending_up,
-                                  color:
-                                      Color(0xFF22C55E),
-                                  size: 34,
+                                  color: Color(0xFF22C55E),
+                                  size: 30,
                                 ),
                               ],
                             ),
@@ -1016,15 +1035,19 @@ Widget _whiteMetric(String label, String value) {
         Row(
           children: [
             Flexible(
-              child: Text(
-                value,
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 21,
-                  fontWeight: FontWeight.w900,
-                  letterSpacing: -0.4,
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: Alignment.centerLeft,
+                child: Text(
+                  value,
+                  maxLines: 1,
+                  softWrap: false,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 21,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.4,
+                  ),
                 ),
               ),
             ),
@@ -2034,7 +2057,7 @@ Widget _sectionCard({
 }) {
   return Container(
     width: double.infinity,
-    padding: const EdgeInsets.all(20),
+    padding: const EdgeInsets.all(16),
     decoration: BoxDecoration(
       color: Colors.white.withValues(alpha: 0.94),
       borderRadius: BorderRadius.circular(30),
@@ -2088,7 +2111,7 @@ Widget _sectionCard({
             ),
           ],
         ),
-        const SizedBox(height: 18),
+        const SizedBox(height: 14),
         child,
       ],
     ),
@@ -2119,12 +2142,12 @@ Widget _listTile({
       ],
     ),
     child: Padding(
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.all(12),
       child: Row(
         children: [
           Container(
-            width: 42,
-            height: 42,
+            width: 40,
+            height: 40,
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
@@ -2154,6 +2177,7 @@ Widget _listTile({
               children: [
                 Text(
                   title,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFF111827),
@@ -2164,6 +2188,7 @@ Widget _listTile({
                 const SizedBox(height: 4),
                 Text(
                   subtitle,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: const TextStyle(
                     color: Color(0xFF7C86A5),
@@ -2175,16 +2200,21 @@ Widget _listTile({
             ),
           ),
           const SizedBox(width: 10),
-          Flexible(
-            child: Text(
-              trailing,
-              maxLines: 1,
-              overflow: TextOverflow.ellipsis,
-              textAlign: TextAlign.right,
-              style: TextStyle(
-                color: accentColor,
-                fontWeight: FontWeight.w900,
-                fontSize: 13.5,
+          ConstrainedBox(
+            constraints: const BoxConstraints(maxWidth: 110),
+            child: FittedBox(
+              fit: BoxFit.scaleDown,
+              alignment: Alignment.centerRight,
+              child: Text(
+                trailing,
+                maxLines: 1,
+                softWrap: false,
+                textAlign: TextAlign.right,
+                style: TextStyle(
+                  color: accentColor,
+                  fontWeight: FontWeight.w900,
+                  fontSize: 13.5,
+                ),
               ),
             ),
           ),

@@ -4,6 +4,8 @@ import 'package:flutter/material.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import 'package:ramhis_app/core/app_config.dart';
+import 'package:ramhis_app/core/session_manager.dart';
+import 'package:ramhis_app/core/online_status_manager.dart';
 import 'package:ramhis_app/features/user/screens/chat_room_screen.dart';
 import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
 import 'package:ramhis_app/models/chat_thread_model.dart';
@@ -28,10 +30,13 @@ const _kDividerColor = Color(0xFFE3E7F4);
 
 class ChatCopyWidget extends StatefulWidget {
   const ChatCopyWidget({super.key});
+  
 
   @override
   State<ChatCopyWidget> createState() => _ChatCopyWidgetState();
 }
+
+
 
 class _ChatCopyWidgetState extends State<ChatCopyWidget> {
   // Keys & controllers
@@ -72,45 +77,79 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
       ..dispose();
     _searchFocusNode.dispose();
     _socket
-      ?..off('group_chat_created')
-      ..disconnect()
-      ..dispose();
+  ?..off('group_chat_created')
+  ..off('user_status_changed')
+  ..disconnect()
+  ..dispose();
     super.dispose();
   }
 
   // ── Socket ─────────────────────────────────────────────────
 
   void _connectSocket() {
-    _socket = io.io(
-      AppConfig.baseUrl,
-      io.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .build(),
-    )..connect();
+  _socket = io.io(
+    AppConfig.socketBaseUrl,
+    io.OptionBuilder()
+        .setTransports(['websocket'])
+        .disableAutoConnect()
+        .build(),
+  )..connect();
 
-    _socket!
-      ..onConnect((_) => debugPrint('✅ Socket connected'))
-      ..onDisconnect((_) => debugPrint('❌ Socket disconnected'))
-      ..on('group_chat_created', _onGroupChatCreated);
-  }
+  _socket!
+    ..onConnect((_) {
+      debugPrint('✅ Socket connected');
 
-  Future<void> _onGroupChatCreated(dynamic data) async {
-    if (!mounted) return;
-    await _loadThreads();
-    if (!mounted) return;
+      final userId =
+          AuthSession.currentUser?['_id'] ??
+          AuthSession.currentUser?['id'] ??
+          '';
 
-    final eventTitle = data is Map
-        ? (data['eventTitle'] ?? data['event_title'] ?? 'the event').toString()
-        : 'the event';
+      if (userId.toString().isNotEmpty) {
+        _socket?.emit(
+          'user_online',
+          userId.toString(),
+        );
+      }
+    })
+    ..onDisconnect(
+      (_) => debugPrint('❌ Socket disconnected'),
+    )
+    ..on('group_chat_created', _onGroupChatCreated)
+    ..on('user_status_changed', (data) {
+      if (data is! Map) return;
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text('🎉 You joined $eventTitle group chat!'),
-        behavior: SnackBarBehavior.floating,
-      ),
-    );
-  }
+      final userId =
+          data['userId']?.toString() ?? '';
+
+      final isOnline =
+          data['isOnline'] == true;
+
+      final lastSeenString =
+          data['lastSeen']?.toString();
+
+      final lastSeen =
+          lastSeenString != null
+              ? DateTime.tryParse(lastSeenString)
+              : null;
+
+      OnlineStatusManager.setStatus(
+        userId,
+        isOnline,
+        lastSeen,
+      );
+
+      if (mounted) {
+        setState(() {});
+      }
+    });
+}
+Future<void> _onGroupChatCreated(dynamic data) async {
+  debugPrint('📦 group_chat_created: $data');
+
+  if (!mounted) return;
+
+  await _loadThreads();
+}
 
   // ── Search ─────────────────────────────────────────────────
 
@@ -192,9 +231,12 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
     await Navigator.of(context).push(
       MaterialPageRoute(
         builder: (_) => ChatRoomWidget(
-          threadId: thread.id,
-          threadTitle: thread.displayName,
-        ),
+  threadId: thread.id,
+  threadTitle: thread.displayName,
+  otherUserId: thread.otherUserId,
+  isOnline: thread.isOnline,
+  lastSeen: thread.lastSeen,
+),
       ),
     );
     if (mounted) await _loadThreads();
@@ -312,11 +354,12 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
   // ── Sub-widgets ────────────────────────────────────────────
 
   Widget _avatar({
-    required String name,
-    double size = 52,
-    bool showOnline = true,
-    bool isGroup = false,
-  }) {
+  required String name,
+  String userId = '',
+  double size = 52,
+  bool showOnline = true,
+  bool isGroup = false,
+}) {
     final bg = isGroup ? _kPrimary : _avatarColor(name);
     return Stack(
       clipBehavior: Clip.none,
@@ -356,7 +399,9 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
               width: 14,
               height: 14,
               decoration: BoxDecoration(
-                color: _kOnline,
+                color: OnlineStatusManager.isOnline(userId)
+    ? const Color(0xFF22C55E)
+    : const Color(0xFF9CA3AF),
                 shape: BoxShape.circle,
                 border: Border.all(color: Colors.white, width: 2),
               ),
@@ -390,42 +435,45 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
   // ── Build ──────────────────────────────────────────────────
 
   @override
-  Widget build(BuildContext context) {
-    return GestureDetector(
-      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-      child: Scaffold(
-        key: _scaffoldKey,
-        backgroundColor: _kBackground,
-        body: SafeArea(
-          child: Column(
-            children: [
-              _buildHeader(),
-              Expanded(
-                child: RefreshIndicator(
-                  color: _kPrimary,
-                  onRefresh: _loadThreads,
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Column(
-                      children: [
-                        if (_searchQuery.trim().isNotEmpty) ...[
-                          const SizedBox(height: 14),
-                          _buildUserResults(),
-                          const SizedBox(height: 8),
-                        ],
-                        Expanded(child: _buildThreadList()),
+Widget build(BuildContext context) {
+  final bool keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+
+  return GestureDetector(
+    onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+    child: Scaffold(
+      key: _scaffoldKey,
+      backgroundColor: _kBackground,
+      resizeToAvoidBottomInset: true,
+      body: SafeArea(
+        child: Column(
+          children: [
+            _buildHeader(),
+            Expanded(
+              child: RefreshIndicator(
+                color: _kPrimary,
+                onRefresh: _loadThreads,
+                child: SizedBox(
+                  width: double.infinity,
+                  child: Column(
+                    children: [
+                      if (_searchQuery.trim().isNotEmpty) ...[
+                        const SizedBox(height: 14),
+                        _buildUserResults(),
+                        const SizedBox(height: 8),
                       ],
-                    ),
+                      Expanded(child: _buildThreadList()),
+                    ],
                   ),
                 ),
               ),
-              const CustomNavBar(currentIndex: 2),
-            ],
-          ),
+            ),
+            if (!keyboardOpen) const CustomNavBar(currentIndex: 2),
+          ],
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildHeader() {
     return Container(
@@ -645,9 +693,10 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
     }
 
     return _userResultsShell(
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
+  child: SingleChildScrollView(
+    child: Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
           const Padding(
             padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
             child: Text(
@@ -662,6 +711,7 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
           ),
           ..._searchUsers.map(_buildUserTile),
         ],
+    ),
       ),
     );
   }
@@ -670,7 +720,7 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       constraints:
-          constrained ? const BoxConstraints(maxHeight: 320) : null,
+    constrained ? const BoxConstraints(maxHeight: 220) : null,
       padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
       decoration: BoxDecoration(
         color: Colors.white,
@@ -705,7 +755,11 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
           padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
           child: Row(
             children: [
-              _avatar(name: fullName, size: 44),
+              _avatar(
+  name: fullName,
+  userId: (user['_id'] ?? user['id'] ?? '').toString(),
+  size: 44,
+),
               const SizedBox(width: 12),
               Expanded(
                 child: Column(
@@ -760,10 +814,13 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
   }
 
   Widget _buildThreadList() {
-    if (_isLoading) return _buildLoadingState();
-    if (_filteredThreads.isEmpty) return _buildEmptyState();
+  if (_isLoading) return _buildLoadingState();
 
-    return ListView.separated(
+  if (_filteredThreads.isEmpty) {
+    return Container();
+  }
+
+  return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
       padding: const EdgeInsets.fromLTRB(16, 18, 16, 22),
       itemCount: _filteredThreads.length,
@@ -839,11 +896,12 @@ class _ChatCopyWidgetState extends State<ChatCopyWidget> {
                     child: Row(
                       children: [
                         _avatar(
-                          name: displayName,
-                          size: 54,
-                          showOnline: !isGroup,
-                          isGroup: isGroup,
-                        ),
+  name: displayName,
+  userId: thread.otherUserId,
+  size: 54,
+  showOnline: !isGroup,
+  isGroup: isGroup,
+),
                         const SizedBox(width: 13),
                         Expanded(
                           child: Column(

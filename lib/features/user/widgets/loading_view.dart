@@ -19,43 +19,52 @@ class LogoLoadingOverlay extends StatelessWidget {
         child,
 
         if (isLoading)
-          Container(
-            width: double.infinity,
-            height: double.infinity,
-            color: Colors.black.withValues(alpha: 0.55),
-            child: Center(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  Image.asset(
-                    'assets/images/ramhis_logo.png',
-                    width: 180,
-                    height: 180,
-                    fit: BoxFit.contain,
-                  ),
-
-                  const SizedBox(height: 20),
-
-                  const CircularProgressIndicator(
-                    color: Colors.white,
-                    strokeWidth: 3,
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Text(
-                    message,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 18,
-                      fontWeight: FontWeight.bold,
-                      letterSpacing: 0.5,
-                    ),
-                  ),
-                ],
-              ),
-            ),
+  Positioned.fill(
+    child: Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF4169D8),
+            Color(0xFF234AB3),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+      ),
+      child: Center(
+        child: Container(
+          padding: const EdgeInsets.symmetric(
+            horizontal: 32,
+            vertical: 36,
           ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Image.asset(
+                'assets/images/ramhis_logo.png',
+                width: 110,
+                height: 110,
+              ),
+              const SizedBox(height: 24),
+              const CircularProgressIndicator(
+                color: Colors.white,
+              ),
+              const SizedBox(height: 18),
+              Text(
+                message,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700,
+                  decoration: TextDecoration.none,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    ),
+  ),
       ],
     );
   }

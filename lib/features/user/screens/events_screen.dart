@@ -803,9 +803,9 @@ class _EventsWidgetState extends State<EventsWidget> {
         onTap: () => _openEventDetails(event),
         child: Row(
           children: [
+            // ── Left accent bar ───────────────────────
             Container(
               width: 4,
-              height: 110,
               decoration: BoxDecoration(
                 color: accentColor,
                 borderRadius: const BorderRadius.only(
@@ -814,59 +814,79 @@ class _EventsWidgetState extends State<EventsWidget> {
                 ),
               ),
             ),
+            // ── Card content ──────────────────────────
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
+
+                    // ── Row 1: Badge ──────────────────
+                    Row(
+                      children: [
+                        const Spacer(),
+                        if (joinStatus == 'Approved')
+                          _compactBadge('Approved ✓', _kGreen),
+                        if (joinStatus == 'Pending')
+                          _compactBadge('Pending', _kOrange),
+                      ],
+                    ),
+
+                    const SizedBox(height: 4),
+
+                    // ── Title ─────────────────────────
+                    Text(
+                      event.title.isNotEmpty
+                          ? event.title
+                          : 'Untitled Event',
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _kTextPrimary,
+                        fontSize: 16,
+                        fontWeight: FontWeight.w900,
+                        height: 1.3,
+                      ),
+                    ),
+
+                    const SizedBox(height: 10),
+
+                    // ── Date ─────────────────────────
                     Row(
                       children: [
                         const Icon(
                           Icons.calendar_month_rounded,
-                          size: 18,
+                          size: 15,
                           color: _kTextSecondary,
                         ),
-                        const SizedBox(width: 8),
-                        const Text(
-                          'Date',
-                          style: TextStyle(
-                            color: _kTextSecondary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
+                        const SizedBox(width: 6),
+                        Expanded(
+                          child: Text(
+                            _eventDate(event),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: _kTextSecondary,
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
                         ),
-                        const Spacer(),
-                        if (joinStatus == 'Approved')
-                          _compactBadge(
-                            'Approved ✓',
-                            _kGreen,
-                          ),
-                        if (joinStatus == 'Pending')
-                          _compactBadge(
-                            'Pending',
-                            _kOrange,
-                          ),
                       ],
                     ),
-                    const SizedBox(height: 8),
-                    Text(
-                      _eventDate(event),
-                      style: const TextStyle(
-                        color: _kTextPrimary,
-                        fontSize: 18,
-                        fontWeight: FontWeight.w800,
-                      ),
-                    ),
-                    const SizedBox(height: 18),
-Row(
+
+                    const SizedBox(height: 6),
+
+                    // ── Location ──────────────────────
+                    Row(
                       children: [
                         const Icon(
                           Icons.location_on_rounded,
-                          size: 18,
+                          size: 15,
                           color: _kTextSecondary,
                         ),
-                        const SizedBox(width: 8),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
                             _eventLocation(event),
@@ -874,6 +894,7 @@ Row(
                             overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
                               color: _kTextSecondary,
+                              fontSize: 13,
                               fontWeight: FontWeight.w600,
                             ),
                           ),
@@ -882,9 +903,12 @@ Row(
                         const Icon(
                           Icons.chevron_right_rounded,
                           color: _kTextSecondary,
+                          size: 18,
                         ),
                       ],
                     ),
+
+                    const SizedBox(height: 4),
                   ],
                 ),
               ),
@@ -1144,6 +1168,42 @@ bool get hasCoordinates =>
   Color get typeColor => _typeColor(widget.typeText);
   Color get statusColor => _statusColor(widget.statusText);
   Widget _mapPreview() {
+  final double? latitude = widget.event.latitude;
+  final double? longitude = widget.event.longitude;
+
+  final bool hasValidCoordinates =
+      latitude != null &&
+      longitude != null &&
+      latitude >= -90 &&
+      latitude <= 90 &&
+      longitude >= -180 &&
+      longitude <= 180;
+
+  Future<void> openGoogleMaps() async {
+    if (!hasValidCoordinates) return;
+
+    final uri = Uri.parse(
+      'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
+    );
+
+    try {
+      await launchUrl(
+        uri,
+        mode: LaunchMode.externalApplication,
+      );
+    } catch (e) {
+      debugPrint('❌ Failed to open Google Maps: $e');
+
+      if (!mounted) return;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Unable to open Google Maps'),
+        ),
+      );
+    }
+  }
+
   return Container(
     height: 190,
     width: double.infinity,
@@ -1160,64 +1220,118 @@ bool get hasCoordinates =>
       ],
     ),
     clipBehavior: Clip.antiAlias,
-    child: hasCoordinates
+    child: hasValidCoordinates
         ? Stack(
             children: [
               MapLibreMap(
-                styleString:
-                    'https://demotiles.maplibre.org/style.json',
+                styleString: 'https://tiles.openfreemap.org/styles/liberty',
                 initialCameraPosition: CameraPosition(
-                  target: LatLng(
-                    widget.event.latitude!,
-                    widget.event.longitude!,
-                  ),
+                  target: LatLng(latitude, longitude),
                   zoom: 15,
                 ),
+                onMapCreated: (controller) {
+                  _mapController = controller;
+                },
+                onStyleLoadedCallback: () async {
+                  if (_mapController == null) return;
+
+                  try {
+                    await _mapController!.addSymbol(
+                      SymbolOptions(
+                        geometry: LatLng(latitude, longitude),
+                        iconImage: 'marker-15',
+                        iconSize: 1.8,
+                      ),
+                    );
+                  } catch (e) {
+                    debugPrint('❌ Failed to add MapLibre marker: $e');
+                  }
+                },
                 myLocationEnabled: false,
                 compassEnabled: false,
                 rotateGesturesEnabled: false,
                 tiltGesturesEnabled: false,
+                zoomGesturesEnabled: true,
+                scrollGesturesEnabled: true,
               ),
 
-              // Flutter marker overlay
               const Center(
-                child: Icon(
-                  Icons.location_pin,
-                  color: _kRed,
-                  size: 44,
+                child: IgnorePointer(
+                  child: Icon(
+                    Icons.location_pin,
+                    color: _kRed,
+                    size: 44,
+                  ),
                 ),
               ),
 
               Positioned(
-                right: 12,
+                left: 12,
                 bottom: 12,
-                child: GestureDetector(
-                  onTap: () => _openLocationInMaps(widget.locationText),
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(999),
-                      boxShadow: [
-                        BoxShadow(
-                          color: Colors.black.withValues(alpha: 0.12),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
+                right: 12,
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 9,
                         ),
-                      ],
-                    ),
-                    child: const Text(
-                      'Open map',
-                      style: TextStyle(
-                        color: _kPrimary,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
+                        decoration: BoxDecoration(
+                          color: Colors.white.withValues(alpha: 0.94),
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: Text(
+                          widget.event.location.isNotEmpty
+                              ? widget.event.location
+                              : 'Event location',
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: _kTextPrimary,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
                       ),
                     ),
-                  ),
+                    const SizedBox(width: 8),
+                    GestureDetector(
+                      onTap: openGoogleMaps,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 9,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _kPrimary,
+                          borderRadius: BorderRadius.circular(999),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.12),
+                              blurRadius: 10,
+                              offset: const Offset(0, 4),
+                            ),
+                          ],
+                        ),
+                        child: const Text(
+                          'Google Maps',
+                          style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 12,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -1233,6 +1347,7 @@ bool get hasCoordinates =>
           ),
   );
 }
+
 
   static Color _typeColor(String type) {
     switch (type.toLowerCase()) {
@@ -1730,7 +1845,7 @@ const SizedBox(height: 22),
       icon = Icons.event_available_rounded;
       color = _kGray;
     } else if (status == 'cancelled') {
-      text = 'Event Cancelled';
+      text = 'Cancel join request';
       icon = Icons.cancel_rounded;
       color = _kRed;
     } else if (joinStatus == 'Pending') {

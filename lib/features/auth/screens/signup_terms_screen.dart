@@ -331,8 +331,6 @@ class _SignupTermsConditionsWidgetState
   Widget build(BuildContext context) {
     final termsText = widget.accountType == 'doctor'
         ? '''
-TERMS AND CONDITIONS — Doctor Account
-Remote Area Medical (RAM) Philippines
 
 Welcome to the RAM Philippines Registration System. By completing your registration as a licensed healthcare professional, you acknowledge that you have read, understood, and agreed to the following terms.
 
@@ -425,7 +423,7 @@ By submitting your registration, you confirm that you have read and understood t
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            height: 360,
+            height: 300,
             padding: const EdgeInsets.all(20),
             decoration: BoxDecoration(
               color: Colors.white,
@@ -439,16 +437,56 @@ By submitting your registration, you confirm that you have read and understood t
               ],
             ),
             child: SingleChildScrollView(
-              child: Text(
-                termsText,
-                textAlign: TextAlign.left,
-                style: const TextStyle(
-                  fontSize: 15,
-                  height: 1.55,
-                  color: Color(0xFF111827),
-                ),
-              ),
-            ),
+  child: Column(
+    crossAxisAlignment: CrossAxisAlignment.stretch,
+    children: [
+      Text(
+        'TERMS AND CONDITIONS',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 20,
+          fontWeight: FontWeight.bold,
+        ),
+      ),
+
+      const SizedBox(height: 6),
+
+      Text(
+        widget.accountType == 'doctor'
+            ? 'Doctor Account'
+            : 'Volunteer Account',
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          fontSize: 18,
+          fontWeight: FontWeight.w600,
+        ),
+      ),
+
+      const SizedBox(height: 4),
+
+      const Text(
+        'Remote Area Medical (RAM) Philippines',
+        textAlign: TextAlign.center,
+        style: TextStyle(
+          fontSize: 15,
+          color: Colors.black54,
+        ),
+      ),
+
+      const SizedBox(height: 18),
+
+      Text(
+        termsText,
+        textAlign: TextAlign.left,
+        style: const TextStyle(
+          fontSize: 15,
+          height: 1.55,
+          color: Color(0xFF111827),
+        ),
+      ),
+    ],
+  ),
+),
           ),
           const SizedBox(height: 22),
           Row(
@@ -492,7 +530,7 @@ By submitting your registration, you confirm that you have read and understood t
             onTap: _isSubmitting ? null : _submit,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              height: 58,
+              height: 46,
               decoration: BoxDecoration(
                 borderRadius: BorderRadius.circular(32),
                 gradient: LinearGradient(
@@ -574,75 +612,81 @@ class _SignupStepScaffold extends StatelessWidget {
     final progress = currentStep / totalSteps;
 
     return Scaffold(
-      body: Stack(
-        children: [
-          Container(
-            decoration: const BoxDecoration(
-              gradient: LinearGradient(
-                colors: [
-                  Color(0xFF4169D8),
-                  Color(0xFF234AB3),
-                ],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              ),
-            ),
+      resizeToAvoidBottomInset: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF4169D8),
+              Color(0xFF234AB3),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
           ),
-          SafeArea(
-            child: Padding(
-              padding: const EdgeInsets.all(24),
-              child: Column(
-                children: [
-                  Row(
-                    children: [
-                      IconButton(
-                        onPressed: onBack,
-                        icon: const Icon(
-                          Icons.arrow_back_rounded,
-                          color: Colors.white,
-                        ),
+        ),
+        child: SafeArea(
+          child: Padding(
+            padding: const EdgeInsets.all(16),
+            child: Column(
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: InkWell(
+                    onTap: onBack,
+                    borderRadius: BorderRadius.circular(16),
+                    child: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.9),
+                        borderRadius: BorderRadius.circular(16),
                       ),
-                      const Spacer(),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  const Text(
-                    'Create',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w300,
+                      child: const Icon(
+                        Icons.arrow_back,
+                        color: Color(0xFF4267D6),
+                      ),
                     ),
                   ),
-                  Text(
-                    accountName,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
+                ),
+                const SizedBox(height: 8),
+                const Text(
+                  'Create',
+                  style: TextStyle(
+                    color: Colors.white70,
+                    fontSize: 24,
+                    fontWeight: FontWeight.w300,
                   ),
-                  const SizedBox(height: 24),
-                  LinearProgressIndicator(
-                    value: progress,
-                    color: const Color(0xFFF05261),
-                    backgroundColor: Colors.white24,
-                    minHeight: 6,
+                ),
+                Text(
+                  accountName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 32,
+                    fontWeight: FontWeight.bold,
                   ),
-                  const SizedBox(height: 18),
-                  Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.white24,
-                        child: Icon(
-                          Icons.article_outlined,
-                          color: Colors.white,
-                        ),
+                ),
+                const SizedBox(height: 16),
+                LinearProgressIndicator(
+                  value: progress,
+                  color: const Color(0xFFF05261),
+                  backgroundColor: Colors.white24,
+                  minHeight: 6,
+                ),
+                const SizedBox(height: 10),
+                Row(
+                  children: [
+                    const CircleAvatar(
+                      radius: 24,
+                      backgroundColor: Colors.white24,
+                      child: Icon(
+                        Icons.article_outlined,
+                        color: Colors.white,
                       ),
-                      const SizedBox(width: 12),
-                      Text(
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Text(
                         'Step $currentStep of $totalSteps\n$stepLabel',
                         style: const TextStyle(
                           color: Colors.white,
@@ -650,27 +694,27 @@ class _SignupStepScaffold extends StatelessWidget {
                           fontWeight: FontWeight.w600,
                         ),
                       ),
-                    ],
-                  ),
-                  const SizedBox(height: 22),
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEAF4FF),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: SingleChildScrollView(
-                        child: child,
-                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 12),
+                Expanded(
+                  child: Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFEAF4FF),
+                      borderRadius: BorderRadius.circular(30),
+                    ),
+                    child: SingleChildScrollView(
+                      child: child,
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
-        ],
+        ),
       ),
     );
   }

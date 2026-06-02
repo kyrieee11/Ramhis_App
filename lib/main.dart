@@ -28,6 +28,7 @@ class MyApp extends StatefulWidget {
 
 class _MyAppState extends State<MyApp> {
   StreamSubscription<Uri>? _linkSubscription;
+  bool _isChecking = true;
 
   @override
   void initState() {
@@ -36,63 +37,96 @@ class _MyAppState extends State<MyApp> {
     _checkSession();
   }
 
+  // ── Session ────────────────────────────────────────────────
+
   Future<void> _checkSession() async {
-    if (!AuthSession.isLoggedIn) return;
+  print('🔑 token on launch: ${AuthSession.accessToken}');
+  print('👤 user on launch: ${AuthSession.currentUser}');
 
-    final user = await AuthSession.fetchMe();
-
-    if (user == null) {
-      final refreshed = await AuthSession.refreshSession();
-
-      if (refreshed) {
-        await AuthSession.fetchMe();
-      } else {
-        await AuthSession.clearSession();
-      }
-    }
-
-    final role = AuthSession.currentUser?['role']
-        ?.toString()
-        .toLowerCase();
-
-    if (role == 'admin') {
-      await AuthSession.clearSession();
-    }
-
-    if (mounted) setState(() {});
+  if (!AuthSession.isLoggedIn) {
+    if (mounted) setState(() => _isChecking = false);
+    return;
   }
+
+  try {
+    await AuthSession.fetchMe();
+  } catch (error) {
+    final message = error.toString().toLowerCase();
+
+    final isAuthFailure =
+        message.contains('401') ||
+        message.contains('403') ||
+        message.contains('unauthorized') ||
+        message.contains('forbidden') ||
+        message.contains('jwt') ||
+        message.contains('token');
+
+    if (isAuthFailure) {
+      await AuthSession.clearSession();
+
+      final context = navigatorKey.currentContext;
+      if (context != null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Your session expired, please log in again.'),
+          ),
+        );
+      }
+
+      if (mounted) setState(() => _isChecking = false);
+      return;
+    }
+
+    debugPrint(
+      '⚠️ Network issue detected. Keeping local session.',
+    );
+  }
+
+  final role =
+      AuthSession.currentUser?['role']?.toString().toLowerCase();
+
+  if (role == 'admin') {
+    await AuthSession.clearSession();
+    if (mounted) setState(() => _isChecking = false);
+    return;
+  }
+
+  if (mounted) setState(() => _isChecking = false);
+}
+
+  // ── Deep links ─────────────────────────────────────────────
 
   Future<void> _initDeepLinks() async {
-  final appLinks = AppLinks();
+    final appLinks = AppLinks();
 
-  final initialUri = await appLinks.getInitialLink();
+    final initialUri = await appLinks.getInitialLink();
+    if (initialUri != null) {
+      _handleDeepLink(initialUri);
+    }
 
-  if (initialUri != null) {
-    _handleDeepLink(initialUri);
+    _linkSubscription = appLinks.uriLinkStream.listen((uri) {
+      _handleDeepLink(uri);
+    });
   }
 
-  _linkSubscription = appLinks.uriLinkStream.listen((uri) {
-    _handleDeepLink(uri);
-  });
-}
+  void _handleDeepLink(Uri uri) {
+    final isResetPasswordLink =
+        uri.host == 'reset-password' ||
+        uri.path.contains('reset-password');
 
-void _handleDeepLink(Uri uri) {
-  final isResetPasswordLink =
-      uri.host == 'reset-password' ||
-      uri.path.contains('reset-password');
+    if (!isResetPasswordLink) return;
 
-  if (!isResetPasswordLink) return;
+    final token = uri.queryParameters['token'];
+    if (token == null || token.isEmpty) return;
 
-  final token = uri.queryParameters['token'];
+    navigatorKey.currentState?.push(
+      MaterialPageRoute(
+        builder: (_) => ResetPasswordScreen(token: token),
+      ),
+    );
+  }
 
-  if (token == null || token.isEmpty) return;
-
-  navigatorKey.currentState?.push(
-    MaterialPageRoute(
-      builder: (_) => ResetPasswordScreen(token: token),
-    ),
-  );
-}
+  // ── Lifecycle ──────────────────────────────────────────────
 
   @override
   void dispose() {
@@ -100,7 +134,18 @@ void _handleDeepLink(Uri uri) {
     super.dispose();
   }
 
+  // ── Routing ────────────────────────────────────────────────
+
   Widget _startScreen() {
+    if (_isChecking) {
+      return const Scaffold(
+        backgroundColor: Color(0xFF5B76F7),
+        body: Center(
+          child: CircularProgressIndicator(color: Colors.white),
+        ),
+      );
+    }
+
     if (!AuthSession.isLoggedIn) {
       return const LandingpageWidget();
     }
@@ -108,25 +153,21 @@ void _handleDeepLink(Uri uri) {
     return const HomeScreen();
   }
 
+  // ── Build ──────────────────────────────────────────────────
+
   @override
   Widget build(BuildContext context) {
     return MaterialApp(
-  navigatorKey: navigatorKey,
-  debugShowCheckedModeBanner: false,
-  home: _startScreen(),
-  routes: {
-  '/reset-password': (context) {
-    final args =
-        ModalRoute.of(context)?.settings.arguments;
-
-    final token =
-        args is String ? args : '';
-
-    return ResetPasswordScreen(
-      token: token,
+      navigatorKey: navigatorKey,
+      debugShowCheckedModeBanner: false,
+      home: _startScreen(),
+      routes: {
+        '/reset-password': (context) {
+          final args = ModalRoute.of(context)?.settings.arguments;
+          final token = args is String ? args : '';
+          return ResetPasswordScreen(token: token);
+        },
+      },
     );
-  },
-},
-);
   }
 }

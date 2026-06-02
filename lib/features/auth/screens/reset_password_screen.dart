@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:ramhis_app/services/api/auth_service.dart';
+import 'package:ramhis_app/features/auth/screens/landing_page.dart';
 
 class ResetPasswordScreen
     extends StatefulWidget {
@@ -87,16 +88,44 @@ class _ResetPasswordScreenState
 
     if (!mounted) return;
 
-    _showSnackBar(
-      response['message'] ??
-          'Password reset successful.',
-    );
+    Future<void> _showSuccessDialog(String message) async {
+  await showDialog(
+    context: context,
+    barrierDismissible: false,
+    builder: (dialogContext) {
+      return AlertDialog(
+        shape: RoundedRectangleBorder(
+          borderRadius: BorderRadius.circular(20),
+        ),
+        title: const Text(
+          'Success',
+          style: TextStyle(fontWeight: FontWeight.bold),
+        ),
+        content: Text(message),
+        actions: [
+          ElevatedButton(
+  onPressed: () {
+    Navigator.pop(dialogContext);
 
-    Navigator.pushNamedAndRemoveUntil(
+    Navigator.pushAndRemoveUntil(
       context,
-      '/login',
+      MaterialPageRoute(
+        builder: (_) => const LandingpageWidget(),
+      ),
       (route) => false,
     );
+  },
+  child: const Text('Back to Login'),
+),
+        ],
+      );
+    },
+  );
+}
+
+    await _showSuccessDialog(
+  response['message'] ?? 'Password reset successful.',
+);
   } catch (e) {
     if (!mounted) return;
 

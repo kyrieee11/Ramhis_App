@@ -11,6 +11,10 @@ class ChatThreadModel {
   final int memberCount;
   final List<dynamic> participants;
 
+  final String otherUserId;
+  final bool isOnline;
+  final String lastSeen;
+
   const ChatThreadModel({
     required this.id,
     required this.name,
@@ -22,6 +26,9 @@ class ChatThreadModel {
     required this.eventTitle,
     required this.memberCount,
     required this.participants,
+    required this.otherUserId,
+    required this.isOnline,
+    required this.lastSeen,
   });
 
   bool get isGroup => type.toLowerCase() == 'group';
@@ -89,6 +96,9 @@ class ChatThreadModel {
               ) ??
               participants.length,
       participants: participants,
+      otherUserId: json['otherUserId']?.toString() ?? '',
+      isOnline: json['isOnline'] == true,
+      lastSeen: json['lastSeen']?.toString() ?? '',
     );
   }
 }
