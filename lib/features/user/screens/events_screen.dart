@@ -11,6 +11,11 @@ import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
 import 'package:ramhis_app/models/event_model.dart';
 import 'package:ramhis_app/services/api/event_service.dart';
 
+// Shared helpers (date parsing / success-check / title casing), also used
+// by home_screen.dart, so both stay in sync. Adjust the path to match
+// wherever you place event_helpers.dart in your project.
+import 'package:ramhis_app/utils/event_helpers.dart';
+
 const _kPrimary = Color(0xFF5B76F7);
 const _kAccent = Color(0xFF4564E8);
 const _kBg = Color(0xFFF0F2FF);
@@ -153,11 +158,11 @@ class _EventsWidgetState extends State<EventsWidget> {
     }
   }
 
-  bool _isSuccess(Map<String, dynamic> result) {
-    return result['ok'] == true ||
-        result['success'] == true ||
-        result['message'] != null;
-  }
+  // FIX: uses shared isEventActionSuccessful instead of a loose local
+  // check, so join/leave/delete responses are no longer treated as
+  // successful just because the payload happens to include a `message`
+  // field (which many error responses also have).
+  bool _isSuccess(Map<String, dynamic> result) => isEventActionSuccessful(result);
 
   Future<bool> _joinEvent(String eventId) async {
     try {
@@ -235,10 +240,14 @@ class _EventsWidgetState extends State<EventsWidget> {
 
   bool _isClosed(EventModel event) {
     final status = event.status.toLowerCase();
+
+    // A past event is closed even if its status/registrationOpen has not
+    // yet been updated by the server.
     return status == 'completed' ||
         status == 'cancelled' ||
         status == 'done' ||
-        !event.registrationOpen;
+        !event.registrationOpen ||
+        isPastEventDate(event);
   }
 
   List<EventModel> get filteredEvents {
@@ -335,25 +344,9 @@ class _EventsWidgetState extends State<EventsWidget> {
     return _dynamicField(event, 'imageUrl');
   }
 
-  String _eventDate(EventModel event) {
-    final rawDate = _dynamicField(event, 'date');
-
-    if (rawDate.isNotEmpty) {
-      final parsed = DateTime.tryParse(rawDate);
-
-      if (parsed != null) {
-        return _formatDate(parsed);
-      }
-
-      return rawDate;
-    }
-
-    if (event.operationDays.trim().isNotEmpty) {
-      return event.operationDays;
-    }
-
-    return 'Date to be announced';
-  }
+  // FIX: now delegates to the shared formatEventDateDisplay so this
+  // matches home_screen.dart's date formatting/fallback exactly.
+  String _eventDate(EventModel event) => formatEventDateDisplay(event);
 
   String _eventTime(EventModel event) {
     final start = _dynamicField(event, 'startTime');
@@ -427,25 +420,6 @@ class _EventsWidgetState extends State<EventsWidget> {
     if (event.alreadyJoined) return 'Pending';
 
     return 'None';
-  }
-
-  String _formatDate(DateTime date) {
-    const months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
-    ];
-
-    return '${months[date.month - 1]} ${date.day}, ${date.year}';
   }
 
   Color _typeColor(String type) {
@@ -557,7 +531,8 @@ class _EventsWidgetState extends State<EventsWidget> {
                           )
                         else
                           Column(
-                            children: list.map(_buildEventCard).toList(),
+                            // Wrap each event card with swipe-to-remove.
+                            children: list.map(_buildSwipeableEventCard).toList(),
                           ),
                       ],
                     ),
@@ -771,8 +746,155 @@ class _EventsWidgetState extends State<EventsWidget> {
     );
   }
 
+  // Swipe left to quickly remove an event schedule.
+  Widget _buildSwipeableEventCard(EventModel event) {
+    return Dismissible(
+      key: ValueKey('event_${event.id}'),
+      direction: DismissDirection.endToStart,
+      dismissThresholds: const {
+        DismissDirection.endToStart: 0.45,
+      },
+      background: Container(
+        margin: const EdgeInsets.symmetric(
+          horizontal: 16,
+          vertical: 8,
+        ),
+        alignment: Alignment.centerRight,
+        padding: const EdgeInsets.only(right: 24),
+        decoration: BoxDecoration(
+          color: _kRed,
+          borderRadius: BorderRadius.circular(18),
+        ),
+        child: const Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.delete_outline_rounded,
+              color: Colors.white,
+              size: 28,
+            ),
+            SizedBox(height: 4),
+            Text(
+              'Remove',
+              style: TextStyle(
+                color: Colors.white,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+      ),
+      confirmDismiss: (_) async {
+        return await _confirmRemoveEvent(event);
+      },
+      resizeDuration: const Duration(milliseconds: 250),
+      child: _buildEventCard(event),
+    );
+  }
+
+  Future<bool> _confirmRemoveEvent(EventModel event) async {
+    final eventTitle = titleCaseEventText(
+      event.title.trim().isNotEmpty ? event.title : 'Untitled Event',
+    );
+
+    final confirmed = await showDialog<bool>(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text(
+            'Remove Event?',
+            style: TextStyle(fontWeight: FontWeight.w900),
+          ),
+          content: Text(
+            'Are you sure you want to remove "$eventTitle"?\n\n'
+            'This will permanently remove this event schedule.',
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, false);
+              },
+              child: const Text(
+                'Cancel',
+                style: TextStyle(fontWeight: FontWeight.w700),
+              ),
+            ),
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pop(dialogContext, true);
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kRed,
+                foregroundColor: Colors.white,
+                elevation: 0,
+              ),
+              child: const Text(
+                'Remove',
+                style: TextStyle(fontWeight: FontWeight.w800),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+
+    if (confirmed != true) {
+      return false;
+    }
+
+    return await _removeEvent(event);
+  }
+
+  // NOTE: this calls EventService.deleteEvent — a permanent, global
+  // delete — from a user-facing swipe gesture. Confirm this is intended
+  // (vs. a per-user "leave/unregister" action) and that the backend
+  // route is properly restricted to admins before shipping this as-is.
+  Future<bool> _removeEvent(EventModel event) async {
+    try {
+      final result = await EventService.deleteEvent(event.id);
+
+      final success = _isSuccess(result);
+
+      if (!mounted) return success;
+
+      if (success) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${titleCaseEventText(event.title)} removed successfully.'),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+
+        await _loadEvents();
+      } else {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text((result['message'] ?? 'Failed to remove event.').toString()),
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+
+      return success;
+    } catch (error) {
+      if (!mounted) return false;
+
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Failed to remove event: $error'),
+          behavior: SnackBarBehavior.floating,
+        ),
+      );
+
+      return false;
+    }
+  }
+
   Widget _buildEventCard(EventModel event) {
     final joinStatus = _joinStatus(event);
+    final isPastDate = isPastEventDate(event);
 
     Color accentColor = Colors.transparent;
 
@@ -803,7 +925,6 @@ class _EventsWidgetState extends State<EventsWidget> {
         onTap: () => _openEventDetails(event),
         child: Row(
           children: [
-            // ── Left accent bar ───────────────────────
             Container(
               width: 4,
               decoration: BoxDecoration(
@@ -814,32 +935,30 @@ class _EventsWidgetState extends State<EventsWidget> {
                 ),
               ),
             ),
-            // ── Card content ──────────────────────────
             Expanded(
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-
-                    // ── Row 1: Badge ──────────────────
                     Row(
                       children: [
                         const Spacer(),
                         if (joinStatus == 'Approved')
-                          _compactBadge('Approved ✓', _kGreen),
+                          _compactBadge('Approved for this mission ✓', _kGreen),
                         if (joinStatus == 'Pending')
-                          _compactBadge('Pending', _kOrange),
+                          _compactBadge('Pending for this mission', _kOrange),
+                        if (joinStatus == 'Rejected')
+                          _compactBadge('Rejected for this mission', _kRed),
+                        if (joinStatus == 'None' && isPastDate)
+                          _compactBadge('Event date passed', _kGray),
                       ],
                     ),
-
                     const SizedBox(height: 4),
-
-                    // ── Title ─────────────────────────
                     Text(
-                      event.title.isNotEmpty
-                          ? event.title
-                          : 'Untitled Event',
+                      titleCaseEventText(
+                        event.title.isNotEmpty ? event.title : 'Untitled Event',
+                      ),
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
@@ -849,10 +968,7 @@ class _EventsWidgetState extends State<EventsWidget> {
                         height: 1.3,
                       ),
                     ),
-
                     const SizedBox(height: 10),
-
-                    // ── Date ─────────────────────────
                     Row(
                       children: [
                         const Icon(
@@ -875,10 +991,7 @@ class _EventsWidgetState extends State<EventsWidget> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 6),
-
-                    // ── Location ──────────────────────
                     Row(
                       children: [
                         const Icon(
@@ -907,7 +1020,6 @@ class _EventsWidgetState extends State<EventsWidget> {
                         ),
                       ],
                     ),
-
                     const SizedBox(height: 4),
                   ],
                 ),
@@ -919,15 +1031,9 @@ class _EventsWidgetState extends State<EventsWidget> {
     );
   }
 
-  Widget _compactBadge(
-    String text,
-    Color color,
-  ) {
+  Widget _compactBadge(String text, Color color) {
     return Container(
-      padding: const EdgeInsets.symmetric(
-        horizontal: 10,
-        vertical: 6,
-      ),
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(30),
@@ -1078,8 +1184,12 @@ class _EventsWidgetState extends State<EventsWidget> {
             ),
           ),
           const SizedBox(height: 8),
+          // FIX: removed the stray backslash before `$_searchQuery`
+          // (`\$_searchQuery`), which previously suppressed string
+          // interpolation and showed the literal text "$_searchQuery"
+          // instead of the user's actual search term.
           Text(
-            'No events matched "\$_searchQuery".\nTry a different keyword.',
+            'No events matched "$_searchQuery".\nTry a different keyword.',
             textAlign: TextAlign.center,
             style: const TextStyle(
               color: _kTextSecondary,
@@ -1161,193 +1271,186 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   bool isSubmitting = false;
   MapLibreMapController? _mapController;
 
-bool get hasCoordinates =>
-    widget.event.latitude != null &&
-    widget.event.longitude != null;
-
   Color get typeColor => _typeColor(widget.typeText);
   Color get statusColor => _statusColor(widget.statusText);
+
   Widget _mapPreview() {
-  final double? latitude = widget.event.latitude;
-  final double? longitude = widget.event.longitude;
+    final double? latitude = widget.event.latitude;
+    final double? longitude = widget.event.longitude;
 
-  final bool hasValidCoordinates =
-      latitude != null &&
-      longitude != null &&
-      latitude >= -90 &&
-      latitude <= 90 &&
-      longitude >= -180 &&
-      longitude <= 180;
+    final bool hasValidCoordinates = latitude != null &&
+        longitude != null &&
+        latitude >= -90 &&
+        latitude <= 90 &&
+        longitude >= -180 &&
+        longitude <= 180;
 
-  Future<void> openGoogleMaps() async {
-    if (!hasValidCoordinates) return;
+    Future<void> openGoogleMaps() async {
+      if (!hasValidCoordinates) return;
 
-    final uri = Uri.parse(
-      'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
-    );
-
-    try {
-      await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
+      final uri = Uri.parse(
+        'https://www.google.com/maps/search/?api=1&query=$latitude,$longitude',
       );
-    } catch (e) {
-      debugPrint('❌ Failed to open Google Maps: $e');
 
-      if (!mounted) return;
+      try {
+        await launchUrl(
+          uri,
+          mode: LaunchMode.externalApplication,
+        );
+      } catch (e) {
+        debugPrint('❌ Failed to open Google Maps: $e');
 
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Unable to open Google Maps'),
-        ),
-      );
+        if (!mounted) return;
+
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('Unable to open Google Maps'),
+          ),
+        );
+      }
     }
-  }
 
-  return Container(
-    height: 190,
-    width: double.infinity,
-    margin: const EdgeInsets.only(bottom: 22),
-    decoration: BoxDecoration(
-      color: Colors.white,
-      borderRadius: BorderRadius.circular(18),
-      boxShadow: [
-        BoxShadow(
-          color: Colors.black.withValues(alpha: 0.045),
-          blurRadius: 18,
-          offset: const Offset(0, 8),
-        ),
-      ],
-    ),
-    clipBehavior: Clip.antiAlias,
-    child: hasValidCoordinates
-        ? Stack(
-            children: [
-              MapLibreMap(
-                styleString: 'https://tiles.openfreemap.org/styles/liberty',
-                initialCameraPosition: CameraPosition(
-                  target: LatLng(latitude, longitude),
-                  zoom: 15,
+    return Container(
+      height: 190,
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withValues(alpha: 0.045),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: hasValidCoordinates
+          ? Stack(
+              children: [
+                MapLibreMap(
+                  styleString: 'https://tiles.openfreemap.org/styles/liberty',
+                  initialCameraPosition: CameraPosition(
+                    target: LatLng(latitude, longitude),
+                    zoom: 15,
+                  ),
+                  onMapCreated: (controller) {
+                    _mapController = controller;
+                  },
+                  onStyleLoadedCallback: () async {
+                    if (_mapController == null) return;
+
+                    try {
+                      await _mapController!.addSymbol(
+                        SymbolOptions(
+                          geometry: LatLng(latitude, longitude),
+                          iconImage: 'marker-15',
+                          iconSize: 1.8,
+                        ),
+                      );
+                    } catch (e) {
+                      debugPrint('❌ Failed to add MapLibre marker: $e');
+                    }
+                  },
+                  myLocationEnabled: false,
+                  compassEnabled: false,
+                  rotateGesturesEnabled: false,
+                  tiltGesturesEnabled: false,
+                  zoomGesturesEnabled: true,
+                  scrollGesturesEnabled: true,
                 ),
-                onMapCreated: (controller) {
-                  _mapController = controller;
-                },
-                onStyleLoadedCallback: () async {
-                  if (_mapController == null) return;
-
-                  try {
-                    await _mapController!.addSymbol(
-                      SymbolOptions(
-                        geometry: LatLng(latitude, longitude),
-                        iconImage: 'marker-15',
-                        iconSize: 1.8,
-                      ),
-                    );
-                  } catch (e) {
-                    debugPrint('❌ Failed to add MapLibre marker: $e');
-                  }
-                },
-                myLocationEnabled: false,
-                compassEnabled: false,
-                rotateGesturesEnabled: false,
-                tiltGesturesEnabled: false,
-                zoomGesturesEnabled: true,
-                scrollGesturesEnabled: true,
-              ),
-
-              const Center(
-                child: IgnorePointer(
-                  child: Icon(
-                    Icons.location_pin,
-                    color: _kRed,
-                    size: 44,
+                const Center(
+                  child: IgnorePointer(
+                    child: Icon(
+                      Icons.location_pin,
+                      color: _kRed,
+                      size: 44,
+                    ),
                   ),
                 ),
-              ),
-
-              Positioned(
-                left: 12,
-                bottom: 12,
-                right: 12,
-                child: Row(
-                  children: [
-                    Expanded(
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 9,
-                        ),
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.94),
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.12),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                Positioned(
+                  left: 12,
+                  bottom: 12,
+                  right: 12,
+                  child: Row(
+                    children: [
+                      Expanded(
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.94),
+                            borderRadius: BorderRadius.circular(999),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.12),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: Text(
+                            widget.event.location.isNotEmpty
+                                ? widget.event.location
+                                : 'Event location',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: _kTextPrimary,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w800,
                             ),
-                          ],
-                        ),
-                        child: Text(
-                          widget.event.location.isNotEmpty
-                              ? widget.event.location
-                              : 'Event location',
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: _kTextPrimary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
                           ),
                         ),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    GestureDetector(
-                      onTap: openGoogleMaps,
-                      child: Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 12,
-                          vertical: 9,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _kPrimary,
-                          borderRadius: BorderRadius.circular(999),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.12),
-                              blurRadius: 10,
-                              offset: const Offset(0, 4),
+                      const SizedBox(width: 8),
+                      GestureDetector(
+                        onTap: openGoogleMaps,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 12,
+                            vertical: 9,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _kPrimary,
+                            borderRadius: BorderRadius.circular(999),
+                            boxShadow: [
+                              BoxShadow(
+                                color: Colors.black.withValues(alpha: 0.12),
+                                blurRadius: 10,
+                                offset: const Offset(0, 4),
+                              ),
+                            ],
+                          ),
+                          child: const Text(
+                            'Google Maps',
+                            style: TextStyle(
+                              color: Colors.white,
+                              fontSize: 12,
+                              fontWeight: FontWeight.w900,
                             ),
-                          ],
-                        ),
-                        child: const Text(
-                          'Google Maps',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
-                    ),
-                  ],
+                    ],
+                  ),
+                ),
+              ],
+            )
+          : const Center(
+              child: Text(
+                'No coordinates available',
+                style: TextStyle(
+                  color: _kTextSecondary,
+                  fontWeight: FontWeight.w700,
                 ),
               ),
-            ],
-          )
-        : const Center(
-            child: Text(
-              'No coordinates available',
-              style: TextStyle(
-                color: _kTextSecondary,
-                fontWeight: FontWeight.w700,
-              ),
             ),
-          ),
-  );
-}
-
+    );
+  }
 
   static Color _typeColor(String type) {
     switch (type.toLowerCase()) {
@@ -1363,8 +1466,6 @@ bool get hasCoordinates =>
         return _kGray;
     }
   }
-
-  
 
   static IconData _typeIcon(String type) {
     switch (type.toLowerCase()) {
@@ -1442,9 +1543,11 @@ bool get hasCoordinates =>
                     children: [
                       Expanded(
                         child: Text(
-                          widget.event.title.isEmpty
-                              ? 'Untitled Event'
-                              : widget.event.title,
+                          titleCaseEventText(
+                            widget.event.title.isEmpty
+                                ? 'Untitled Event'
+                                : widget.event.title,
+                          ),
                           style: const TextStyle(
                             color: _kTextPrimary,
                             fontSize: 25,
@@ -1476,12 +1579,11 @@ bool get hasCoordinates =>
                       fontWeight: FontWeight.w500,
                     ),
                   ),
-                 const SizedBox(height: 18),
-_mapPreview(),
-const SizedBox(height: 22),
-_infoCard(),
-const SizedBox(height: 22),
-                  
+                  const SizedBox(height: 18),
+                  _mapPreview(),
+                  const SizedBox(height: 22),
+                  _infoCard(),
+                  const SizedBox(height: 22),
                   _sectionTitle('Description'),
                   const SizedBox(height: 10),
                   Text(
@@ -1853,13 +1955,17 @@ const SizedBox(height: 22),
       icon = Icons.hourglass_top_rounded;
       color = _kOrange;
     } else if (joinStatus == 'Approved') {
-      text = 'You are approved ✓';
+      text = 'Approved for: ${titleCaseEventText(widget.event.title)} ✓';
       icon = Icons.verified_rounded;
       color = _kGreen;
     } else if (joinStatus == 'Rejected') {
       text = 'Rejected';
       icon = Icons.block_rounded;
       color = _kRed;
+    } else if (isPastEventDate(widget.event)) {
+      text = 'Event Date Passed';
+      icon = Icons.event_busy_rounded;
+      color = _kGray;
     } else if (widget.isClosed) {
       text = 'Registration Closed';
       icon = Icons.lock_clock_rounded;
@@ -1907,8 +2013,7 @@ const SizedBox(height: 22),
                       label: Text(isSubmitting ? 'Please wait...' : text),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: color,
-                        disabledBackgroundColor:
-                            color.withValues(alpha: 0.70),
+                        disabledBackgroundColor: color.withValues(alpha: 0.70),
                         foregroundColor: Colors.white,
                         elevation: 0,
                         textStyle: const TextStyle(

@@ -209,7 +209,37 @@ print('JOIN BODY: ${response.body}');
   }
 
   // Optional alias
+   // Optional alias
   static Future<Map<String, dynamic>> cancelJoinRequest(String eventId) {
     return leaveEvent(eventId);
+  }
+
+  // ↓ ADDED: DELETE /api/events/:id
+  static Future<Map<String, dynamic>> deleteEvent(
+    String eventId,
+  ) async {
+    final response = await _withRefresh(() {
+      return http
+          .delete(
+            Uri.parse('$apiUrl/events/$eventId'),
+            headers: AuthSession.headers(),
+          )
+          .timeout(
+            const Duration(seconds: 60),
+          );
+    });
+
+    _throwIfFailed(
+      response,
+      'Failed to remove event schedule.',
+    );
+
+    final data = _decodeObject(response);
+
+    return {
+      'ok': data['ok'] ?? true,
+      'message': data['message'] ?? 'Event removed successfully.',
+      ...data,
+    };
   }
 }
