@@ -260,12 +260,15 @@ class _AccountWidgetState extends State<AccountWidget> {
   }
 
   String _resolveProfileImageUrl(String imageUrl) {
-    if (imageUrl.isEmpty) return '';
-    if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
-      return imageUrl;
-    }
-    return '${AppConfig.productionUrl}$imageUrl';
+  if (imageUrl.isEmpty) return '';
+  if (imageUrl.startsWith('http://') || imageUrl.startsWith('https://')) {
+    return imageUrl;
   }
+  final path = imageUrl.startsWith('/uploads')
+      ? imageUrl.substring('/uploads'.length)
+      : (imageUrl.startsWith('/') ? imageUrl : '/$imageUrl');
+  return '${AppConfig.uploadsBaseUrl}$path';
+}
 
   Color _roleColor(String role) {
     final normalized = role.toLowerCase();
