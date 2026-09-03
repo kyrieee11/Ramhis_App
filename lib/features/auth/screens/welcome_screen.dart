@@ -16,22 +16,17 @@ class WelcomeScreenWidget extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
-    final width = size.width;
     final height = size.height;
 
-    final bool isWide = width > 800;
     final bool isSmallHeight = height < 760;
     final bool isVerySmallHeight = height < 680;
 
-    final double outerHorizontalPadding = isWide ? 24 : 18;
-    final double outerVerticalPadding = isSmallHeight ? 10 : 18;
-
-    final double cardHorizontalPadding = isWide ? 34 : 22;
-    final double cardVerticalPadding = isVerySmallHeight
-        ? 14
+    final double horizontalPadding = isSmallHeight ? 24 : 32;
+    final double verticalPadding = isVerySmallHeight
+        ? 16
         : isSmallHeight
-            ? 18
-            : 24;
+            ? 20
+            : 28;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -53,136 +48,102 @@ class WelcomeScreenWidget extends StatelessWidget {
             builder: (context, constraints) {
               return Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: outerHorizontalPadding,
-                  vertical: outerVerticalPadding,
+                  horizontal: horizontalPadding,
+                  vertical: verticalPadding,
                 ),
-                child: Center(
-                  child: ConstrainedBox(
-                    constraints: const BoxConstraints(maxWidth: 430),
-                    child: SizedBox(
-                      height: constraints.maxHeight -
-                          (outerVerticalPadding * 2),
-                      child: Container(
-                        width: double.infinity,
-                        padding: EdgeInsets.symmetric(
-                          horizontal: cardHorizontalPadding,
-                          vertical: cardVerticalPadding,
+                child: Column(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: [
+                    Flexible(
+                      flex: 2,
+                      child: _buildLogo(
+                        isSmallHeight: isSmallHeight,
+                        isVerySmallHeight: isVerySmallHeight,
+                      ),
+                    ),
+
+                    const Text(
+                      'Welcome to',
+                      style: TextStyle(
+                        color: Color(0xFFEAF0FF),
+                        fontSize: 17,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+
+                    Text(
+                      'RAMHIS!',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: isVerySmallHeight ? 34 : 40,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 1,
+                      ),
+                    ),
+
+                    _buildDividerDot(),
+
+                    const Text(
+                      'How would you like to continue?',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Color(0xFFEAF0FF),
+                        fontSize: 16,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+
+                    _buildRoleButton(
+                      title: 'Doctor',
+                      subtitle:
+                          'Access medical tools\nand patient records',
+                      icon: Icons.medical_services_rounded,
+                      color: const Color(0xFFF05261),
+                      onTap: () => _navigate(context, 'doctor'),
+                      compact: isSmallHeight,
+                    ),
+
+                    _buildRoleButton(
+                      title: 'Volunteer',
+                      subtitle:
+                          'Help and support\nyour community',
+                      icon: Icons.volunteer_activism_rounded,
+                      color: const Color(0xFF4E75E8),
+                      onTap: () =>
+                          _navigate(context, 'volunteer'),
+                      compact: isSmallHeight,
+                    ),
+
+                    _buildOrDivider(),
+
+                    SizedBox(
+                      width: 230,
+                      height: isSmallHeight ? 46 : 52,
+                      child: OutlinedButton.icon(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
                         ),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFF4167D4)
-                              .withValues(alpha: 0.88),
-                          borderRadius: BorderRadius.circular(42),
-                          border: Border.all(
-                            color: Colors.white.withValues(alpha: 0.22),
-                            width: 1.4,
+                        label: const Text('Back to Login'),
+                        style: OutlinedButton.styleFrom(
+                          foregroundColor: Colors.white,
+                          side: const BorderSide(
+                            color: Colors.white,
+                            width: 1.5,
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color:
-                                  Colors.black.withValues(alpha: 0.25),
-                              blurRadius: 34,
-                              offset: const Offset(0, 18),
-                            ),
-                          ],
-                        ),
-                        child: Column(
-                          mainAxisAlignment:
-                              MainAxisAlignment.spaceEvenly,
-                          children: [
-                            Flexible(
-                              flex: 2,
-                              child: _buildLogo(
-                                isSmallHeight: isSmallHeight,
-                                isVerySmallHeight: isVerySmallHeight,
-                              ),
-                            ),
-
-                            const Text(
-                              'Welcome to',
-                              style: TextStyle(
-                                color: Color(0xFFEAF0FF),
-                                fontSize: 17,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-
-                            Text(
-                              'RAMHIS!',
-                              style: TextStyle(
-                                color: Colors.white,
-                                fontSize: isVerySmallHeight ? 34 : 40,
-                                fontWeight: FontWeight.w900,
-                                letterSpacing: 1,
-                              ),
-                            ),
-
-                            _buildDividerDot(),
-
-                            const Text(
-                              'How would you like to continue?',
-                              textAlign: TextAlign.center,
-                              style: TextStyle(
-                                color: Color(0xFFEAF0FF),
-                                fontSize: 16,
-                                fontWeight: FontWeight.w500,
-                              ),
-                            ),
-
-                            _buildRoleButton(
-                              title: 'Doctor',
-                              subtitle:
-                                  'Access medical tools\nand patient records',
-                              icon: Icons.medical_services_rounded,
-                              color: const Color(0xFFF05261),
-                              onTap: () => _navigate(context, 'doctor'),
-                              compact: isSmallHeight,
-                            ),
-
-                            _buildRoleButton(
-                              title: 'Volunteer',
-                              subtitle:
-                                  'Help and support\nyour community',
-                              icon: Icons.volunteer_activism_rounded,
-                              color: const Color(0xFF4E75E8),
-                              onTap: () =>
-                                  _navigate(context, 'volunteer'),
-                              compact: isSmallHeight,
-                            ),
-
-                            _buildOrDivider(),
-
-                            SizedBox(
-                              width: 230,
-                              height: isSmallHeight ? 46 : 52,
-                              child: OutlinedButton.icon(
-                                onPressed: () => Navigator.pop(context),
-                                icon: const Icon(
-                                  Icons.arrow_back_rounded,
-                                ),
-                                label: const Text('Back to Login'),
-                                style: OutlinedButton.styleFrom(
-                                  foregroundColor: Colors.white,
-                                  side: const BorderSide(
-                                    color: Colors.white,
-                                    width: 1.5,
-                                  ),
-                                  shape: RoundedRectangleBorder(
-                                    borderRadius:
-                                        BorderRadius.circular(30),
-                                  ),
-                                  textStyle: TextStyle(
-                                    fontSize:
-                                        isSmallHeight ? 14 : 16,
-                                    fontWeight: FontWeight.w800,
-                                  ),
-                                ),
-                              ),
-                            ),
-                          ],
+                          shape: RoundedRectangleBorder(
+                            borderRadius:
+                                BorderRadius.circular(30),
+                          ),
+                          textStyle: TextStyle(
+                            fontSize:
+                                isSmallHeight ? 14 : 16,
+                            fontWeight: FontWeight.w800,
+                          ),
                         ),
                       ),
                     ),
-                  ),
+                  ],
                 ),
               );
             },

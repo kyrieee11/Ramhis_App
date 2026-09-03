@@ -140,15 +140,15 @@ class _SignupProfessionalVerificationWidgetState
     }
 
     if (_isVolunteer) {
-      if (organization.isEmpty || skills.isEmpty) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Please complete all volunteer fields.'),
-          ),
-        );
-        return;
-      }
-    }
+  if (organization.isEmpty || skills.isEmpty || selectedFile == null) {
+    ScaffoldMessenger.of(context).showSnackBar(
+      const SnackBar(
+        content: Text('Please complete all volunteer fields and upload a valid ID.'),
+      ),
+    );
+    return;
+  }
+}
 
     Navigator.push(
       context,
@@ -407,27 +407,68 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildVolunteerFields() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        _label('Organization'),
-        _input(
-          _organizationController,
-          'Enter organization name',
-          Icons.groups_outlined,
+  return Column(
+    crossAxisAlignment: CrossAxisAlignment.start,
+    children: [
+      _label('Valid ID'),
+      const SizedBox(height: 10),
+      InkWell(
+        onTap: _pickFile,
+        borderRadius: BorderRadius.circular(20),
+        child: Container(
+          width: double.infinity,
+          padding: const EdgeInsets.all(18),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(20),
+            border: Border.all(color: const Color(0xFF4267D6), width: 1.5),
+          ),
+          child: selectedFileName == null
+              ? const Column(
+                  children: [
+                    Icon(Icons.cloud_upload_outlined, color: Color(0xFF4267D6), size: 40),
+                    SizedBox(height: 8),
+                    Text('Upload Valid ID',
+                        style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF4267D6))),
+                    SizedBox(height: 4),
+                    Text('JPG, PNG or PDF (max. 5MB)', style: TextStyle(color: Colors.grey)),
+                  ],
+                )
+              : Row(
+                  children: [
+                    const Icon(Icons.insert_drive_file_outlined, color: Colors.green),
+                    const SizedBox(width: 10),
+                    Expanded(
+                      child: Text(
+                        selectedFileName!,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF243B73)),
+                      ),
+                    ),
+                    IconButton(
+                      onPressed: _removeFile,
+                      icon: const Icon(Icons.delete_outline, color: Colors.red),
+                    ),
+                  ],
+                ),
         ),
-        const SizedBox(height: 20),
-        _label('Skills'),
-        _input(
-          _skillsController,
-          'Ex. logistics, registration, first aid',
-          Icons.volunteer_activism_outlined,
-        ),
-        const SizedBox(height: 30),
-        _nextButton(),
+      ),
+      if (selectedFileName != null) ...[
+        const SizedBox(height: 8),
+        const Text('✔ File uploaded successfully',
+            style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
       ],
-    );
-  }
+      const SizedBox(height: 20),
+      _label('Organization'),
+      _input(_organizationController, 'Enter organization name', Icons.groups_outlined),
+      const SizedBox(height: 20),
+      _label('Skills'),
+      _input(_skillsController, 'Ex. logistics, registration, first aid', Icons.volunteer_activism_outlined),
+      const SizedBox(height: 30),
+      _nextButton(),
+    ],
+  );
+}
 
   Widget _buildRegularUserFields() {
     return Column(
