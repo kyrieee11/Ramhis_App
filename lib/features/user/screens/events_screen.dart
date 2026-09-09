@@ -101,29 +101,37 @@ class _EventsWidgetState extends State<EventsWidget> {
   }
 
   void _connectSocket() {
-    _socket = io.io(
-      AppConfig.baseUrl,
-      io.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .build(),
-    );
+  _socket = io.io(
+    AppConfig.socketBaseUrl,
+    io.OptionBuilder()
+        .setTransports(['websocket'])
+        .disableAutoConnect()
+        .build(),
+  );
 
-    _socket?.connect();
+  _socket?.onConnect((_) {
+    debugPrint('✅ Connected to events socket');
+  });
 
-    _socket?.onConnect((_) {
-      debugPrint('✅ Connected to events socket');
-    });
+  _socket?.on('events_updated', (_) async {
+    if (!mounted) return;
+    await _loadEvents();
+  });
 
-    _socket?.on('events_updated', (_) async {
-      if (!mounted) return;
-      await _loadEvents();
-    });
+  _socket?.onDisconnect((_) {
+    debugPrint('❌ Disconnected from events socket');
+  });
 
-    _socket?.onDisconnect((_) {
-      debugPrint('❌ Disconnected from events socket');
-    });
-  }
+  _socket?.onConnectError((error) {
+    debugPrint('❌ Events socket connection error: $error');
+  });
+
+  _socket?.onError((error) {
+    debugPrint('❌ Events socket error: $error');
+  });
+
+  _socket?.connect();
+}
 
   Future<void> _loadEvents() async {
     if (!mounted) return;

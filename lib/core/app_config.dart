@@ -12,7 +12,6 @@ class AppConfig {
 
   // ============================================================
   // PRODUCTION BACKEND
-  // Keep this because other files in the app still reference it.
   // ============================================================
 
   static const String productionUrl =
@@ -23,6 +22,7 @@ class AppConfig {
 
   // ============================================================
   // CURRENT BACKEND
+  // LOCAL
   // ============================================================
 
   static const String apiBaseUrl =
@@ -31,15 +31,26 @@ class AppConfig {
   static const String baseUrl =
       apiBaseUrl;
 
-  // Socket.IO
+  // ============================================================
+  // SOCKET.IO
+  // LOCAL
+  // ============================================================
+
   static const String socketBaseUrl =
       localUrl;
 
-  // Uploaded files
+  // ============================================================
+  // UPLOADED FILES
+  // LOCAL
+  // ============================================================
+
   static const String uploadsBaseUrl =
       '$localUrl/uploads';
 
-  // Environment status
+  // ============================================================
+  // ENVIRONMENT STATUS
+  // ============================================================
+
   static bool get isLocal => true;
 
   static bool get isProduction => false;

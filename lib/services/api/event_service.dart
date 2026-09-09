@@ -93,37 +93,54 @@ static const String apiUrl = AppConfig.baseUrl;
 
   // GET /api/events
   static Future<List<EventModel>> getEvents() async {
-    final response = await _withRefresh(() {
-      return http
-          .get(
-            Uri.parse('$apiUrl/events'),
-            headers: AuthSession.headers(),
-          )
-          .timeout(
-            const Duration(seconds: 60),
-          );
-    });
-    
-
-print('GET EVENTS URL: $apiUrl/events');
-print('GET EVENTS STATUS: ${response.statusCode}');
-print('GET EVENTS BODY: ${response.body}');
-
-
-
-    _throwIfFailed(response, 'Failed to fetch events.');
-
-    final data = _extractEventList(response);
-
-    return data
-        .map(
-          (item) => EventModel.fromJson(
-            Map<String, dynamic>.from(item),
-            _currentUserId,
-          ),
+  final response = await _withRefresh(() {
+    return http
+        .get(
+          Uri.parse('$apiUrl/events'),
+          headers: AuthSession.headers(),
         )
-        .toList();
+        .timeout(
+          const Duration(seconds: 60),
+        );
+  });
+
+  print('GET EVENTS URL: $apiUrl/events');
+  print('GET EVENTS STATUS: ${response.statusCode}');
+  print('GET EVENTS BODY: ${response.body}');
+
+  _throwIfFailed(response, 'Failed to fetch events.');
+
+  final data = _extractEventList(response);
+
+  print('📦 RAW EVENT COUNT: ${data.length}');
+
+  for (final item in data) {
+    if (item is Map) {
+      print(
+        '📦 RAW EVENT: ${item['_id'] ?? item['id']} | ${item['title']}',
+      );
+    }
   }
+
+  final parsedEvents = data
+      .map(
+        (item) => EventModel.fromJson(
+          Map<String, dynamic>.from(item),
+          _currentUserId,
+        ),
+      )
+      .toList();
+
+  print('✅ PARSED EVENT COUNT: ${parsedEvents.length}');
+
+  for (final event in parsedEvents) {
+    print(
+      '✅ PARSED EVENT: ${event.id} | ${event.title}',
+    );
+  }
+
+  return parsedEvents;
+}
 
   // GET /api/events/:id
   static Future<EventModel> getEventById(String eventId) async {

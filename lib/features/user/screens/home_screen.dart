@@ -9,12 +9,14 @@ import 'package:ramhis_app/services/api/analytics_service.dart';
 import 'package:ramhis_app/services/api/event_service.dart';
 import 'package:ramhis_app/models/event_model.dart';
 import 'package:ramhis_app/core/app_config.dart';
+import 'package:ramhis_app/core/session_manager.dart';
 import 'package:ramhis_app/features/user/screens/events_screen.dart';
 
 // Shared helpers (date parsing / success-check), deduplicated so this file
 // and events_widget.dart don't diverge. Adjust the path below to match
 // where you place event_helpers.dart in your project.
 import 'package:ramhis_app/utils/event_helpers.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 
 // IMPORTANT:
 // Use the actual file where EventDetailScreen is defined.
@@ -76,103 +78,163 @@ class _PatientBarChart extends StatelessWidget {
     );
   }
 
-  Widget _buildChart(double safeMax, double chartHeight, double availableWidth) {
-    const topLabelHeight = 26.0;
-    const bottomLabelHeight = 24.0;
-    const gap = 6.0;
+  Widget _buildChart(
+  double safeMax,
+  double chartHeight,
+  double availableWidth,
+) {
+  const topLabelHeight = 26.0;
+  const bottomLabelHeight = 24.0;
+  const gap = 6.0;
 
-    final availableBarHeight = math
-        .max(30.0, chartHeight - topLabelHeight - bottomLabelHeight - gap)
-        .toDouble();
+  final availableBarHeight = math
+      .max(
+        30.0,
+        chartHeight -
+            topLabelHeight -
+            bottomLabelHeight -
+            gap,
+      )
+      .toDouble();
 
-    // Dynamically size each bar column so all bars fit within availableWidth,
-    // no matter how many months are shown.
-    final columnWidth = (availableWidth / data.length).clamp(24.0, 64.0);
-    final barWidth = (columnWidth * 0.5).clamp(8.0, 26.0);
+  // IMPORTANT:
+  // Always fit every month inside the available screen width.
+  // No horizontal scrolling and no minimum column width.
+  final columnWidth =
+      availableWidth / data.length;
 
-    return Stack(
-      clipBehavior: Clip.none,
-      children: [
-        Positioned(
-          left: 0,
-          right: 0,
-          top: topLabelHeight,
-          height: availableBarHeight,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: List.generate(
-              5,
-              (_) => Container(
-                width: double.infinity,
-                height: 1,
-                color: AppColors.cardBorder.withOpacity(0.6),
+  // Keep bars proportional while making sure
+  // they remain visible on smaller screens.
+  final barWidth = math
+      .min(
+        20.0,
+        columnWidth * 0.55,
+      )
+      .toDouble();
+
+  return Stack(
+    clipBehavior: Clip.none,
+    children: [
+      Positioned(
+        left: 0,
+        right: 0,
+        top: topLabelHeight,
+        height: availableBarHeight,
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.spaceBetween,
+          children: List.generate(
+            5,
+            (_) => Container(
+              width: double.infinity,
+              height: 1,
+              color:
+                  AppColors.cardBorder.withOpacity(
+                0.6,
               ),
             ),
           ),
         ),
-        Positioned(
-          left: -38,
-          top: topLabelHeight - 6,
-          width: 32,
-          height: availableBarHeight + 8,
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.end,
-            children: [
-              _axisText(safeMax),
-              _axisText(safeMax * 0.75),
-              _axisText(safeMax * 0.50),
-              _axisText(safeMax * 0.25),
-              _axisText(0),
-            ],
-          ),
+      ),
+
+      Positioned(
+        left: -38,
+        top: topLabelHeight - 6,
+        width: 32,
+        height: availableBarHeight + 8,
+        child: Column(
+          mainAxisAlignment:
+              MainAxisAlignment.spaceBetween,
+          crossAxisAlignment:
+              CrossAxisAlignment.end,
+          children: [
+            _axisText(safeMax),
+            _axisText(safeMax * 0.75),
+            _axisText(safeMax * 0.50),
+            _axisText(safeMax * 0.25),
+            _axisText(0),
+          ],
         ),
-        Positioned(
-          left: 0,
-          right: 0,
-          top: 0,
-          height: chartHeight,
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.end,
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-            children: data.asMap().entries.map((entry) {
+      ),
+
+      Positioned(
+        left: 0,
+        right: 0,
+        top: 0,
+        height: chartHeight,
+        child: Row(
+          crossAxisAlignment:
+              CrossAxisAlignment.end,
+          mainAxisAlignment:
+              MainAxisAlignment.spaceEvenly,
+          children: data.asMap().entries.map(
+            (entry) {
               final index = entry.key;
               final item = entry.value;
 
-              final value =
-                  readNumber(item, ['count', 'patients', 'total', 'value'])
-                      .toDouble();
+              final value = readNumber(
+                item,
+                [
+                  'count',
+                  'patients',
+                  'total',
+                  'value',
+                ],
+              ).toDouble();
 
-              final label = '${item['clinic'] ?? 'Unknown'}';
-              final normalizedHeight = (value / safeMax).clamp(0.0, 1.0);
-              final baseColor = colors[index % colors.length];
+              final label =
+                  '${item['clinic'] ?? 'Unknown'}';
+
+              final normalizedHeight =
+                  (value / safeMax)
+                      .clamp(0.0, 1.0);
+
+              final baseColor =
+                  colors[index % colors.length];
 
               return SizedBox(
                 width: columnWidth,
                 height: chartHeight,
                 child: Column(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                  mainAxisAlignment:
+                      MainAxisAlignment.end,
                   children: [
                     SizedBox(
                       height: topLabelHeight,
                       child: Align(
-                        alignment: Alignment.bottomCenter,
+                        alignment:
+                            Alignment.bottomCenter,
                         child: value > 0
                             ? FittedBox(
                                 fit: BoxFit.scaleDown,
                                 child: Container(
-                                  padding: const EdgeInsets.symmetric(
-                                      horizontal: 6, vertical: 2),
-                                  decoration: BoxDecoration(
-                                    color: baseColor.withOpacity(0.12),
-                                    borderRadius: BorderRadius.circular(6),
+                                  padding:
+                                      const EdgeInsets
+                                          .symmetric(
+                                    horizontal: 5,
+                                    vertical: 2,
+                                  ),
+                                  decoration:
+                                      BoxDecoration(
+                                    color: baseColor
+                                        .withOpacity(
+                                      0.12,
+                                    ),
+                                    borderRadius:
+                                        BorderRadius
+                                            .circular(
+                                      6,
+                                    ),
                                   ),
                                   child: Text(
-                                    _formatNumber(value),
+                                    _formatNumber(
+                                      value,
+                                    ),
                                     style: TextStyle(
                                       color: baseColor,
-                                      fontSize: 10,
-                                      fontWeight: FontWeight.w800,
+                                      fontSize: 9,
+                                      fontWeight:
+                                          FontWeight.w800,
                                     ),
                                   ),
                                 ),
@@ -180,32 +242,58 @@ class _PatientBarChart extends StatelessWidget {
                             : const SizedBox.shrink(),
                       ),
                     ),
+
                     SizedBox(
                       height: availableBarHeight,
                       child: Align(
-                        alignment: Alignment.bottomCenter,
+                        alignment:
+                            Alignment.bottomCenter,
                         child: AnimatedContainer(
-                          duration: const Duration(milliseconds: 350),
-                          curve: Curves.easeOutCubic,
+                          duration:
+                              const Duration(
+                            milliseconds: 350,
+                          ),
+                          curve:
+                              Curves.easeOutCubic,
                           width: barWidth,
                           height: math.max(
-                            value > 0 ? 8.0 : 3.0,
-                            availableBarHeight * normalizedHeight,
+                            value > 0
+                                ? 8.0
+                                : 3.0,
+                            availableBarHeight *
+                                normalizedHeight,
                           ),
-                          decoration: BoxDecoration(
-                            borderRadius: BorderRadius.circular(8),
+                          decoration:
+                              BoxDecoration(
+                            borderRadius:
+                                BorderRadius.circular(
+                              8,
+                            ),
                             boxShadow: [
                               BoxShadow(
-                                color: baseColor.withOpacity(0.2),
+                                color: baseColor
+                                    .withOpacity(
+                                  0.2,
+                                ),
                                 blurRadius: 6,
-                                offset: const Offset(0, 3),
+                                offset:
+                                    const Offset(
+                                  0,
+                                  3,
+                                ),
                               ),
                             ],
-                            gradient: LinearGradient(
-                              begin: Alignment.topCenter,
-                              end: Alignment.bottomCenter,
+                            gradient:
+                                LinearGradient(
+                              begin:
+                                  Alignment.topCenter,
+                              end:
+                                  Alignment.bottomCenter,
                               colors: [
-                                baseColor.withOpacity(0.85),
+                                baseColor
+                                    .withOpacity(
+                                  0.85,
+                                ),
                                 baseColor,
                               ],
                             ),
@@ -213,18 +301,26 @@ class _PatientBarChart extends StatelessWidget {
                         ),
                       ),
                     ),
+
                     const SizedBox(height: gap),
+
                     SizedBox(
                       height: bottomLabelHeight,
+                      width: columnWidth,
                       child: Center(
-                        child: Text(
-                          _shortLabel(label),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            _shortLabel(label),
+                            maxLines: 1,
+                            style:
+                                const TextStyle(
+                              color:
+                                  AppColors.textMuted,
+                              fontSize: 10,
+                              fontWeight:
+                                  FontWeight.w700,
+                            ),
                           ),
                         ),
                       ),
@@ -232,12 +328,13 @@ class _PatientBarChart extends StatelessWidget {
                   ],
                 ),
               );
-            }).toList(),
-          ),
+            },
+          ).toList(),
         ),
-      ],
-    );
-  }
+      ),
+    ],
+  );
+}
 
   Widget _axisText(double value) {
     return Text(
@@ -372,6 +469,8 @@ class _HomeScreenState extends State<HomeScreen> {
 
 List<EventModel> _homeEvents = [];
 
+Set<String> _knownHomeEventIds = <String>{};
+
 /// Keeps Home event notifications alive when the
 /// HomeScreen widget is recreated while navigating
 /// between Home, Events, Chat, and Account.
@@ -393,20 +492,27 @@ final Set<String> _dismissedHomeEventIds =
 
 io.Socket? _eventSocket;
 
-static const int _maxRecentEventNotifications = 3;
+
 
 bool _homeEventsInitialized = false;
+
+// Persistent storage keys.
+static const String _recentEventIdsKey =
+    'home_recent_event_notification_ids';
+
+static const String _dismissedEventIdsKey =
+    'home_dismissed_event_ids';
 
   // ─────────────────────────────────────────────
   // INIT
   // ─────────────────────────────────────────────
 
-  @override
+  
+
+@override
 void initState() {
   super.initState();
 
-  // Restore the Home notification state when this screen
-  // is recreated after navigating between tabs.
   _recentEventNotifications =
       List<EventModel>.from(
     _persistentRecentEventNotifications,
@@ -418,183 +524,296 @@ void initState() {
   );
 
   _loadHomeAnalytics();
+
+  // Load persisted notification state first,
+  // then load the current events as the baseline.
   _startHomeEvents();
 }
 
-  Future<void> _startHomeEvents() async {
-    await _initializeHomeEvents();
-    _connectHomeEventSocket();
+
+// ─────────────────────────────────────────────
+// START HOME EVENTS
+// ─────────────────────────────────────────────
+
+Future<void> _startHomeEvents() async {
+  await _loadPersistentHomeEventNotifications();
+
+  await _initializeHomeEvents();
+
+  _connectHomeEventSocket();
+}
+
+
+Future<void> _loadPersistentHomeEventNotifications() async {
+  try {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    final savedRecentIds =
+        prefs.getStringList(
+              _recentEventIdsKey,
+            ) ??
+            <String>[];
+
+    final savedDismissedIds =
+        prefs.getStringList(
+              _dismissedEventIdsKey,
+            ) ??
+            <String>[];
+
+    _dismissedHomeEventIds
+      ..clear()
+      ..addAll(savedDismissedIds);
+
+    _persistentDismissedHomeEventIds
+      ..clear()
+      ..addAll(savedDismissedIds);
+
+    // We only store IDs here.
+    // The actual EventModel objects will be
+    // reconstructed after the API events are loaded.
+    _recentEventNotifications.clear();
+
+    debugPrint(
+      'Loaded ${savedRecentIds.length} persisted Home notification ID(s).',
+    );
+  } catch (e) {
+    debugPrint(
+      'Failed to load persisted Home notifications: $e',
+    );
   }
+}
+
+// ─────────────────────────────────────────────
+// SAVE NOTIFICATION STATE
+// ─────────────────────────────────────────────
+
+Future<void> _saveHomeEventNotificationState() async {
+  try {
+    final prefs =
+        await SharedPreferences.getInstance();
+
+    await prefs.setStringList(
+      _recentEventIdsKey,
+      _recentEventNotifications
+          .map((event) => event.id)
+          .toList(),
+    );
+
+    await prefs.setStringList(
+      _dismissedEventIdsKey,
+      _dismissedHomeEventIds.toList(),
+    );
+
+    debugPrint(
+      'Saved Home event notification state.',
+    );
+  } catch (e) {
+    debugPrint(
+      'Failed to save Home notification state: $e',
+    );
+  }
+}
+
+
 
   // ─────────────────────────────────────────────
   // EVENT INITIALIZATION
   // ─────────────────────────────────────────────
 
   Future<void> _initializeHomeEvents() async {
-    try {
-      final events = await EventService.getEvents();
+  try {
+    final events = await EventService.getEvents();
 
-      if (!mounted) return;
+    if (!mounted) return;
 
-      setState(() {
-        _homeEvents = List<EventModel>.from(events);
-        _homeEventsInitialized = true;
-      });
+    final prefs =
+        await SharedPreferences.getInstance();
 
-      debugPrint(
-        'Home loaded ${_homeEvents.length} events',
-      );
-    } catch (e) {
-      debugPrint(
-        'Failed to initialize Home events: $e',
-      );
+    final savedRecentIds =
+        prefs.getStringList(
+              _recentEventIdsKey,
+            ) ??
+            <String>[];
 
-      if (mounted) {
-        setState(
-          () => _homeEventsInitialized = true,
-        );
+    final restoredNotifications =
+        <EventModel>[];
+
+    for (final event in events) {
+      if (savedRecentIds.contains(event.id) &&
+          !_dismissedHomeEventIds.contains(event.id)) {
+        restoredNotifications.add(event);
       }
     }
+
+    restoredNotifications.sort(
+      (a, b) {
+        final aIndex =
+            savedRecentIds.indexOf(a.id);
+        final bIndex =
+            savedRecentIds.indexOf(b.id);
+
+        return aIndex.compareTo(bIndex);
+      },
+    );
+
+    setState(() {
+  _homeEvents =
+      List<EventModel>.from(events);
+
+  _knownHomeEventIds =
+      events.map((event) => event.id).toSet();
+
+  _recentEventNotifications =
+      restoredNotifications;
+
+      _persistentRecentEventNotifications
+        ..clear()
+        ..addAll(
+          _recentEventNotifications,
+        );
+
+      _homeEventsInitialized = true;
+    });
+
+    await _saveHomeEventNotificationState();
+
+    debugPrint(
+      'Home loaded ${_homeEvents.length} events.',
+    );
+
+    debugPrint(
+      'Home restored ${_recentEventNotifications.length} notification(s).',
+    );
+  } catch (e) {
+    debugPrint(
+      'Failed to initialize Home events: $e',
+    );
+
+    if (mounted) {
+      setState(() {
+        _homeEventsInitialized = true;
+      });
+    }
   }
+}
 
   // ─────────────────────────────────────────────
   // SOCKET CONNECTION
   // ─────────────────────────────────────────────
 
   void _connectHomeEventSocket() {
-    _eventSocket = io.io(
-      AppConfig.socketBaseUrl,
-      io.OptionBuilder()
-          .setTransports(['websocket'])
-          .disableAutoConnect()
-          .build(),
-    );
+    debugPrint('🔵 _connectHomeEventSocket() CALLED');
+  _eventSocket = io.io(
+    AppConfig.socketBaseUrl,
+    io.OptionBuilder()
+        .setTransports(['websocket'])
+        .disableAutoConnect()
+        .build(),
+  );
 
-    _eventSocket?.connect();
+  // Register listeners BEFORE connecting.
+  _eventSocket?.onConnect((_) async {
+  debugPrint(
+    '🟢 HOME SOCKET CONNECTED: ${_eventSocket?.id}',
+  );
 
-    _eventSocket?.onConnect((_) {
+    // Do not refresh if the initial event list
+    // has not been loaded yet.
+    if (!_homeEventsInitialized) {
       debugPrint(
-        'Home connected to event socket',
+        'Home socket connected before event initialization completed.',
       );
-    });
+      return;
+    }
 
-    _eventSocket?.on(
-      'events_updated',
-      _handleHomeEventsUpdated,
-    );
+    await _refreshHomeEvents();
+  });
 
-    _eventSocket?.onDisconnect((_) {
-      debugPrint(
-        'Home disconnected from event socket',
-      );
-    });
+  _eventSocket?.on(
+  'events_updated',
+  _handleHomeEventsUpdated,
+);
 
-    _eventSocket?.onConnectError((error) {
-      debugPrint(
-        'Home socket connection error: $error',
-      );
-    });
 
-    _eventSocket?.onError((error) {
-      debugPrint(
-        'Home socket error: $error',
-      );
-    });
-  }
 
-  // ─────────────────────────────────────────────
-// DETECT NEW EVENTS
-// ─────────────────────────────────────────────
+_eventSocket?.on(
+  'event_created',
+  _handleHomeEventCreated,
+);
 
-int _eventsUpdateRequestId = 0;
 
-Future<void> _handleHomeEventsUpdated(
-  dynamic socketData,
-) async {
-  if (!_homeEventsInitialized) {
+
+  _eventSocket?.onDisconnect((reason) {
+  debugPrint(
+    '🔴 HOME SOCKET DISCONNECTED: ${_eventSocket?.id} | reason: $reason',
+  );
+});
+
+  _eventSocket?.onConnectError((error) {
     debugPrint(
-      'Home received events_updated before init — ignoring',
+      'Home socket connection error: $error',
     );
-    return;
-  }
+  });
 
-  final requestId = ++_eventsUpdateRequestId;
+  _eventSocket?.onError((error) {
+    debugPrint(
+      'Home socket error: $error',
+    );
+  });
 
+  // Connect LAST.
+  _eventSocket?.connect();
+}
+
+Future<void> _refreshHomeEvents() async {
   try {
-    debugPrint(
-      'Home received events_updated',
-    );
-
     final updatedEvents =
         await EventService.getEvents();
 
     if (!mounted) return;
 
-    if (requestId != _eventsUpdateRequestId) {
-      debugPrint(
-        'Home dropping stale events_updated response',
-      );
-      return;
-    }
-
-    final oldIds =
-        _homeEvents.map((event) => event.id).toSet();
-
     final updatedIds =
         updatedEvents.map((event) => event.id).toSet();
 
-    // Detect only genuinely NEW events.
-    //
-    // Events that were manually dismissed with X
-    // must never be added again.
-    final newEvents = updatedEvents
-        .where(
-          (event) =>
-              !oldIds.contains(event.id) &&
-              !_dismissedHomeEventIds.contains(event.id),
-        )
-        .toList();
+    // Detect only events that were NOT known
+    // when Home was initialized.
+    final newEvents = updatedEvents.where(
+      (event) =>
+          !_knownHomeEventIds.contains(event.id) &&
+          !_dismissedHomeEventIds.contains(event.id),
+    ).toList();
 
     debugPrint(
-      'Home detected ${newEvents.length} new event(s)',
+      'Home refresh detected ${newEvents.length} new event(s)',
     );
 
     setState(() {
-      // Always keep the latest event information.
       _homeEvents =
           List<EventModel>.from(updatedEvents);
 
-      // Remove notifications only if the event
-      // no longer exists in the backend.
+      // Remember the current API events.
+      _knownHomeEventIds = updatedIds;
+
+      // Keep notifications for events that
+      // still exist in the API.
       _recentEventNotifications.removeWhere(
-        (event) =>
-            !updatedIds.contains(event.id),
+        (event) => !updatedIds.contains(event.id),
       );
 
-      // Refresh existing notifications using
-      // the latest backend event data.
+      // Update existing notification data.
       _recentEventNotifications =
           _recentEventNotifications.map((existing) {
         return updatedEvents.firstWhere(
-          (updated) =>
-              updated.id == existing.id,
+          (updated) => updated.id == existing.id,
           orElse: () => existing,
         );
       }).toList();
 
-      // Add genuinely NEW events.
-      //
-      // Opening Event Details does NOT remove them.
-      // Only pressing X adds the event to the
-      // dismissed set.
-      for (final event in newEvents) {
-        if (_dismissedHomeEventIds.contains(event.id)) {
-          continue;
-        }
-
+      // Add ONLY genuinely new events.
+      for (final event in newEvents.reversed) {
         _recentEventNotifications.removeWhere(
-          (existing) =>
-              existing.id == event.id,
+          (existing) => existing.id == event.id,
         );
 
         _recentEventNotifications.insert(
@@ -603,33 +822,147 @@ Future<void> _handleHomeEventsUpdated(
         );
       }
 
-      // Keep only the latest three notifications.
-      if (_recentEventNotifications.length >
-          _maxRecentEventNotifications) {
-        _recentEventNotifications =
-            _recentEventNotifications
-                .take(_maxRecentEventNotifications)
-                .toList();
-      }
-
-      // Persist notification state so it survives
-      // HomeScreen recreation when navigating between
-      // Home, Events, Chat, and Account.
       _persistentRecentEventNotifications
         ..clear()
-        ..addAll(
-          _recentEventNotifications,
-        );
-
-      _persistentDismissedHomeEventIds
-        ..clear()
-        ..addAll(
-          _dismissedHomeEventIds,
-        );
+        ..addAll(_recentEventNotifications);
     });
+
+    await _saveHomeEventNotificationState();
+
   } catch (e) {
     debugPrint(
-      'Failed to handle Home events_updated: $e',
+      'Failed to refresh Home events: $e',
+    );
+  }
+}
+
+  // ─────────────────────────────────────────────
+// DETECT NEW EVENTS
+// ─────────────────────────────────────────────
+
+Future<void> _handleHomeEventsUpdated(
+  dynamic socketData,
+) async {
+  debugPrint(
+    'Home received events_updated: $socketData',
+  );
+
+  if (!_homeEventsInitialized) {
+    debugPrint(
+      'Home received events_updated before initialization completed.',
+    );
+
+    await _initializeHomeEvents();
+
+    // Refresh again so an event created during
+    // initialization can be detected as NEW.
+    await _refreshHomeEvents();
+
+    return;
+  }
+
+  await _refreshHomeEvents();
+}
+
+Future<void> _handleHomeEventCreated(
+  dynamic socketData,
+) async {
+  try {
+    debugPrint(
+      '🟢🟢🟢 EVENT_CREATED RECEIVED',
+    );
+    debugPrint(
+      '🟢 Payload: $socketData',
+    );
+
+    if (!mounted) return;
+
+    if (socketData is! Map) {
+      debugPrint(
+        '🔴 Invalid event_created payload',
+      );
+      return;
+    }
+
+    final rawEvent =
+        socketData['event'];
+
+    if (rawEvent is! Map) {
+      debugPrint(
+        '🔴 event_created payload has no event object',
+      );
+      return;
+    }
+
+    final currentUser =
+        AuthSession.currentUser;
+
+    final currentUserId =
+        (currentUser?['_id'] ??
+                currentUser?['id'] ??
+                currentUser?['userId'] ??
+                '')
+            .toString();
+
+    final event =
+        EventModel.fromJson(
+      Map<String, dynamic>.from(
+        rawEvent,
+      ),
+      currentUserId,
+    );
+
+    if (_dismissedHomeEventIds
+        .contains(event.id)) {
+      debugPrint(
+        'Home ignored dismissed event: ${event.id}',
+      );
+      return;
+    }
+
+    setState(() {
+  _homeEvents.removeWhere(
+    (existing) => existing.id == event.id,
+  );
+
+  _homeEvents.insert(
+    0,
+    event,
+  );
+
+  _knownHomeEventIds.add(event.id);
+
+  _recentEventNotifications.removeWhere(
+    (existing) => existing.id == event.id,
+  );
+
+  _recentEventNotifications.insert(
+    0,
+    event,
+  );
+
+  _persistentRecentEventNotifications
+    ..clear()
+    ..addAll(_recentEventNotifications);
+});
+
+    await _saveHomeEventNotificationState();
+
+    debugPrint(
+      '🟢 HOME DISPLAYED NEW EVENT: ${event.title}',
+    );
+
+    debugPrint(
+      '🟢 TOTAL HOME NOTIFICATIONS: '
+      '${_recentEventNotifications.length}',
+    );
+  } catch (e, stackTrace) {
+    debugPrint(
+      '🔴 Failed to handle event_created: $e',
+    );
+
+    debugPrint(
+      '🔴 STACK: $stackTrace',
     );
   }
 }
@@ -716,30 +1049,31 @@ Future<void> _handleHomeEventsUpdated(
     // X = explicitly dismiss this notification
     GestureDetector(
       behavior: HitTestBehavior.opaque,
-      onTap: () {
-        if (!mounted) return;
+      onTap: () async {
+  if (!mounted) return;
 
-        setState(() {
-          _dismissedHomeEventIds.add(event.id);
+  setState(() {
+    _dismissedHomeEventIds.add(event.id);
 
-          _recentEventNotifications.removeWhere(
-            (item) => item.id == event.id,
-          );
+    _recentEventNotifications.removeWhere(
+      (item) => item.id == event.id,
+    );
 
-          // Persist dismissal across HomeScreen rebuilds.
-          _persistentDismissedHomeEventIds
-            ..clear()
-            ..addAll(_dismissedHomeEventIds);
+    _persistentDismissedHomeEventIds
+      ..clear()
+      ..addAll(_dismissedHomeEventIds);
 
-          _persistentRecentEventNotifications
-            ..clear()
-            ..addAll(_recentEventNotifications);
-        });
+    _persistentRecentEventNotifications
+      ..clear()
+      ..addAll(_recentEventNotifications);
+  });
 
-        debugPrint(
-          'Home notification dismissed: ${event.id}',
-        );
-      },
+  await _saveHomeEventNotificationState();
+
+  debugPrint(
+    'Home notification dismissed: ${event.id}',
+  );
+},
       child: const Padding(
         padding: EdgeInsets.only(
           left: 8,
@@ -1075,19 +1409,24 @@ Future<void> _handleHomeEventsUpdated(
   // ─────────────────────────────────────────────
 
   @override
-  void dispose() {
-    _eventSocket?.off(
-      'events_updated',
-      _handleHomeEventsUpdated,
-    );
+void dispose() {
+  _eventSocket?.off(
+    'events_updated',
+    _handleHomeEventsUpdated,
+  );
 
-    _eventSocket?.disconnect();
-    _eventSocket?.dispose();
+  _eventSocket?.off(
+    'event_created',
+    _handleHomeEventCreated,
+  );
 
-    _searchController.dispose();
+  _eventSocket?.disconnect();
+  _eventSocket?.dispose();
 
-    super.dispose();
-  }
+  _searchController.dispose();
+
+  super.dispose();
+}
 
   // ─────────────────────────────────────────────
   // ANALYTICS HELPERS
