@@ -1,3 +1,4 @@
+
 import 'dart:io';
 
 import 'package:flutter/material.dart';
@@ -21,6 +22,7 @@ class SignupTermsConditionsWidget extends StatefulWidget {
     this.hospitalClinic = '',
     this.organization = '',
     this.skills = '',
+    this.department = '',
     this.acceptedTerms = false,
     this.proofFile,
   });
@@ -37,6 +39,7 @@ class SignupTermsConditionsWidget extends StatefulWidget {
   final String hospitalClinic;
   final String organization;
   final String skills;
+  final String department;
   final bool acceptedTerms;
   final File? proofFile;
 
@@ -51,7 +54,9 @@ class _SignupTermsConditionsWidgetState
   bool _isSubmitting = false;
 
   String get _accountName =>
-      widget.accountType == 'doctor' ? 'Doctor Account' : 'Volunteer Account';
+      widget.accountType == 'doctor'
+          ? 'Doctor Account'
+          : 'Volunteer Account';
 
   @override
   void initState() {
@@ -70,6 +75,7 @@ class _SignupTermsConditionsWidgetState
           birthdate: widget.birthdate,
           password: widget.password,
           confirmPassword: widget.confirmPassword,
+          department: widget.department,
           prcLicenseNumber: widget.prcLicenseNumber,
           specialty: widget.specialty,
           hospitalClinic: widget.hospitalClinic,
@@ -267,7 +273,9 @@ class _SignupTermsConditionsWidgetState
     if (!_acceptedTerms) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('Please agree to the Terms and Conditions first.'),
+          content: Text(
+            'Please agree to the Terms and Conditions first.',
+          ),
         ),
       );
       return;
@@ -275,7 +283,19 @@ class _SignupTermsConditionsWidgetState
 
     if (widget.password != widget.confirmPassword) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Passwords do not match.')),
+        const SnackBar(
+          content: Text('Passwords do not match.'),
+        ),
+      );
+      return;
+    }
+
+    if (widget.accountType == 'doctor' &&
+        widget.department.trim().isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Doctor department is required.'),
+        ),
       );
       return;
     }
@@ -291,6 +311,7 @@ class _SignupTermsConditionsWidgetState
         contactNumber: widget.contactNumber,
         birthdate: widget.birthdate,
         acceptedTerms: _acceptedTerms,
+        department: widget.department,
         prcLicenseNumber: widget.prcLicenseNumber,
         specialty: widget.specialty,
         hospitalClinic: widget.hospitalClinic,
@@ -307,7 +328,9 @@ class _SignupTermsConditionsWidgetState
 
       Navigator.pushAndRemoveUntil(
         context,
-        MaterialPageRoute(builder: (_) => const LandingpageWidget()),
+        MaterialPageRoute(
+          builder: (_) => const LandingpageWidget(),
+        ),
         (route) => false,
       );
     } catch (error) {
@@ -437,56 +460,50 @@ By submitting your registration, you confirm that you have read and understood t
               ],
             ),
             child: SingleChildScrollView(
-  child: Column(
-    crossAxisAlignment: CrossAxisAlignment.stretch,
-    children: [
-      Text(
-        'TERMS AND CONDITIONS',
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 20,
-          fontWeight: FontWeight.bold,
-        ),
-      ),
-
-      const SizedBox(height: 6),
-
-      Text(
-        widget.accountType == 'doctor'
-            ? 'Doctor Account'
-            : 'Volunteer Account',
-        textAlign: TextAlign.center,
-        style: const TextStyle(
-          fontSize: 18,
-          fontWeight: FontWeight.w600,
-        ),
-      ),
-
-      const SizedBox(height: 4),
-
-      const Text(
-        'Remote Area Medical (RAM) Philippines',
-        textAlign: TextAlign.center,
-        style: TextStyle(
-          fontSize: 15,
-          color: Colors.black54,
-        ),
-      ),
-
-      const SizedBox(height: 18),
-
-      Text(
-        termsText,
-        textAlign: TextAlign.left,
-        style: const TextStyle(
-          fontSize: 15,
-          height: 1.55,
-          color: Color(0xFF111827),
-        ),
-      ),
-    ],
-  ),
-),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  const Text(
+                    'TERMS AND CONDITIONS',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 20,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    widget.accountType == 'doctor'
+                        ? 'Doctor Account'
+                        : 'Volunteer Account',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      fontSize: 18,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'Remote Area Medical (RAM) Philippines',
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 15,
+                      color: Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 18),
+                  Text(
+                    termsText,
+                    textAlign: TextAlign.left,
+                    style: const TextStyle(
+                      fontSize: 15,
+                      height: 1.55,
+                      color: Color(0xFF111827),
+                    ),
+                  ),
+                ],
+              ),
+            ),
           ),
           const SizedBox(height: 22),
           Row(
@@ -719,3 +736,4 @@ class _SignupStepScaffold extends StatelessWidget {
     );
   }
 }
+

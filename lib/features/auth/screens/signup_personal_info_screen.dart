@@ -9,6 +9,7 @@ class SignupPersonalInformationWidget extends StatefulWidget {
     this.email = '',
     this.contactNumber = '',
     this.birthdate = '',
+    this.department = '',
   });
 
   final String accountType;
@@ -16,6 +17,7 @@ class SignupPersonalInformationWidget extends StatefulWidget {
   final String email;
   final String contactNumber;
   final String birthdate;
+  final String department;
 
   @override
   State<SignupPersonalInformationWidget> createState() =>
@@ -29,19 +31,40 @@ class _SignupPersonalInformationWidgetState
   late final TextEditingController _contactController;
   late final TextEditingController _birthdateController;
 
+  String _selectedDepartment = '';
+
+  static const List<String> _departments = [
+    'Pediatrics',
+    'Neurology',
+    'Pathology',
+    'Circumcision',
+    'Surgery',
+    'PT',
+    'OBGyn',
+    'Dental',
+    'Ophthalmology',
+    'Dermatology',
+    'AdultMed',
+  ];
+
   String get _accountName {
     if (widget.accountType == 'doctor') return 'Doctor Account';
     if (widget.accountType == 'volunteer') return 'Volunteer Account';
     return 'User Account';
   }
 
+  bool get _isDoctor => widget.accountType == 'doctor';
+
   @override
   void initState() {
     super.initState();
+
     _fullNameController = TextEditingController(text: widget.fullName);
     _emailController = TextEditingController(text: widget.email);
     _contactController = TextEditingController(text: widget.contactNumber);
     _birthdateController = TextEditingController(text: widget.birthdate);
+
+    _selectedDepartment = widget.department;
   }
 
   @override
@@ -79,21 +102,14 @@ class _SignupPersonalInformationWidgetState
 
   void _goNext() {
     final fullName = _fullNameController.text.trim();
-
     final email = _emailController.text.trim().toLowerCase();
-
     final contact = _contactController.text.trim();
-
     final birthdate = _birthdateController.text.trim();
-
-    // ───────────────── FULL NAME ─────────────────
 
     if (fullName.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please enter your full name.',
-          ),
+          content: Text('Please enter your full name.'),
         ),
       );
       return;
@@ -102,9 +118,7 @@ class _SignupPersonalInformationWidgetState
     if (fullName.length < 3) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Full name must be at least 3 characters.',
-          ),
+          content: Text('Full name must be at least 3 characters.'),
         ),
       );
       return;
@@ -113,22 +127,16 @@ class _SignupPersonalInformationWidgetState
     if (!RegExp(r"^[a-zA-Z\s.'-]+$").hasMatch(fullName)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Full name must contain letters only.',
-          ),
+          content: Text('Full name must contain letters only.'),
         ),
       );
       return;
     }
 
-    // ───────────────── EMAIL ─────────────────
-
     if (email.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please enter your email address.',
-          ),
+          content: Text('Please enter your email address.'),
         ),
       );
       return;
@@ -137,22 +145,16 @@ class _SignupPersonalInformationWidgetState
     if (!_isValidEmail(email)) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please enter a valid email address.',
-          ),
+          content: Text('Please enter a valid email address.'),
         ),
       );
       return;
     }
 
-    // ───────────────── CONTACT ─────────────────
-
     if (contact.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please enter your contact number.',
-          ),
+          content: Text('Please enter your contact number.'),
         ),
       );
       return;
@@ -169,20 +171,23 @@ class _SignupPersonalInformationWidgetState
       return;
     }
 
-    // ───────────────── BIRTHDATE ─────────────────
-
     if (birthdate.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text(
-            'Please select your birthdate.',
-          ),
+          content: Text('Please select your birthdate.'),
         ),
       );
       return;
     }
 
-    // ───────────────── SUCCESS ─────────────────
+    if (_isDoctor && _selectedDepartment.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('Please select your department.'),
+        ),
+      );
+      return;
+    }
 
     Navigator.of(context).push(
       MaterialPageRoute(
@@ -192,6 +197,7 @@ class _SignupPersonalInformationWidgetState
           email: email,
           contactNumber: contact,
           birthdate: birthdate,
+          department: _selectedDepartment,
         ),
       ),
     );
@@ -214,7 +220,9 @@ class _SignupPersonalInformationWidgetState
             hintText: 'Enter your full name',
             icon: Icons.person_outline_rounded,
           ),
-         const SizedBox(height: 6),
+
+          const SizedBox(height: 6),
+
           _buildLabel('Email'),
           _buildTextField(
             controller: _emailController,
@@ -222,7 +230,9 @@ class _SignupPersonalInformationWidgetState
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
           ),
+
           const SizedBox(height: 10),
+
           _buildLabel('Contact number'),
           _buildTextField(
             controller: _contactController,
@@ -230,7 +240,9 @@ class _SignupPersonalInformationWidgetState
             icon: Icons.phone_outlined,
             keyboardType: TextInputType.phone,
           ),
-         const SizedBox(height: 10),
+
+          const SizedBox(height: 10),
+
           _buildLabel('Birthdate'),
           GestureDetector(
             onTap: _pickBirthdate,
@@ -243,12 +255,69 @@ class _SignupPersonalInformationWidgetState
               ),
             ),
           ),
+
+          if (_isDoctor) ...[
+            const SizedBox(height: 10),
+
+            _buildLabel('Department'),
+
+            DropdownButtonFormField<String>(
+              value: _selectedDepartment.isEmpty
+                  ? null
+                  : _selectedDepartment,
+              decoration: InputDecoration(
+                hintText: 'Select your department',
+                hintStyle: const TextStyle(
+                  color: Color(0xFF8A8A8A),
+                  fontSize: 15,
+                ),
+                filled: true,
+                fillColor: Colors.white,
+                prefixIcon: const Icon(
+                  Icons.medical_services_outlined,
+                  color: Color(0xFF4267D6),
+                  size: 25,
+                ),
+                contentPadding: const EdgeInsets.symmetric(
+                  horizontal: 16,
+                  vertical: 12,
+                ),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: BorderSide.none,
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(18),
+                  borderSide: const BorderSide(
+                    color: Color(0xFF4267D6),
+                    width: 1.5,
+                  ),
+                ),
+              ),
+              items: _departments.map((department) {
+                return DropdownMenuItem<String>(
+                  value: department,
+                  child: Text(department),
+                );
+              }).toList(),
+              onChanged: (value) {
+                setState(() {
+                  _selectedDepartment = value ?? '';
+                });
+              },
+            ),
+          ],
+
           const SizedBox(height: 14),
+
           SizedBox(
             height: 46,
             child: ElevatedButton.icon(
               onPressed: _goNext,
-              icon: const Icon(Icons.navigate_next_rounded, size: 26),
+              icon: const Icon(
+                Icons.navigate_next_rounded,
+                size: 26,
+              ),
               label: const Text(
                 'Next',
                 style: TextStyle(
@@ -363,7 +432,7 @@ class _SignupStepScaffold extends StatelessWidget {
     final progress = currentStep / totalSteps;
 
     return Scaffold(
-       resizeToAvoidBottomInset: true,
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
@@ -382,9 +451,9 @@ class _SignupStepScaffold extends StatelessWidget {
               child: ConstrainedBox(
                 constraints: const BoxConstraints(maxWidth: 430),
                 child: Column(
-  mainAxisSize: MainAxisSize.max,
-  crossAxisAlignment: CrossAxisAlignment.stretch,
-  children: [
+                  mainAxisSize: MainAxisSize.max,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
                     Align(
                       alignment: Alignment.centerLeft,
                       child: InkWell(
@@ -404,7 +473,9 @@ class _SignupStepScaffold extends StatelessWidget {
                         ),
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     const Text(
                       'Create',
                       textAlign: TextAlign.center,
@@ -414,7 +485,9 @@ class _SignupStepScaffold extends StatelessWidget {
                         fontWeight: FontWeight.w300,
                       ),
                     ),
+
                     const SizedBox(height: 2),
+
                     Text(
                       accountName,
                       textAlign: TextAlign.center,
@@ -424,7 +497,9 @@ class _SignupStepScaffold extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
+
                     const SizedBox(height: 16),
+
                     ClipRRect(
                       borderRadius: BorderRadius.circular(30),
                       child: LinearProgressIndicator(
@@ -434,7 +509,9 @@ class _SignupStepScaffold extends StatelessWidget {
                         minHeight: 7,
                       ),
                     ),
+
                     const SizedBox(height: 12),
+
                     Row(
                       children: [
                         const CircleAvatar(
@@ -457,8 +534,10 @@ class _SignupStepScaffold extends StatelessWidget {
                         ),
                       ],
                     ),
+
                     const SizedBox(height: 12),
-                      Expanded(
+
+                    Expanded(
                       child: Container(
                         width: double.infinity,
                         padding: const EdgeInsets.all(16),
@@ -467,10 +546,10 @@ class _SignupStepScaffold extends StatelessWidget {
                           borderRadius: BorderRadius.circular(30),
                         ),
                         child: SingleChildScrollView(
-                        child: child,
+                          child: child,
+                        ),
                       ),
                     ),
-                      ),
                   ],
                 ),
               ),
@@ -481,3 +560,4 @@ class _SignupStepScaffold extends StatelessWidget {
     );
   }
 }
+

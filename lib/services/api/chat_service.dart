@@ -84,18 +84,20 @@ class ChatService {
     required String message,
   }) async {
     try {
-      final response = await http.post(
-        Uri.parse(
-          '$_base/chat/threads/$threadId/messages',
-        ),
-        headers: {
-          ...AuthSession.headers(),
-          'Content-Type': 'application/json',
-        },
-        body: jsonEncode({
-          'message': message,
-        }),
-      );
+      final response = await http
+    .post(
+      Uri.parse('$_base/chat/threads/$threadId/messages'),
+      headers: {
+        ...AuthSession.headers(),
+        'Content-Type': 'application/json',
+      },
+      body: jsonEncode({
+        'message': message,
+      }),
+    )
+    .timeout(
+      const Duration(seconds: 15),
+    );
 
       return response.statusCode == 200 ||
           response.statusCode == 201;

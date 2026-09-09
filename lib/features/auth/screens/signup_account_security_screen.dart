@@ -13,6 +13,7 @@ class SignupAccountSecurityWidget extends StatefulWidget {
     required this.birthdate,
     this.password = '',
     this.confirmPassword = '',
+    this.department = '',
   });
 
   final String accountType;
@@ -22,6 +23,7 @@ class SignupAccountSecurityWidget extends StatefulWidget {
   final String birthdate;
   final String password;
   final String confirmPassword;
+  final String department;
 
   @override
   State<SignupAccountSecurityWidget> createState() =>
@@ -51,9 +53,7 @@ class _SignupAccountSecurityWidgetState
         TextEditingController(text: widget.password);
 
     _confirmPasswordController =
-        TextEditingController(
-      text: widget.confirmPassword,
-    );
+        TextEditingController(text: widget.confirmPassword);
 
     _passwordController.addListener(() {
       if (_useSamePassword) {
@@ -79,6 +79,7 @@ class _SignupAccountSecurityWidgetState
           email: widget.email,
           contactNumber: widget.contactNumber,
           birthdate: widget.birthdate,
+          department: widget.department,
         ),
       ),
     );
@@ -175,6 +176,7 @@ class _SignupAccountSecurityWidgetState
           birthdate: widget.birthdate,
           password: password,
           confirmPassword: confirmPassword,
+          department: widget.department,
           prcLicenseNumber: '',
           specialty: '',
           hospitalClinic: '',
@@ -194,8 +196,7 @@ class _SignupAccountSecurityWidgetState
       totalSteps: 4,
       onBack: _goBack,
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.stretch,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildLabel('Password'),
 
@@ -226,10 +227,8 @@ class _SignupAccountSecurityWidgetState
           CheckboxListTile(
             value: _useSamePassword,
             contentPadding: EdgeInsets.zero,
-            activeColor:
-                const Color(0xFF4267D6),
-            controlAffinity:
-                ListTileControlAffinity.leading,
+            activeColor: const Color(0xFF4267D6),
+            controlAffinity: ListTileControlAffinity.leading,
             title: const Text(
               'Use same password for confirmation',
               style: TextStyle(
@@ -240,16 +239,13 @@ class _SignupAccountSecurityWidgetState
             ),
             onChanged: (value) {
               setState(() {
-                _useSamePassword =
-                    value ?? false;
+                _useSamePassword = value ?? false;
 
                 if (_useSamePassword) {
-                  _confirmPasswordController
-                          .text =
+                  _confirmPasswordController.text =
                       _passwordController.text;
                 } else {
-                  _confirmPasswordController
-                      .clear();
+                  _confirmPasswordController.clear();
                 }
               });
             },
@@ -260,8 +256,7 @@ class _SignupAccountSecurityWidgetState
           _buildLabel('Confirm password'),
 
           _buildPasswordField(
-            controller:
-                _confirmPasswordController,
+            controller: _confirmPasswordController,
             hintText: 'Confirm password',
             enabled: !_useSamePassword,
             obscureText: !_passwordVisible2,
@@ -291,14 +286,12 @@ class _SignupAccountSecurityWidgetState
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor:
-                    const Color(0xFFF05261),
+                backgroundColor: const Color(0xFFF05261),
                 foregroundColor: Colors.white,
                 elevation: 10,
                 shadowColor: Colors.black26,
                 shape: RoundedRectangleBorder(
-                  borderRadius:
-                      BorderRadius.circular(32),
+                  borderRadius: BorderRadius.circular(32),
                 ),
               ),
             ),
@@ -310,8 +303,7 @@ class _SignupAccountSecurityWidgetState
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding:
-          const EdgeInsets.only(left: 6, bottom: 8),
+      padding: const EdgeInsets.only(left: 6, bottom: 8),
       child: Text(
         text,
         style: const TextStyle(
@@ -356,19 +348,16 @@ class _SignupAccountSecurityWidgetState
                 : Icons.visibility_outlined,
           ),
         ),
-        contentPadding:
-            const EdgeInsets.symmetric(
+        contentPadding: const EdgeInsets.symmetric(
           horizontal: 18,
           vertical: 20,
         ),
         border: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(18),
           borderSide: BorderSide.none,
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius:
-              BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(
             color: Color(0xFF4267D6),
             width: 1.5,
@@ -415,47 +404,27 @@ class _SignupStepScaffold extends StatelessWidget {
         child: SafeArea(
           child: Center(
             child: SingleChildScrollView(
-              padding:
-                  const EdgeInsets.all(24),
+              padding: const EdgeInsets.all(24),
               child: ConstrainedBox(
-                constraints:
-                    const BoxConstraints(
-                  maxWidth: 430,
-                ),
+                constraints: const BoxConstraints(maxWidth: 430),
                 child: Column(
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .stretch,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
                     Align(
-                      alignment:
-                          Alignment.centerLeft,
+                      alignment: Alignment.centerLeft,
                       child: InkWell(
                         onTap: onBack,
-                        borderRadius:
-                            BorderRadius
-                                .circular(16),
+                        borderRadius: BorderRadius.circular(16),
                         child: Container(
                           width: 54,
                           height: 54,
-                          decoration:
-                              BoxDecoration(
-                            color: Colors.white
-                                .withValues(
-                              alpha: 0.9,
-                            ),
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
-                              16,
-                            ),
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(16),
                           ),
                           child: const Icon(
-                            Icons
-                                .arrow_back_rounded,
-                            color: Color(
-                              0xFF4267D6,
-                            ),
+                            Icons.arrow_back_rounded,
+                            color: Color(0xFF4267D6),
                           ),
                         ),
                       ),
@@ -465,14 +434,11 @@ class _SignupStepScaffold extends StatelessWidget {
 
                     const Text(
                       'Create',
-                      textAlign:
-                          TextAlign.center,
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        color:
-                            Color(0xFFEAF0FF),
+                        color: Color(0xFFEAF0FF),
                         fontSize: 30,
-                        fontWeight:
-                            FontWeight.w300,
+                        fontWeight: FontWeight.w300,
                       ),
                     ),
 
@@ -480,33 +446,22 @@ class _SignupStepScaffold extends StatelessWidget {
 
                     Text(
                       accountName,
-                      textAlign:
-                          TextAlign.center,
-                      style:
-                          const TextStyle(
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
                         color: Colors.white,
                         fontSize: 38,
-                        fontWeight:
-                            FontWeight.w900,
+                        fontWeight: FontWeight.w900,
                       ),
                     ),
 
                     const SizedBox(height: 34),
 
                     ClipRRect(
-                      borderRadius:
-                          BorderRadius.circular(
-                        30,
-                      ),
-                      child:
-                          LinearProgressIndicator(
+                      borderRadius: BorderRadius.circular(30),
+                      child: LinearProgressIndicator(
                         value: progress,
-                        color:
-                            const Color(
-                          0xFFF05261,
-                        ),
-                        backgroundColor:
-                            Colors.white24,
+                        color: const Color(0xFFF05261),
+                        backgroundColor: Colors.white24,
                         minHeight: 7,
                       ),
                     ),
@@ -517,29 +472,21 @@ class _SignupStepScaffold extends StatelessWidget {
                       children: [
                         const CircleAvatar(
                           radius: 24,
-                          backgroundColor:
-                              Colors.white24,
+                          backgroundColor: Colors.white24,
                           child: Icon(
-                            Icons
-                                .lock_outline_rounded,
-                            color:
-                                Colors.white,
+                            Icons.lock_outline_rounded,
+                            color: Colors.white,
                           ),
                         ),
 
-                        const SizedBox(
-                            width: 12),
+                        const SizedBox(width: 12),
 
                         Text(
                           'Step $currentStep of $totalSteps\n$stepLabel',
-                          style:
-                              const TextStyle(
-                            color:
-                                Colors.white,
+                          style: const TextStyle(
+                            color: Colors.white,
                             height: 1.35,
-                            fontWeight:
-                                FontWeight
-                                    .w600,
+                            fontWeight: FontWeight.w600,
                           ),
                         ),
                       ],
@@ -549,19 +496,10 @@ class _SignupStepScaffold extends StatelessWidget {
 
                     Container(
                       width: double.infinity,
-                      padding:
-                          const EdgeInsets.all(
-                        20,
-                      ),
-                      decoration:
-                          BoxDecoration(
-                        color:
-                            const Color(
-                          0xFFEAF4FF,
-                        ),
-                        borderRadius:
-                            BorderRadius
-                                .circular(30),
+                      padding: const EdgeInsets.all(20),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFEAF4FF),
+                        borderRadius: BorderRadius.circular(30),
                       ),
                       child: child,
                     ),
@@ -575,3 +513,4 @@ class _SignupStepScaffold extends StatelessWidget {
     );
   }
 }
+

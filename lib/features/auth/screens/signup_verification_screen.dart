@@ -20,6 +20,7 @@ class SignupProfessionalVerificationWidget extends StatefulWidget {
     this.hospitalClinic = '',
     this.organization = '',
     this.skills = '',
+    this.department = '',
   });
 
   final String accountType;
@@ -34,6 +35,7 @@ class SignupProfessionalVerificationWidget extends StatefulWidget {
   final String hospitalClinic;
   final String organization;
   final String skills;
+  final String department;
 
   @override
   State<SignupProfessionalVerificationWidget> createState() =>
@@ -140,15 +142,19 @@ class _SignupProfessionalVerificationWidgetState
     }
 
     if (_isVolunteer) {
-  if (organization.isEmpty || skills.isEmpty || selectedFile == null) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(
-        content: Text('Please complete all volunteer fields and upload a valid ID.'),
-      ),
-    );
-    return;
-  }
-}
+      if (organization.isEmpty ||
+          skills.isEmpty ||
+          selectedFile == null) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text(
+              'Please complete all volunteer fields and upload a valid ID.',
+            ),
+          ),
+        );
+        return;
+      }
+    }
 
     Navigator.push(
       context,
@@ -161,6 +167,7 @@ class _SignupProfessionalVerificationWidgetState
           birthdate: widget.birthdate,
           password: widget.password,
           confirmPassword: widget.confirmPassword,
+          department: widget.department,
           prcLicenseNumber: prcLicenseNumber,
           specialty: specialty,
           hospitalClinic: hospitalClinic,
@@ -173,130 +180,130 @@ class _SignupProfessionalVerificationWidgetState
   }
 
   @override
-Widget build(BuildContext context) {
-  return Scaffold(
-    resizeToAvoidBottomInset: true,
-    body: Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF4169D8),
-            Color(0xFF234AB3),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
+  Widget build(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF4169D8),
+              Color(0xFF234AB3),
+            ],
+            begin: Alignment.topLeft,
+            end: Alignment.bottomRight,
+          ),
         ),
-      ),
-      child: SafeArea(
-        child: Center(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 430),
-              child: Column(
-                children: [
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: InkWell(
-                      onTap: () => Navigator.pop(context),
-                      borderRadius: BorderRadius.circular(16),
-                      child: Container(
-                        width: 50,
-                        height: 50,
-                        decoration: BoxDecoration(
-                          color: Colors.white.withValues(alpha: 0.9),
-                          borderRadius: BorderRadius.circular(16),
-                        ),
-                        child: const Icon(
-                          Icons.arrow_back,
-                          color: Color(0xFF4267D6),
-                        ),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 8),
-                  const Text(
-                    'Create',
-                    style: TextStyle(
-                      color: Colors.white70,
-                      fontSize: 24,
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
-                  Text(
-                    _accountTitle,
-                    textAlign: TextAlign.center,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 32,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                  const SizedBox(height: 16),
-                  const LinearProgressIndicator(
-                    value: 3 / 4,
-                    color: Color(0xFFF05261),
-                    backgroundColor: Colors.white24,
-                    minHeight: 6,
-                  ),
-                  const SizedBox(height: 10),
-                  Row(
-                    children: [
-                      const CircleAvatar(
-                        radius: 24,
-                        backgroundColor: Colors.white24,
-                        child: Icon(
-                          Icons.verified_user_outlined,
-                          color: Colors.white,
+        child: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(16),
+              child: ConstrainedBox(
+                constraints: const BoxConstraints(maxWidth: 430),
+                child: Column(
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: InkWell(
+                        onTap: () => Navigator.pop(context),
+                        borderRadius: BorderRadius.circular(16),
+                        child: Container(
+                          width: 50,
+                          height: 50,
+                          decoration: BoxDecoration(
+                            color: Colors.white.withValues(alpha: 0.9),
+                            borderRadius: BorderRadius.circular(16),
+                          ),
+                          child: const Icon(
+                            Icons.arrow_back,
+                            color: Color(0xFF4267D6),
+                          ),
                         ),
                       ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: Text(
-                          'Step 3 of 4\n${_isDoctor ? 'Professional Verification' : _isVolunteer ? 'Volunteer Verification' : 'Account Verification'}',
-                          style: const TextStyle(
+                    ),
+                    const SizedBox(height: 8),
+                    const Text(
+                      'Create',
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 24,
+                        fontWeight: FontWeight.w300,
+                      ),
+                    ),
+                    Text(
+                      _accountTitle,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 32,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    const SizedBox(height: 16),
+                    const LinearProgressIndicator(
+                      value: 3 / 4,
+                      color: Color(0xFFF05261),
+                      backgroundColor: Colors.white24,
+                      minHeight: 6,
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: [
+                        const CircleAvatar(
+                          radius: 24,
+                          backgroundColor: Colors.white24,
+                          child: Icon(
+                            Icons.verified_user_outlined,
                             color: Colors.white,
-                            height: 1.35,
-                            fontWeight: FontWeight.w600,
                           ),
                         ),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 12),
-                  Expanded(
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEAF4FF),
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.18),
-                            blurRadius: 24,
-                            offset: const Offset(0, 12),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Text(
+                            'Step 3 of 4\n${_isDoctor ? 'Professional Verification' : _isVolunteer ? 'Volunteer Verification' : 'Account Verification'}',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              height: 1.35,
+                              fontWeight: FontWeight.w600,
+                            ),
                           ),
-                        ],
-                      ),
-                      child: SingleChildScrollView(
-                        child: _isDoctor
-                            ? _buildDoctorFields()
-                            : _isVolunteer
-                                ? _buildVolunteerFields()
-                                : _buildRegularUserFields(),
+                        ),
+                      ],
+                    ),
+                    const SizedBox(height: 12),
+                    Expanded(
+                      child: Container(
+                        width: double.infinity,
+                        padding: const EdgeInsets.all(16),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFEAF4FF),
+                          borderRadius: BorderRadius.circular(30),
+                          boxShadow: [
+                            BoxShadow(
+                              color: Colors.black.withValues(alpha: 0.18),
+                              blurRadius: 24,
+                              offset: const Offset(0, 12),
+                            ),
+                          ],
+                        ),
+                        child: SingleChildScrollView(
+                          child: _isDoctor
+                              ? _buildDoctorFields()
+                              : _isVolunteer
+                                  ? _buildVolunteerFields()
+                                  : _buildRegularUserFields(),
+                        ),
                       ),
                     ),
-                  ),
-                ],
+                  ],
+                ),
               ),
             ),
           ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildDoctorFields() {
     return Column(
@@ -407,68 +414,105 @@ Widget build(BuildContext context) {
   }
 
   Widget _buildVolunteerFields() {
-  return Column(
-    crossAxisAlignment: CrossAxisAlignment.start,
-    children: [
-      _label('Valid ID'),
-      const SizedBox(height: 10),
-      InkWell(
-        onTap: _pickFile,
-        borderRadius: BorderRadius.circular(20),
-        child: Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(18),
-          decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(20),
-            border: Border.all(color: const Color(0xFF4267D6), width: 1.5),
-          ),
-          child: selectedFileName == null
-              ? const Column(
-                  children: [
-                    Icon(Icons.cloud_upload_outlined, color: Color(0xFF4267D6), size: 40),
-                    SizedBox(height: 8),
-                    Text('Upload Valid ID',
-                        style: TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF4267D6))),
-                    SizedBox(height: 4),
-                    Text('JPG, PNG or PDF (max. 5MB)', style: TextStyle(color: Colors.grey)),
-                  ],
-                )
-              : Row(
-                  children: [
-                    const Icon(Icons.insert_drive_file_outlined, color: Colors.green),
-                    const SizedBox(width: 10),
-                    Expanded(
-                      child: Text(
-                        selectedFileName!,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(fontWeight: FontWeight.w600, color: Color(0xFF243B73)),
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        _label('Valid ID'),
+        const SizedBox(height: 10),
+        InkWell(
+          onTap: _pickFile,
+          borderRadius: BorderRadius.circular(20),
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(18),
+            decoration: BoxDecoration(
+              color: Colors.white,
+              borderRadius: BorderRadius.circular(20),
+              border: Border.all(
+                color: const Color(0xFF4267D6),
+                width: 1.5,
+              ),
+            ),
+            child: selectedFileName == null
+                ? const Column(
+                    children: [
+                      Icon(
+                        Icons.cloud_upload_outlined,
+                        color: Color(0xFF4267D6),
+                        size: 40,
                       ),
-                    ),
-                    IconButton(
-                      onPressed: _removeFile,
-                      icon: const Icon(Icons.delete_outline, color: Colors.red),
-                    ),
-                  ],
-                ),
+                      SizedBox(height: 8),
+                      Text(
+                        'Upload Valid ID',
+                        style: TextStyle(
+                          fontWeight: FontWeight.bold,
+                          color: Color(0xFF4267D6),
+                        ),
+                      ),
+                      SizedBox(height: 4),
+                      Text(
+                        'JPG, PNG or PDF (max. 5MB)',
+                        style: TextStyle(color: Colors.grey),
+                      ),
+                    ],
+                  )
+                : Row(
+                    children: [
+                      const Icon(
+                        Icons.insert_drive_file_outlined,
+                        color: Colors.green,
+                      ),
+                      const SizedBox(width: 10),
+                      Expanded(
+                        child: Text(
+                          selectedFileName!,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w600,
+                            color: Color(0xFF243B73),
+                          ),
+                        ),
+                      ),
+                      IconButton(
+                        onPressed: _removeFile,
+                        icon: const Icon(
+                          Icons.delete_outline,
+                          color: Colors.red,
+                        ),
+                      ),
+                    ],
+                  ),
+          ),
         ),
-      ),
-      if (selectedFileName != null) ...[
-        const SizedBox(height: 8),
-        const Text('✔ File uploaded successfully',
-            style: TextStyle(color: Colors.green, fontWeight: FontWeight.w600)),
+        if (selectedFileName != null) ...[
+          const SizedBox(height: 8),
+          const Text(
+            '✔ File uploaded successfully',
+            style: TextStyle(
+              color: Colors.green,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        ],
+        const SizedBox(height: 20),
+        _label('Organization'),
+        _input(
+          _organizationController,
+          'Enter organization name',
+          Icons.groups_outlined,
+        ),
+        const SizedBox(height: 20),
+        _label('Skills'),
+        _input(
+          _skillsController,
+          'Ex. logistics, registration, first aid',
+          Icons.volunteer_activism_outlined,
+        ),
+        const SizedBox(height: 30),
+        _nextButton(),
       ],
-      const SizedBox(height: 20),
-      _label('Organization'),
-      _input(_organizationController, 'Enter organization name', Icons.groups_outlined),
-      const SizedBox(height: 20),
-      _label('Skills'),
-      _input(_skillsController, 'Ex. logistics, registration, first aid', Icons.volunteer_activism_outlined),
-      const SizedBox(height: 30),
-      _nextButton(),
-    ],
-  );
-}
+    );
+  }
 
   Widget _buildRegularUserFields() {
     return Column(
@@ -563,3 +607,4 @@ Widget build(BuildContext context) {
     );
   }
 }
+

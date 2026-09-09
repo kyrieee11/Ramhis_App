@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:convert';
 
 import 'package:flutter/material.dart';
@@ -50,7 +51,14 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
 
   String currentUserId = '';
 
-  List<ChatMessageModel> messages = [];
+List<ChatMessageModel> messages = [];
+
+String? _pendingMessage;
+Timer? _retryTimer;
+bool _isWaitingForConnection = false;
+
+  
+  
 
   @override
   void initState() {
@@ -75,18 +83,22 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
   }
 
   @override
-  void dispose() {
-    if (_socketInitialized) {
-      socket
-        ..off('receive_message')
-        ..off('user_status_changed')
-        ..disconnect()
-        ..dispose();
-    }
-    _controller.dispose();
-    _scrollController.dispose();
-    super.dispose();
+void dispose() {
+  _retryTimer?.cancel();
+  _retryTimer = null;
+
+  if (_socketInitialized) {
+    socket
+      ..off('receive_message')
+      ..off('user_status_changed')
+      ..disconnect()
+      ..dispose();
   }
+
+  _controller.dispose();
+  _scrollController.dispose();
+  super.dispose();
+}
 
   Future<void> _loadCurrentUserThenMessages() async {
     await _loadCurrentUser();
@@ -234,37 +246,143 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
       });
     }
   }
+  
 
   Future<void> _sendMessage() async {
-    final text = _controller.text.trim();
-    if (text.isEmpty || isSending) return;
+  final text = _controller.text.trim();
 
-    setState(() => isSending = true);
+  if (text.isEmpty || isSending) return;
 
-    try {
-      final success = await _chatService.sendMessage(
-        threadId: widget.threadId,
-        message: text,
-      );
+  setState(() {
+    isSending = true;
+    _isWaitingForConnection = false;
+  });
 
-      if (success) {
-        socket.emit('send_message', {
-          'threadId': widget.threadId,
-          'senderId': currentUserId,
-          'message': text,
-        });
+  try {
+    final success = await _chatService.sendMessage(
+      threadId: widget.threadId,
+      message: text,
+    );
 
-        _controller.clear();
-        await _loadMessages();
-        _scrollToBottom();
-      }
-    } catch (e) {
-      debugPrint('❌ Failed to send message: $e');
+    if (success) {
+      socket.emit('send_message', {
+        'threadId': widget.threadId,
+        'senderId': currentUserId,
+        'message': text,
+      });
+
+      _controller.clear();
+
+      setState(() {
+        _pendingMessage = null;
+        _isWaitingForConnection = false;
+        isSending = false;
+      });
+
+      _stopRetryTimer();
+
+      await _loadMessages();
+      _scrollToBottom();
+      return;
     }
 
-    if (!mounted) return;
-    setState(() => isSending = false);
+    _setPendingMessage(text);
+  } catch (e) {
+    debugPrint('❌ Failed to send message: $e');
+    _setPendingMessage(text);
   }
+
+  if (!mounted) return;
+
+  setState(() {
+    isSending = false;
+  });
+}
+
+void _setPendingMessage(String text) {
+  if (!mounted) return;
+
+  setState(() {
+    _pendingMessage = text;
+    _isWaitingForConnection = true;
+  });
+
+  _startRetryTimer();
+}
+
+void _startRetryTimer() {
+  if (_retryTimer != null) return;
+
+  _retryTimer = Timer.periodic(
+    const Duration(seconds: 3),
+    (_) => _retryPendingMessage(),
+  );
+}
+
+void _stopRetryTimer() {
+  _retryTimer?.cancel();
+  _retryTimer = null;
+}
+
+Future<void> _retryPendingMessage() async {
+  final text = _pendingMessage;
+
+  if (text == null || text.trim().isEmpty) {
+    _stopRetryTimer();
+    return;
+  }
+
+  if (isSending || !mounted) return;
+
+  setState(() {
+    isSending = true;
+  });
+
+  try {
+    final success = await _chatService.sendMessage(
+      threadId: widget.threadId,
+      message: text,
+    );
+
+    if (!mounted) return;
+
+    if (success) {
+      socket.emit('send_message', {
+        'threadId': widget.threadId,
+        'senderId': currentUserId,
+        'message': text,
+      });
+
+      if (_controller.text.trim() == text) {
+        _controller.clear();
+      }
+
+      setState(() {
+        _pendingMessage = null;
+        _isWaitingForConnection = false;
+        isSending = false;
+      });
+
+      _stopRetryTimer();
+
+      await _loadMessages();
+      _scrollToBottom();
+    } else {
+      setState(() {
+        isSending = false;
+      });
+    }
+  } catch (e) {
+    debugPrint('❌ Retry failed: $e');
+
+    if (!mounted) return;
+
+    setState(() {
+      isSending = false;
+      _isWaitingForConnection = true;
+    });
+  }
+}
 
   Future<void> _pickAndSendFile() async {
     if (isUploadingFile || isSending) return;
@@ -914,120 +1032,157 @@ class _ChatRoomWidgetState extends State<ChatRoomWidget> {
   }
 
   Widget _buildInputBar(bool canSend) {
-    return SafeArea(
-      top: false,
-      child: Container(
-        padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-        decoration: BoxDecoration(
-          color: Colors.white,
-          border: Border(
-            top: BorderSide(color: Colors.black.withOpacity(0.06)),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.06),
-              blurRadius: 18,
-              offset: const Offset(0, -6),
-            ),
-          ],
+  return SafeArea(
+    top: false,
+    child: Container(
+      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        border: Border(
+          top: BorderSide(color: Colors.black.withOpacity(0.06)),
         ),
-        child: Row(
-          children: [
-            IconButton(
-              onPressed: isUploadingFile ? null : _pickAndSendFile,
-              icon: isUploadingFile
-                  ? const SizedBox(
-                      width: 20,
-                      height: 20,
-                      child: CircularProgressIndicator(
-                        strokeWidth: 2,
-                        color: Color(0xFF3949AB),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black.withOpacity(0.06),
+            blurRadius: 18,
+            offset: const Offset(0, -6),
+          ),
+        ],
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          if (_isWaitingForConnection)
+            Padding(
+              padding: const EdgeInsets.only(
+                left: 8,
+                right: 8,
+                bottom: 6,
+              ),
+              child: Row(
+                children: [
+                  const SizedBox(
+                    width: 14,
+                    height: 14,
+                    child: CircularProgressIndicator(
+                      strokeWidth: 2,
+                      color: Color(0xFF3949AB),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Expanded(
+                    child: Text(
+                      'Waiting for connection... Retrying automatically.',
+                      style: TextStyle(
+                        color: Color(0xFF7B739A),
+                        fontSize: 11,
+                        fontWeight: FontWeight.w600,
                       ),
-                    )
-                  : const Icon(
-                      Icons.attach_file_rounded,
-                      color: Color(0xFF7B739A),
-                    ),
-            ),
-            Expanded(
-              child: TextField(
-                controller: _controller,
-                minLines: 1,
-                maxLines: 4,
-                onChanged: (_) {
-                  if (mounted) setState(() {});
-                },
-                textInputAction: TextInputAction.newline,
-                style: const TextStyle(
-                  color: Color(0xFF2D2363),
-                  fontWeight: FontWeight.w500,
-                ),
-                decoration: InputDecoration(
-                  hintText: 'Type a message...',
-                  hintStyle: const TextStyle(
-                    color: Color(0xFF7B739A),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  filled: true,
-                  fillColor: const Color(0xFFF1F3FA),
-                  suffixIcon: IconButton(
-                    onPressed: () {},
-                    icon: const Icon(
-                      Icons.emoji_emotions_outlined,
-                      color: Color(0xFF7B739A),
                     ),
                   ),
-                  contentPadding: const EdgeInsets.symmetric(
-                    horizontal: 16,
-                    vertical: 12,
-                  ),
-                  border: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(999),
-                    borderSide: BorderSide.none,
-                  ),
-                  enabledBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(999),
-                    borderSide: BorderSide.none,
-                  ),
-                  focusedBorder: OutlineInputBorder(
-                    borderRadius: BorderRadius.circular(999),
-                    borderSide:
-                        const BorderSide(color: Color(0xFFCAD0EA)),
-                  ),
-                ),
+                ],
               ),
             ),
-            const SizedBox(width: 8),
-            AnimatedContainer(
-              duration: const Duration(milliseconds: 180),
-              decoration: BoxDecoration(
-                color: canSend
-                    ? const Color(0xFF3949AB)
-                    : const Color(0xFFCBD2E1),
-                shape: BoxShape.circle,
-              ),
-              child: IconButton(
-                onPressed: canSend ? _sendMessage : null,
-                icon: isSending
+          Row(
+            children: [
+              IconButton(
+                onPressed: isUploadingFile ? null : _pickAndSendFile,
+                icon: isUploadingFile
                     ? const SizedBox(
-                        width: 18,
-                        height: 18,
+                        width: 20,
+                        height: 20,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: Colors.white,
+                          color: Color(0xFF3949AB),
                         ),
                       )
                     : const Icon(
-                        Icons.arrow_upward_rounded,
-                        color: Colors.white,
+                        Icons.attach_file_rounded,
+                        color: Color(0xFF7B739A),
                       ),
               ),
-            ),
-          ],
-        ),
+              Expanded(
+                child: TextField(
+                  controller: _controller,
+                  minLines: 1,
+                  maxLines: 4,
+                  onChanged: (_) {
+                    if (mounted) setState(() {});
+                  },
+                  textInputAction: TextInputAction.newline,
+                  style: const TextStyle(
+                    color: Color(0xFF2D2363),
+                    fontWeight: FontWeight.w500,
+                  ),
+                  decoration: InputDecoration(
+                    hintText: 'Type a message...',
+                    hintStyle: const TextStyle(
+                      color: Color(0xFF7B739A),
+                      fontWeight: FontWeight.w500,
+                    ),
+                    filled: true,
+                    fillColor: const Color(0xFFF1F3FA),
+                    suffixIcon: IconButton(
+                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.emoji_emotions_outlined,
+                        color: Color(0xFF7B739A),
+                      ),
+                    ),
+                    contentPadding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    border: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(999),
+                      borderSide: BorderSide.none,
+                    ),
+                    enabledBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(999),
+                      borderSide: BorderSide.none,
+                    ),
+                    focusedBorder: OutlineInputBorder(
+                      borderRadius: BorderRadius.circular(999),
+                      borderSide: const BorderSide(
+                        color: Color(0xFFCAD0EA),
+                      ),
+                    ),
+                  ),
+                ),
+              ),
+              const SizedBox(width: 8),
+              AnimatedContainer(
+                duration: const Duration(milliseconds: 180),
+                decoration: BoxDecoration(
+                  color: canSend
+                      ? const Color(0xFF3949AB)
+                      : const Color(0xFFCBD2E1),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  onPressed: canSend ? _sendMessage : null,
+                  icon: isSending
+                      ? const SizedBox(
+                          width: 18,
+                          height: 18,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 2,
+                            color: Colors.white,
+                          ),
+                        )
+                      : const Icon(
+                          Icons.arrow_upward_rounded,
+                          color: Colors.white,
+                        ),
+                ),
+              ),
+            ],
+          ),
+        ],
       ),
-    );
-  }
+    ),
+  );
+}
 
   Widget _buildLoadingBubbles() {
     return ListView(

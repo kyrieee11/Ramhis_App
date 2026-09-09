@@ -11,6 +11,7 @@ class UserModel {
   final String role;
   final String status;
   final String specialty;
+  final String department;
   final String organization;
   final String skills;
   final String prcLicenseNumber;
@@ -29,6 +30,7 @@ class UserModel {
     required this.role,
     required this.status,
     required this.specialty,
+    required this.department,
     required this.organization,
     required this.skills,
     required this.prcLicenseNumber,
@@ -49,6 +51,7 @@ class UserModel {
       role: (json['role'] ?? '').toString(),
       status: (json['status'] ?? 'active').toString(),
       specialty: (json['specialty'] ?? '').toString(),
+      department: (json['department'] ?? '').toString(),
       organization: (json['organization'] ?? '').toString(),
       skills: (json['skills'] ?? '').toString(),
       prcLicenseNumber: (json['prc_license_number'] ?? '').toString(),

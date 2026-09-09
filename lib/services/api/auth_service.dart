@@ -5,6 +5,7 @@ import 'package:http/http.dart' as http;
 
 import '../../core/app_config.dart';
 import '../../core/session_manager.dart';
+import '../socket/socket_service.dart';
 
 class AuthService {
   static const String baseUrl = AppConfig.baseUrl;
@@ -20,6 +21,7 @@ class AuthService {
     bool acceptedTerms = false,
     String prcLicenseNumber = '',
     String specialty = '',
+    String department = '',
     String hospitalClinic = '',
     String organization = '',
     String skills = '',
@@ -38,6 +40,7 @@ class AuthService {
     request.fields['accepted_terms'] = acceptedTerms.toString();
     request.fields['prc_license_number'] = prcLicenseNumber;
     request.fields['specialty'] = specialty;
+    request.fields['department'] = department;
     request.fields['hospital_clinic'] = hospitalClinic;
     request.fields['organization'] = organization;
     request.fields['skills'] = skills;
@@ -109,16 +112,18 @@ class AuthService {
   );
 }
 
-    await AuthSession.saveSession(
+        await AuthSession.saveSession(
       access:
-    data['accessToken'] ??
-    data['token'] ??
-    '',
-refresh:
-    data['refreshToken'] ??
-    '',
+          data['accessToken'] ??
+          data['token'] ??
+          '',
+      refresh:
+          data['refreshToken'] ??
+          '',
       user: Map<String, dynamic>.from(data['user']),
     );
+
+    SocketService().connect();
 
     return data;
   }
@@ -168,6 +173,8 @@ refresh:
         headers: AuthSession.headers(),
       );
     } catch (_) {}
+
+    SocketService().disconnect();
 
     await AuthSession.clearSession();
   }

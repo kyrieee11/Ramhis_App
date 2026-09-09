@@ -2,6 +2,7 @@ import 'package:flutter/foundation.dart';
 import 'package:socket_io_client/socket_io_client.dart' as io;
 
 import '../../core/app_config.dart';
+import '../../core/session_manager.dart';
 
 class SocketService {
   SocketService._internal();
@@ -11,6 +12,7 @@ class SocketService {
   factory SocketService() => _instance;
 
   io.Socket? _socket;
+  String _userId = '';
 
   io.Socket? get socket => _socket;
 
@@ -21,43 +23,65 @@ class SocketService {
   // ─────────────────────────────────────────────────────────────
 
   void connect() {
-    if (_socket != null && _socket!.connected) {
-      return;
+  final currentUser = AuthSession.currentUser;
+
+  _userId = (
+    currentUser?['_id'] ??
+    currentUser?['id'] ??
+    currentUser?['userId'] ??
+    ''
+  ).toString().trim();
+
+  if (_socket != null && _socket!.connected) {
+    if (_userId.isNotEmpty) {
+      _socket!.emit('user_online', _userId);
     }
-
-    _socket = io.io(
-      AppConfig.socketBaseUrl,
-      io.OptionBuilder()
-          .setTransports(['websocket'])
-          .enableReconnection()
-          .setReconnectionAttempts(10)
-          .setReconnectionDelay(1000)
-          .disableAutoConnect()
-          .build(),
-    );
-
-    _socket?.connect();
-
-    _socket?.onConnect((_) {
-      debugPrint('✅ Socket connected');
-    });
-
-    _socket?.onDisconnect((_) {
-      debugPrint('❌ Socket disconnected');
-    });
-
-    _socket?.onConnectError((error) {
-      debugPrint('❌ Socket connect error: $error');
-    });
-
-    _socket?.onError((error) {
-      debugPrint('❌ Socket error: $error');
-    });
-
-    _socket?.onReconnect((_) {
-      debugPrint('🔄 Socket reconnected');
-    });
+    return;
   }
+
+  _socket = io.io(
+    AppConfig.socketBaseUrl,
+    io.OptionBuilder()
+        .setTransports(['websocket'])
+        .enableReconnection()
+        .setReconnectionAttempts(10)
+        .setReconnectionDelay(1000)
+        .disableAutoConnect()
+        .build(),
+  );
+
+  _socket?.connect();
+
+  _socket?.onConnect((_) {
+    debugPrint('✅ Socket connected');
+
+    if (_userId.isNotEmpty) {
+      _socket?.emit('user_online', _userId);
+      debugPrint('🟢 User online: $_userId');
+    }
+  });
+
+  _socket?.onDisconnect((_) {
+    debugPrint('❌ Socket disconnected');
+  });
+
+  _socket?.onConnectError((error) {
+    debugPrint('❌ Socket connect error: $error');
+  });
+
+  _socket?.onError((error) {
+    debugPrint('❌ Socket error: $error');
+  });
+
+  _socket?.onReconnect((_) {
+    debugPrint('🔄 Socket reconnected');
+
+    if (_userId.isNotEmpty) {
+      _socket?.emit('user_online', _userId);
+      debugPrint('🟢 User online after reconnect: $_userId');
+    }
+  });
+}
 
   // ─────────────────────────────────────────────────────────────
   // DISCONNECT
@@ -163,6 +187,23 @@ class SocketService {
       }
     });
   }
+
+  void onUserStatusChanged(
+  void Function(Map<String, dynamic> data) callback,
+) {
+  void removeAllListeners() {
+  removeChatListeners();
+  removeEventListeners();
+  removeContentListeners();
+  _socket?.off('user_status_changed');
+}
+
+  _socket?.on('user_status_changed', (data) {
+    if (data is Map) {
+      callback(Map<String, dynamic>.from(data));
+    }
+  });
+}
 
   // ─────────────────────────────────────────────────────────────
   // REMOVE LISTENERS

@@ -4,6 +4,7 @@ import 'package:app_links/app_links.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ramhis_app/core/session_manager.dart';
+import 'package:ramhis_app/services/socket/socket_service.dart';
 import 'package:ramhis_app/features/auth/screens/landing_page.dart';
 import 'package:ramhis_app/features/auth/screens/reset_password_screen.dart';
 import 'package:ramhis_app/features/user/screens/home_screen.dart';
@@ -86,12 +87,14 @@ class _MyAppState extends State<MyApp> {
       AuthSession.currentUser?['role']?.toString().toLowerCase();
 
   if (role == 'admin') {
-    await AuthSession.clearSession();
-    if (mounted) setState(() => _isChecking = false);
-    return;
-  }
-
+  await AuthSession.clearSession();
   if (mounted) setState(() => _isChecking = false);
+  return;
+}
+
+SocketService().connect();
+
+if (mounted) setState(() => _isChecking = false);
 }
 
   // ── Deep links ─────────────────────────────────────────────
