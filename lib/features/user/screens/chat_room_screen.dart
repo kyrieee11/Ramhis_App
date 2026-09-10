@@ -13,6 +13,14 @@ import 'package:ramhis_app/core/online_status_manager.dart';
 import 'package:ramhis_app/models/chat_message_model.dart';
 import 'package:ramhis_app/services/api/chat_service.dart';
 
+const _kNavy = Color(0xFF123F91);
+const _kNavyDark = Color(0xFF082B6B);
+const _kGold = Color(0xFFD9C27A);
+const _kGoldDark = Color(0xFF9D7D2F);
+const _kCream = Color(0xFFF7F2E5);
+const _kInk = Color(0xFF17213A);
+const _kMuted = Color(0xFF777B86);
+
 class ChatRoomWidget extends StatefulWidget {
   const ChatRoomWidget({
     super.key,
@@ -614,160 +622,212 @@ Future<void> _retryPendingMessage() async {
         !isUploadingFile;
 
     return Scaffold(
-      backgroundColor: const Color(0xFFF0F2FF),
-      appBar: AppBar(
-        backgroundColor: const Color(0xFF3949AB),
-        elevation: 0,
-        toolbarHeight: 72,
-        iconTheme: const IconThemeData(color: Colors.white),
-        titleSpacing: 0,
-        title: Row(
+      backgroundColor: _kCream,
+      body: SafeArea(
+        child: Column(
           children: [
-            Stack(
-              clipBehavior: Clip.none,
-              children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundColor: _avatarColor(widget.threadTitle),
-                  child: Text(
-                    _initials(widget.threadTitle),
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontWeight: FontWeight.w900,
-                    ),
-                  ),
-                ),
-                Positioned(
-                  right: -1,
-                  bottom: -1,
-                  child: Container(
-                    width: 11,
-                    height: 11,
-                    decoration: BoxDecoration(
-                      color: otherUserOnline
-                          ? const Color(0xFF22C55E)
-                          : const Color(0xFF9CA3AF),
-                      shape: BoxShape.circle,
-                      border: Border.all(
-                        color: const Color(0xFF3949AB),
-                        width: 2,
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(width: 11),
+            _buildRoomHeader(),
             Expanded(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              child: Stack(
                 children: [
-                  Text(
-                    widget.threadTitle,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w900,
+                  Positioned.fill(
+                    child: CustomPaint(
+                      painter: _MarbleBackgroundPainter(),
                     ),
                   ),
-                  const SizedBox(height: 2),
-                  Text(
-                    _statusText(),
-                    style: TextStyle(
-                      color: _statusColor(),
-                      fontSize: 12,
-                      fontWeight: FontWeight.w500,
-                    ),
-                  ),
-                ],
-              ),
-            ),
-          ],
-        ),
-        actions: [
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.videocam_rounded, color: Colors.white),
-          ),
-          IconButton(
-            onPressed: () {},
-            icon: const Icon(Icons.call_rounded, color: Colors.white),
-          ),
-          IconButton(
-            onPressed: _loadMessages,
-            icon: const Icon(Icons.refresh_rounded, color: Colors.white),
-          ),
-        ],
-      ),
-      body: Column(
-        children: [
-          Expanded(
-            child: Stack(
-              children: [
-                isLoading
-                    ? _buildLoadingBubbles()
-                    : messages.isEmpty
-                        ? _buildEmptyMessages()
-                        : NotificationListener<ScrollNotification>(
-                            onNotification: _handleScrollNotification,
-                            child: ListView.builder(
-                              controller: _scrollController,
-                              padding: const EdgeInsets.fromLTRB(14, 16, 14, 20),
-                              itemCount: messages.length,
-                              itemBuilder: (context, index) {
-                                final msg = messages[index];
-                                return Column(
-                                  children: [
-                                    if (_shouldShowDateSeparator(index))
-                                      _buildDateSeparator(
-                                        _dateLabel(msg.createdAt.toString()),
-                                      ),
-                                    _buildMessageBubble(msg),
-                                  ],
-                                );
-                              },
+                  isLoading
+                      ? _buildLoadingBubbles()
+                      : messages.isEmpty
+                          ? _buildEmptyMessages()
+                          : NotificationListener<ScrollNotification>(
+                              onNotification: _handleScrollNotification,
+                              child: ListView.builder(
+                                controller: _scrollController,
+                                padding:
+                                    const EdgeInsets.fromLTRB(14, 16, 14, 24),
+                                itemCount: messages.length,
+                                itemBuilder: (context, index) {
+                                  final msg = messages[index];
+                                  return Column(
+                                    children: [
+                                      if (_shouldShowDateSeparator(index))
+                                        _buildDateSeparator(
+                                          _dateLabel(msg.createdAt.toString()),
+                                        ),
+                                      _buildMessageBubble(msg),
+                                    ],
+                                  );
+                                },
+                              ),
                             ),
-                          ),
-                Positioned(
-                  right: 16,
-                  bottom: 16,
-                  child: AnimatedScale(
-                    scale: _showScrollToBottom ? 1 : 0,
-                    duration: const Duration(milliseconds: 180),
-                    curve: Curves.easeOutBack,
-                    child: AnimatedOpacity(
-                      opacity: _showScrollToBottom ? 1 : 0,
+                  Positioned(
+                    right: 16,
+                    bottom: 16,
+                    child: AnimatedScale(
+                      scale: _showScrollToBottom ? 1 : 0,
                       duration: const Duration(milliseconds: 180),
-                      child: Material(
-                        color: const Color(0xFF3949AB),
-                        shape: const CircleBorder(),
-                        elevation: 4,
-                        child: InkWell(
-                          customBorder: const CircleBorder(),
-                          onTap: _scrollToBottom,
-                          child: const SizedBox(
-                            width: 44,
-                            height: 44,
-                            child: Icon(
-                              Icons.keyboard_arrow_down_rounded,
-                              color: Colors.white,
+                      curve: Curves.easeOutBack,
+                      child: AnimatedOpacity(
+                        opacity: _showScrollToBottom ? 1 : 0,
+                        duration: const Duration(milliseconds: 180),
+                        child: Material(
+                          color: _kNavy,
+                          shape: const CircleBorder(
+                            side: BorderSide(color: _kGold, width: 1.2),
+                          ),
+                          elevation: 5,
+                          child: InkWell(
+                            customBorder: const CircleBorder(),
+                            onTap: _scrollToBottom,
+                            child: const SizedBox(
+                              width: 44,
+                              height: 44,
+                              child: Icon(
+                                Icons.keyboard_arrow_down_rounded,
+                                color: _kGold,
+                              ),
                             ),
                           ),
                         ),
                       ),
                     ),
                   ),
+                ],
+              ),
+            ),
+            _buildInputBar(canSend),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildRoomHeader() {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(8, 10, 8, 12),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_kNavy, _kNavyDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border(
+          bottom: BorderSide(color: _kGold, width: 1.4),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black26,
+            blurRadius: 12,
+            offset: Offset(0, 5),
+          ),
+        ],
+      ),
+      child: Row(
+        children: [
+          _goldHeaderButton(
+            Icons.arrow_back_ios_new_rounded,
+            () => Navigator.pop(context),
+          ),
+          const SizedBox(width: 4),
+          Stack(
+            clipBehavior: Clip.none,
+            children: [
+              Container(
+                width: 48,
+                height: 48,
+                decoration: BoxDecoration(
+                  color: _kCream,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: _kGold, width: 1.8),
+                  boxShadow: const [
+                    BoxShadow(
+                      color: Colors.black26,
+                      blurRadius: 8,
+                      offset: Offset(0, 4),
+                    ),
+                  ],
+                ),
+                child: Text(
+                  _initials(widget.threadTitle),
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(
+                    color: _kNavy,
+                    fontSize: 17,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Positioned(
+                right: -1,
+                bottom: 0,
+                child: Container(
+                  width: 13,
+                  height: 13,
+                  decoration: BoxDecoration(
+                    color: otherUserOnline
+                        ? const Color(0xFF4CAF50)
+                        : const Color(0xFF9CA3AF),
+                    shape: BoxShape.circle,
+                    border: Border.all(color: _kNavy, width: 2),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(width: 11),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  widget.threadTitle,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: _kCream,
+                    fontSize: 19,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: 0.1,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _statusText(),
+                  style: TextStyle(
+                    color: otherUserOnline ? const Color(0xFF8BE28B) : _kGold,
+                    fontSize: 11.5,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ],
             ),
           ),
-          _buildInputBar(canSend),
+          _goldHeaderButton(Icons.videocam_rounded, () {}),
+          _goldHeaderButton(Icons.call_rounded, () {}),
+          _goldHeaderButton(Icons.refresh_rounded, _loadMessages),
         ],
       ),
     );
   }
+
+  Widget _goldHeaderButton(IconData icon, VoidCallback onTap) {
+    return Material(
+      color: _kGold,
+      shape: const CircleBorder(),
+      elevation: 2,
+      child: InkWell(
+        customBorder: const CircleBorder(),
+        onTap: onTap,
+        child: SizedBox(
+          width: 40,
+          height: 40,
+          child: Icon(icon, color: _kNavy, size: 20),
+        ),
+      ),
+    );
+  }
+
 
   Widget _buildMessageBubble(ChatMessageModel msg) {
     final isMine = _isMine(msg);
@@ -777,7 +837,7 @@ Future<void> _retryPendingMessage() async {
       child: Container(
         margin: const EdgeInsets.symmetric(vertical: 5),
         constraints: BoxConstraints(
-          maxWidth: MediaQuery.of(context).size.width * 0.76,
+          maxWidth: MediaQuery.of(context).size.width * 0.78,
         ),
         child: Column(
           crossAxisAlignment:
@@ -785,44 +845,46 @@ Future<void> _retryPendingMessage() async {
           children: [
             if (!isMine)
               Padding(
-                padding: const EdgeInsets.only(left: 4, bottom: 4),
+                padding: const EdgeInsets.only(left: 7, bottom: 4),
                 child: Text(
                   widget.threadTitle,
-                  style: TextStyle(
-                    color: _senderRoleColor(),
-                    fontSize: 11,
+                  style: const TextStyle(
+                    color: _kGoldDark,
+                    fontSize: 10.5,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
               ),
             Container(
-              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+              padding: msg.isFile
+                  ? const EdgeInsets.all(7)
+                  : const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
               decoration: BoxDecoration(
-                color: isMine ? const Color(0xFF3949AB) : Colors.white,
+                color: isMine ? _kNavy : _kCream.withValues(alpha: 0.96),
                 borderRadius: BorderRadius.only(
-                  topLeft: Radius.circular(isMine ? 18 : 4),
-                  topRight: Radius.circular(isMine ? 4 : 18),
+                  topLeft: Radius.circular(isMine ? 18 : 5),
+                  topRight: Radius.circular(isMine ? 5 : 18),
                   bottomLeft: const Radius.circular(18),
                   bottomRight: const Radius.circular(18),
                 ),
-                boxShadow: isMine
-                    ? []
-                    : [
-                        BoxShadow(
-                          color: Colors.black.withOpacity(0.06),
-                          blurRadius: 14,
-                          offset: const Offset(0, 6),
-                        ),
-                      ],
+                border: Border.all(
+                  color: isMine ? _kGold : const Color(0xFFD9C99B),
+                  width: isMine ? 1.1 : 1,
+                ),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.10),
+                    blurRadius: 9,
+                    offset: const Offset(0, 4),
+                  ),
+                ],
               ),
               child: msg.isFile
                   ? _buildFileMessageContent(msg, isMine)
                   : Text(
                       msg.message,
                       style: TextStyle(
-                        color: isMine
-                            ? Colors.white
-                            : const Color(0xFF2D2363),
+                        color: isMine ? Colors.white : _kInk,
                         fontSize: 14,
                         fontWeight: FontWeight.w500,
                         height: 1.35,
@@ -836,17 +898,17 @@ Future<void> _retryPendingMessage() async {
                 Text(
                   _formatTime(msg.createdAt.toString()),
                   style: const TextStyle(
-                    fontSize: 10.5,
-                    color: Color(0xFF7B739A),
+                    fontSize: 10,
+                    color: _kMuted,
                     fontWeight: FontWeight.w600,
                   ),
                 ),
                 if (isMine) ...[
                   const SizedBox(width: 4),
                   const Icon(
-                    Icons.done_rounded,
-                    size: 14,
-                    color: Color(0xFF7B739A),
+                    Icons.done_all_rounded,
+                    size: 13,
+                    color: _kGoldDark,
                   ),
                 ],
               ],
@@ -869,47 +931,64 @@ Future<void> _retryPendingMessage() async {
         crossAxisAlignment:
             isMine ? CrossAxisAlignment.end : CrossAxisAlignment.start,
         children: [
-          ClipRRect(
-            borderRadius: BorderRadius.circular(14),
-            child: GestureDetector(
-              onTap: () => _openFile(msg),
-              child: Image.network(
-                fileUrl,
-                width: 220,
-                fit: BoxFit.cover,
-                loadingBuilder: (context, child, progress) {
-                  if (progress == null) return child;
-                  return Container(
-                    width: 220,
-                    height: 150,
-                    alignment: Alignment.center,
-                    color: Colors.black.withOpacity(0.06),
-                    child: const SizedBox(
-                      width: 22,
-                      height: 22,
-                      child: CircularProgressIndicator(strokeWidth: 2),
-                    ),
-                  );
-                },
-                errorBuilder: (_, __, ___) => Container(
+          GestureDetector(
+            onTap: () => _openFile(msg),
+            child: Container(
+              padding: const EdgeInsets.all(7),
+              decoration: BoxDecoration(
+                color: _kGold.withValues(alpha: 0.28),
+                borderRadius: BorderRadius.circular(15),
+                border: Border.all(color: _kGoldDark, width: 1),
+              ),
+              child: ClipRRect(
+                borderRadius: BorderRadius.circular(10),
+                child: Image.network(
+                  fileUrl,
                   width: 220,
-                  height: 140,
-                  alignment: Alignment.center,
-                  color: Colors.black.withOpacity(0.06),
-                  child: const Icon(Icons.broken_image_rounded, size: 36),
+                  fit: BoxFit.cover,
+                  loadingBuilder: (context, child, progress) {
+                    if (progress == null) return child;
+                    return Container(
+                      width: 220,
+                      height: 150,
+                      alignment: Alignment.center,
+                      color: _kCream,
+                      child: const SizedBox(
+                        width: 22,
+                        height: 22,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: _kGoldDark,
+                        ),
+                      ),
+                    );
+                  },
+                  errorBuilder: (_, __, ___) => Container(
+                    width: 220,
+                    height: 140,
+                    alignment: Alignment.center,
+                    color: _kCream,
+                    child: const Icon(
+                      Icons.broken_image_rounded,
+                      size: 36,
+                      color: _kGoldDark,
+                    ),
+                  ),
                 ),
               ),
             ),
           ),
           if (msg.message.trim().isNotEmpty) ...[
             const SizedBox(height: 8),
-            Text(
-              msg.message,
-              style: TextStyle(
-                color: isMine ? Colors.white : const Color(0xFF2D2363),
-                fontSize: 14,
-                fontWeight: FontWeight.w500,
-                height: 1.35,
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 4),
+              child: Text(
+                msg.message,
+                style: TextStyle(
+                  color: isMine ? Colors.white : _kInk,
+                  fontSize: 13.5,
+                  fontWeight: FontWeight.w500,
+                ),
               ),
             ),
           ],
@@ -919,19 +998,17 @@ Future<void> _retryPendingMessage() async {
 
     return InkWell(
       onTap: () => _openFile(msg),
-      borderRadius: BorderRadius.circular(14),
+      borderRadius: BorderRadius.circular(13),
       child: Container(
         constraints: const BoxConstraints(minWidth: 210),
-        padding: const EdgeInsets.all(12),
+        padding: const EdgeInsets.all(11),
         decoration: BoxDecoration(
           color: isMine
-              ? Colors.white.withOpacity(0.12)
-              : const Color(0xFFF1F3FA),
-          borderRadius: BorderRadius.circular(14),
+              ? Colors.white.withValues(alpha: 0.10)
+              : Colors.white.withValues(alpha: 0.72),
+          borderRadius: BorderRadius.circular(13),
           border: Border.all(
-            color: isMine
-                ? Colors.white.withOpacity(0.22)
-                : const Color(0xFFE1E5F3),
+            color: isMine ? _kGold : const Color(0xFFD9C99B),
           ),
         ),
         child: Row(
@@ -942,13 +1019,13 @@ Future<void> _retryPendingMessage() async {
               height: 38,
               decoration: BoxDecoration(
                 color: isMine
-                    ? Colors.white.withOpacity(0.18)
-                    : const Color(0xFF3949AB).withOpacity(0.10),
-                borderRadius: BorderRadius.circular(12),
+                    ? _kGold.withValues(alpha: 0.20)
+                    : _kGold.withValues(alpha: 0.24),
+                borderRadius: BorderRadius.circular(11),
               ),
               child: Icon(
                 Icons.insert_drive_file_rounded,
-                color: isMine ? Colors.white : const Color(0xFF3949AB),
+                color: isMine ? _kGold : _kGoldDark,
               ),
             ),
             const SizedBox(width: 10),
@@ -961,25 +1038,19 @@ Future<void> _retryPendingMessage() async {
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: isMine
-                          ? Colors.white
-                          : const Color(0xFF2D2363),
+                      color: isMine ? Colors.white : _kInk,
                       fontSize: 13,
                       fontWeight: FontWeight.w900,
                     ),
                   ),
                   const SizedBox(height: 3),
                   Text(
-                    fileSize.isEmpty
-                        ? 'Tap to open'
-                        : '$fileSize • Tap to open',
+                    fileSize.isEmpty ? 'Tap to open' : '$fileSize • Tap to open',
                     maxLines: 1,
                     overflow: TextOverflow.ellipsis,
                     style: TextStyle(
-                      color: isMine
-                          ? Colors.white.withOpacity(0.78)
-                          : const Color(0xFF7B739A),
-                      fontSize: 11,
+                      color: isMine ? _kCream : _kMuted,
+                      fontSize: 10.5,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
@@ -990,9 +1061,7 @@ Future<void> _retryPendingMessage() async {
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: TextStyle(
-                        color: isMine
-                            ? Colors.white
-                            : const Color(0xFF2D2363),
+                        color: isMine ? Colors.white : _kInk,
                         fontSize: 12,
                         fontWeight: FontWeight.w500,
                       ),
@@ -1009,20 +1078,29 @@ Future<void> _retryPendingMessage() async {
 
   Widget _buildDateSeparator(String label) {
     if (label.isEmpty) return const SizedBox.shrink();
+
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 12),
       child: Center(
         child: Container(
-          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+          padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 6),
           decoration: BoxDecoration(
-            color: const Color(0xFFE2E6F5),
+            color: _kCream.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(999),
+            border: Border.all(color: _kGold, width: 0.8),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.06),
+                blurRadius: 7,
+                offset: const Offset(0, 3),
+              ),
+            ],
           ),
           child: Text(
             label,
             style: const TextStyle(
-              color: Color(0xFF7B739A),
-              fontSize: 11,
+              color: _kGoldDark,
+              fontSize: 10.5,
               fontWeight: FontWeight.w800,
             ),
           ),
@@ -1032,157 +1110,158 @@ Future<void> _retryPendingMessage() async {
   }
 
   Widget _buildInputBar(bool canSend) {
-  return SafeArea(
-    top: false,
-    child: Container(
-      padding: const EdgeInsets.fromLTRB(12, 10, 12, 12),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        border: Border(
-          top: BorderSide(color: Colors.black.withOpacity(0.06)),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.06),
-            blurRadius: 18,
-            offset: const Offset(0, -6),
+    return SafeArea(
+      top: false,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(10, 8, 10, 10),
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [_kNavy, _kNavyDark],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
-        ],
-      ),
-      child: Column(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          if (_isWaitingForConnection)
-            Padding(
-              padding: const EdgeInsets.only(
-                left: 8,
-                right: 8,
-                bottom: 6,
-              ),
-              child: Row(
-                children: [
-                  const SizedBox(
-                    width: 14,
-                    height: 14,
-                    child: CircularProgressIndicator(
-                      strokeWidth: 2,
-                      color: Color(0xFF3949AB),
-                    ),
-                  ),
-                  const SizedBox(width: 8),
-                  const Expanded(
-                    child: Text(
-                      'Waiting for connection... Retrying automatically.',
-                      style: TextStyle(
-                        color: Color(0xFF7B739A),
-                        fontSize: 11,
-                        fontWeight: FontWeight.w600,
+          border: Border(
+            top: BorderSide(color: _kGold, width: 1.2),
+          ),
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            if (_isWaitingForConnection)
+              Padding(
+                padding: const EdgeInsets.only(left: 8, right: 8, bottom: 5),
+                child: Row(
+                  children: [
+                    const SizedBox(
+                      width: 13,
+                      height: 13,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        color: _kGold,
                       ),
                     ),
-                  ),
-                ],
-              ),
-            ),
-          Row(
-            children: [
-              IconButton(
-                onPressed: isUploadingFile ? null : _pickAndSendFile,
-                icon: isUploadingFile
-                    ? const SizedBox(
-                        width: 20,
-                        height: 20,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          color: Color(0xFF3949AB),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Waiting for connection... Retrying automatically.',
+                        style: TextStyle(
+                          color: _kCream,
+                          fontSize: 10.5,
+                          fontWeight: FontWeight.w600,
                         ),
-                      )
-                    : const Icon(
-                        Icons.attach_file_rounded,
-                        color: Color(0xFF7B739A),
-                      ),
-              ),
-              Expanded(
-                child: TextField(
-                  controller: _controller,
-                  minLines: 1,
-                  maxLines: 4,
-                  onChanged: (_) {
-                    if (mounted) setState(() {});
-                  },
-                  textInputAction: TextInputAction.newline,
-                  style: const TextStyle(
-                    color: Color(0xFF2D2363),
-                    fontWeight: FontWeight.w500,
-                  ),
-                  decoration: InputDecoration(
-                    hintText: 'Type a message...',
-                    hintStyle: const TextStyle(
-                      color: Color(0xFF7B739A),
-                      fontWeight: FontWeight.w500,
-                    ),
-                    filled: true,
-                    fillColor: const Color(0xFFF1F3FA),
-                    suffixIcon: IconButton(
-                      onPressed: () {},
-                      icon: const Icon(
-                        Icons.emoji_emotions_outlined,
-                        color: Color(0xFF7B739A),
                       ),
                     ),
-                    contentPadding: const EdgeInsets.symmetric(
-                      horizontal: 16,
-                      vertical: 12,
-                    ),
-                    border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(999),
-                      borderSide: BorderSide.none,
-                    ),
-                    enabledBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(999),
-                      borderSide: BorderSide.none,
-                    ),
-                    focusedBorder: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(999),
-                      borderSide: const BorderSide(
-                        color: Color(0xFFCAD0EA),
-                      ),
-                    ),
-                  ),
+                  ],
                 ),
               ),
-              const SizedBox(width: 8),
-              AnimatedContainer(
-                duration: const Duration(milliseconds: 180),
-                decoration: BoxDecoration(
-                  color: canSend
-                      ? const Color(0xFF3949AB)
-                      : const Color(0xFFCBD2E1),
-                  shape: BoxShape.circle,
-                ),
-                child: IconButton(
-                  onPressed: canSend ? _sendMessage : null,
-                  icon: isSending
+            Row(
+              children: [
+                IconButton(
+                  onPressed: isUploadingFile ? null : _pickAndSendFile,
+                  icon: isUploadingFile
                       ? const SizedBox(
-                          width: 18,
-                          height: 18,
+                          width: 20,
+                          height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: Colors.white,
+                            color: _kGold,
                           ),
                         )
                       : const Icon(
-                          Icons.arrow_upward_rounded,
-                          color: Colors.white,
+                          Icons.attach_file_rounded,
+                          color: _kCream,
                         ),
                 ),
-              ),
-            ],
-          ),
-        ],
+                Expanded(
+                  child: TextField(
+                    controller: _controller,
+                    minLines: 1,
+                    maxLines: 4,
+                    onChanged: (_) {
+                      if (mounted) setState(() {});
+                    },
+                    textInputAction: TextInputAction.newline,
+                    style: const TextStyle(
+                      color: _kInk,
+                      fontWeight: FontWeight.w600,
+                    ),
+                    decoration: InputDecoration(
+                      hintText: 'Type a message...',
+                      hintStyle: const TextStyle(
+                        color: _kMuted,
+                        fontWeight: FontWeight.w500,
+                      ),
+                      filled: true,
+                      fillColor: _kCream,
+                      suffixIcon: IconButton(
+                        onPressed: () {},
+                        icon: const Icon(
+                          Icons.emoji_emotions_outlined,
+                          color: _kGoldDark,
+                        ),
+                      ),
+                      contentPadding: const EdgeInsets.symmetric(
+                        horizontal: 16,
+                        vertical: 12,
+                      ),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        borderSide: const BorderSide(
+                          color: _kGold,
+                          width: 1,
+                        ),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        borderSide: const BorderSide(
+                          color: _kGold,
+                          width: 1,
+                        ),
+                      ),
+                      focusedBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(999),
+                        borderSide: const BorderSide(
+                          color: _kGold,
+                          width: 1.5,
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Material(
+                  color: canSend ? _kGold : const Color(0xFF6D7890),
+                  shape: const CircleBorder(),
+                  elevation: 2,
+                  child: InkWell(
+                    customBorder: const CircleBorder(),
+                    onTap: canSend ? _sendMessage : null,
+                    child: SizedBox(
+                      width: 45,
+                      height: 45,
+                      child: isSending
+                          ? const Padding(
+                              padding: EdgeInsets.all(13),
+                              child: CircularProgressIndicator(
+                                strokeWidth: 2,
+                                color: _kNavy,
+                              ),
+                            )
+                          : const Icon(
+                              Icons.send_rounded,
+                              color: _kNavy,
+                              size: 21,
+                            ),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildLoadingBubbles() {
     return ListView(
@@ -1274,4 +1353,69 @@ Future<void> _retryPendingMessage() async {
       ),
     );
   }
+}
+
+
+class _MarbleBackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final base = Paint()..color = _kCream;
+    canvas.drawRect(Offset.zero & size, base);
+
+    final vein = Paint()
+      ..color = const Color(0xFFB9C1CF).withValues(alpha: 0.28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    final veinSoft = Paint()
+      ..color = const Color(0xFFD2D7DF).withValues(alpha: 0.34)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.7;
+
+    final paths = <Path>[
+      Path()
+        ..moveTo(size.width * .06, size.height * .02)
+        ..cubicTo(size.width * .28, size.height * .12,
+            size.width * .16, size.height * .20,
+            size.width * .42, size.height * .30)
+        ..cubicTo(size.width * .58, size.height * .36,
+            size.width * .36, size.height * .46,
+            size.width * .62, size.height * .55)
+        ..cubicTo(size.width * .82, size.height * .64,
+            size.width * .58, size.height * .78,
+            size.width * .94, size.height * .90),
+      Path()
+        ..moveTo(size.width * .90, size.height * .04)
+        ..cubicTo(size.width * .72, size.height * .16,
+            size.width * .88, size.height * .25,
+            size.width * .66, size.height * .37)
+        ..cubicTo(size.width * .52, size.height * .44,
+            size.width * .76, size.height * .55,
+            size.width * .48, size.height * .70),
+      Path()
+        ..moveTo(size.width * .18, size.height * .76)
+        ..cubicTo(size.width * .34, size.height * .69,
+            size.width * .22, size.height * .84,
+            size.width * .04, size.height * .94),
+    ];
+
+    for (final path in paths) {
+      canvas.drawPath(path, vein);
+    }
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width * .08, size.height * .12)
+        ..cubicTo(size.width * .32, size.height * .18,
+            size.width * .12, size.height * .28,
+            size.width * .46, size.height * .34)
+        ..cubicTo(size.width * .68, size.height * .42,
+            size.width * .44, size.height * .52,
+            size.width * .72, size.height * .61),
+      veinSoft,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

@@ -5,13 +5,12 @@ import 'package:ramhis_app/features/user/screens/chat_screen.dart';
 import 'package:ramhis_app/features/user/screens/account_screen.dart';
 import 'package:ramhis_app/features/user/screens/events_screen.dart';
 
-
 // Brand colors
-const _kNavBgStart = Color(0xFF5666DA);
-const _kNavBgEnd = Color(0xFF6475E8);
+const _kNavBgStart = Color(0xFF123F91);
+const _kNavBgEnd = Color(0xFF082B6B);
 
-const _kActiveFg = Colors.white;
-const _kIdleFg = Color(0xFFBFC8F3);
+const _kActiveFg = Color(0xFFF2E4AF);
+const _kIdleFg = Color(0xFFBFC7D7);
 
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -146,6 +145,12 @@ class CustomNavBar extends StatelessWidget {
               _kNavBgStart,
               _kNavBgEnd,
             ],
+          ),
+          border: const Border(
+            top: BorderSide(
+              color: Color(0xFFD9C27A),
+              width: 1.2,
+            ),
           ),
           boxShadow: [
             BoxShadow(

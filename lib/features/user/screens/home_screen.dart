@@ -24,21 +24,47 @@ import 'package:shared_preferences/shared_preferences.dart';
 // ─────────────────────────────────────────────────────────────────────────────
 // DESIGN SYSTEM CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
+//
+// Premium palette: a deep indigo brand color paired with a warm gold
+// accent, restrained neutrals, and one consistent set of semantic colors
+// used everywhere (chips, charts, icons, buttons) so nothing looks
+// ad-hoc. Every surface in the screen pulls from this single source.
 abstract class AppColors {
-  static const Color primary = Color(0xFF4F46E5);
-  static const Color primaryLight = Color(0xFFEEF2FF);
-  static const Color surface = Colors.white;
-  static const Color background = Color(0xFFF8FAFC);
-  static const Color cardBorder = Color(0xFFE2E8F0);
+  // Brand
+  static const Color primary = Color(0xFF2948A8);
+  static const Color primaryDark = Color(0xFF1E378A);
+  static const Color primarySoft = Color(0xFF5D78C8);
+  static const Color primaryLight = Color(0xFFE9ECFB);
+  static const Color primaryTint = Color(0xFFF3F4FC);
 
-  static const Color textPrimary = Color(0xFF0F172A);
-  static const Color textSecondary = Color(0xFF475569);
-  static const Color textMuted = Color(0xFF64748B);
+  // Premium accent used sparingly for "highlight" moments.
+  static const Color accentGold = Color(0xFFB18A32);
+  static const Color accentGoldBg = Color(0xFFFFF6D9);
 
-  static const Color success = Color(0xFF10B981);
-  static const Color successBg = Color(0xFFECFDF5);
-  static const Color warning = Color(0xFFF59E0B);
-  static const Color danger = Color(0xFFEF4444);
+  // Neutrals
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceSoft = Color(0xFFF9F9FD);
+  static const Color background = Color(0xFFF1F1FA);
+  static const Color cardBorder = Color(0xFFD9DBE8);
+  static const Color divider = Color(0xFFE4E5EF);
+
+  static const Color textPrimary = Color(0xFF11152A);
+  static const Color textSecondary = Color(0xFF44485F);
+  static const Color textMuted = Color(0xFF74798F);
+
+  // Semantic
+  static const Color success = Color(0xFF087C62);
+  static const Color successBg = Color(0xFFE2F7F0);
+  static const Color warning = Color(0xFFC98A16);
+  static const Color warningBg = Color(0xFFFFF5D8);
+  static const Color danger = Color(0xFFD83B62);
+  static const Color dangerBg = Color(0xFFFCECEF);
+  static const Color info = Color(0xFF3D6ED8);
+
+  // Chart accents used consistently with the reference.
+  static const Color chartViolet = Color(0xFF8068D8);
+  static const Color chartSky = Color(0xFF55BFC8);
+  static const Color chartRose = Color(0xFFE26A9B);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -67,11 +93,11 @@ class _PatientBarChart extends StatelessWidget {
     return LayoutBuilder(
       builder: (context, constraints) {
         return Padding(
-          padding: const EdgeInsets.only(left: 40, right: 4, top: 10, bottom: 4),
+          padding: const EdgeInsets.only(left: 42, right: 4, top: 10, bottom: 4),
           child: _buildChart(
             safeMax,
             constraints.maxHeight,
-            constraints.maxWidth - 44, // account for left axis padding
+            constraints.maxWidth - 46, // account for left axis padding
           ),
         );
       },
@@ -83,9 +109,9 @@ class _PatientBarChart extends StatelessWidget {
   double chartHeight,
   double availableWidth,
 ) {
-  const topLabelHeight = 26.0;
+  const topLabelHeight = 28.0;
   const bottomLabelHeight = 24.0;
-  const gap = 6.0;
+  const gap = 5.0;
 
   final availableBarHeight = math
       .max(
@@ -108,7 +134,7 @@ class _PatientBarChart extends StatelessWidget {
   final barWidth = math
       .min(
         20.0,
-        columnWidth * 0.55,
+        columnWidth * 0.5,
       )
       .toDouble();
 
@@ -125,22 +151,21 @@ class _PatientBarChart extends StatelessWidget {
               MainAxisAlignment.spaceBetween,
           children: List.generate(
             5,
-            (_) => Container(
+            (i) => Container(
               width: double.infinity,
               height: 1,
-              color:
-                  AppColors.cardBorder.withOpacity(
-                0.6,
-              ),
+              color: i == 4
+                  ? AppColors.cardBorder
+                  : AppColors.divider,
             ),
           ),
         ),
       ),
 
       Positioned(
-        left: -38,
+        left: -40,
         top: topLabelHeight - 6,
-        width: 32,
+        width: 34,
         height: availableBarHeight + 8,
         child: Column(
           mainAxisAlignment:
@@ -192,6 +217,8 @@ class _PatientBarChart extends StatelessWidget {
               final baseColor =
                   colors[index % colors.length];
 
+              final isPeak = value == safeMax && value > 0;
+
               return SizedBox(
                 width: columnWidth,
                 height: chartHeight,
@@ -211,19 +238,19 @@ class _PatientBarChart extends StatelessWidget {
                                   padding:
                                       const EdgeInsets
                                           .symmetric(
-                                    horizontal: 5,
-                                    vertical: 2,
+                                    horizontal: 6,
+                                    vertical: 2.5,
                                   ),
                                   decoration:
                                       BoxDecoration(
-                                    color: baseColor
-                                        .withOpacity(
-                                      0.12,
-                                    ),
+                                    color: isPeak
+                                        ? baseColor
+                                        : baseColor
+                                            .withOpacity(0.10),
                                     borderRadius:
                                         BorderRadius
                                             .circular(
-                                      6,
+                                      7,
                                     ),
                                   ),
                                   child: Text(
@@ -231,10 +258,13 @@ class _PatientBarChart extends StatelessWidget {
                                       value,
                                     ),
                                     style: TextStyle(
-                                      color: baseColor,
+                                      color: isPeak
+                                          ? Colors.white
+                                          : baseColor,
                                       fontSize: 9,
                                       fontWeight:
                                           FontWeight.w800,
+                                      letterSpacing: 0.1,
                                     ),
                                   ),
                                 ),
@@ -251,7 +281,7 @@ class _PatientBarChart extends StatelessWidget {
                         child: AnimatedContainer(
                           duration:
                               const Duration(
-                            milliseconds: 350,
+                            milliseconds: 400,
                           ),
                           curve:
                               Curves.easeOutCubic,
@@ -267,19 +297,19 @@ class _PatientBarChart extends StatelessWidget {
                               BoxDecoration(
                             borderRadius:
                                 BorderRadius.circular(
-                              8,
+                              9,
                             ),
                             boxShadow: [
                               BoxShadow(
                                 color: baseColor
                                     .withOpacity(
-                                  0.2,
+                                  0.24,
                                 ),
-                                blurRadius: 6,
+                                blurRadius: 10,
                                 offset:
                                     const Offset(
                                   0,
-                                  3,
+                                  4,
                                 ),
                               ),
                             ],
@@ -292,7 +322,7 @@ class _PatientBarChart extends StatelessWidget {
                               colors: [
                                 baseColor
                                     .withOpacity(
-                                  0.85,
+                                  0.70,
                                 ),
                                 baseColor,
                               ],
@@ -313,13 +343,14 @@ class _PatientBarChart extends StatelessWidget {
                           child: Text(
                             _shortLabel(label),
                             maxLines: 1,
-                            style:
-                                const TextStyle(
-                              color:
-                                  AppColors.textMuted,
+                            style: TextStyle(
+                              color: isPeak
+                                  ? AppColors.textPrimary
+                                  : AppColors.textMuted,
                               fontSize: 10,
-                              fontWeight:
-                                  FontWeight.w700,
+                              fontWeight: isPeak
+                                  ? FontWeight.w800
+                                  : FontWeight.w700,
                             ),
                           ),
                         ),
@@ -342,7 +373,7 @@ class _PatientBarChart extends StatelessWidget {
       style: const TextStyle(
         color: AppColors.textMuted,
         fontSize: 9,
-        fontWeight: FontWeight.w600,
+        fontWeight: FontWeight.w700,
       ),
     );
   }
@@ -420,13 +451,73 @@ class _SparklinePainter extends CustomPainter {
       }
     }
 
+    // Soft area fill under the curve gives the sparkline depth without
+    // touching the underlying data binding.
+    final fillPath = Path.from(path)
+      ..lineTo(size.width, size.height)
+      ..lineTo(0, size.height)
+      ..close();
+
+    final fillPaint = Paint()
+      ..shader = LinearGradient(
+        begin: Alignment.topCenter,
+        end: Alignment.bottomCenter,
+        colors: [
+          color.withOpacity(0.18),
+          color.withOpacity(0.0),
+        ],
+      ).createShader(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+      )
+      ..style = PaintingStyle.fill;
+
+    canvas.drawPath(fillPath, fillPaint);
+
     final paint = Paint()
-      ..color = color
+      ..shader = LinearGradient(
+        begin: Alignment.centerLeft,
+        end: Alignment.centerRight,
+        colors: [
+          color.withOpacity(0.55),
+          color,
+        ],
+      ).createShader(
+        Rect.fromLTWH(0, 0, size.width, size.height),
+      )
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 2.5
-      ..strokeCap = StrokeCap.round;
+      ..strokeWidth = 2.6
+      ..strokeCap = StrokeCap.round
+      ..strokeJoin = StrokeJoin.round;
 
     canvas.drawPath(path, paint);
+
+    // Endpoint marker gives the trend a finished, dashboard-grade look.
+    final lastValue = values.last.clamp(0.0, 1.0);
+    final endPoint = Offset(
+      size.width,
+      size.height - (lastValue * size.height),
+    );
+
+    canvas.drawCircle(
+      endPoint,
+      5,
+      Paint()..color = color.withOpacity(0.16),
+    );
+
+    canvas.drawCircle(
+      endPoint,
+      3.2,
+      Paint()..color = color,
+    );
+
+    canvas.drawCircle(
+      endPoint,
+      3.2,
+      Paint()
+        ..color = AppColors.surface
+        ..style = PaintingStyle.stroke
+        ..strokeWidth = 1.4,
+    );
   }
 
   @override
@@ -979,6 +1070,7 @@ Future<void> _handleHomeEventCreated(
     return _sectionCard(
       title: 'New Events',
       icon: Icons.notifications_active_outlined,
+      accent: AppColors.accentGold,
       child: Column(
         children: _recentEventNotifications
             .map(
@@ -999,32 +1091,46 @@ Future<void> _handleHomeEventCreated(
 ) {
   return Container(
     width: double.infinity,
-    padding: const EdgeInsets.all(14),
+    padding: const EdgeInsets.all(10),
     decoration: BoxDecoration(
-      color: AppColors.background,
-      borderRadius: BorderRadius.circular(16),
-      border: Border.all(
-        color: AppColors.cardBorder,
+      gradient: const LinearGradient(
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+        colors: [
+          Color(0xFFFFF8E4),
+          Color(0xFFFFF1C9),
+        ],
       ),
+      borderRadius: BorderRadius.circular(14),
+      border: Border.all(
+        color: const Color(0xFFD9BD72),
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: AppColors.accentGold.withOpacity(0.08),
+          blurRadius: 10,
+          offset: const Offset(0, 4),
+        ),
+      ],
     ),
     child: Row(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         Container(
-          width: 42,
-          height: 42,
+          width: 38,
+          height: 38,
           decoration: BoxDecoration(
-            color: AppColors.primary.withOpacity(0.10),
-            borderRadius: BorderRadius.circular(12),
+            color: AppColors.accentGold.withOpacity(0.16),
+            borderRadius: BorderRadius.circular(13),
           ),
           child: const Icon(
             Icons.event_rounded,
-            color: AppColors.primary,
+            color: AppColors.accentGold,
             size: 21,
           ),
         ),
 
-        const SizedBox(width: 12),
+        const SizedBox(width: 9),
 
         Expanded(
           child: Column(
@@ -1038,10 +1144,10 @@ Future<void> _handleHomeEventCreated(
       child: Text(
         'NEW EVENT',
         style: TextStyle(
-          color: AppColors.primary,
+          color: AppColors.accentGold,
           fontSize: 9,
           fontWeight: FontWeight.w900,
-          letterSpacing: 0.8,
+          letterSpacing: 0.9,
         ),
       ),
     ),
@@ -1131,7 +1237,7 @@ Future<void> _handleHomeEventCreated(
                 ],
               ),
 
-              const SizedBox(height: 9),
+              const SizedBox(height: 7),
 
               Align(
                 alignment: Alignment.centerRight,
@@ -1142,11 +1248,16 @@ Future<void> _handleHomeEventCreated(
   await _openHomeEventDetails(event);
 },
                   style: TextButton.styleFrom(
+                    backgroundColor: AppColors.accentGold,
+                    foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(
-                      horizontal: 10,
-                      vertical: 5,
+                      horizontal: 13,
+                      vertical: 7,
                     ),
                     minimumSize: Size.zero,
+                    shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(16),
+                    ),
                     tapTargetSize:
                         MaterialTapTargetSize.shrinkWrap,
                   ),
@@ -2023,12 +2134,12 @@ void dispose() {
       isScrollControlled: true,
       builder: (_) {
         return Container(
-          padding: const EdgeInsets.all(24),
+          padding: const EdgeInsets.fromLTRB(24, 14, 24, 28),
           decoration: const BoxDecoration(
             color: AppColors.surface,
             borderRadius:
                 BorderRadius.vertical(
-              top: Radius.circular(28),
+              top: Radius.circular(30),
             ),
           ),
           child: Column(
@@ -2038,7 +2149,7 @@ void dispose() {
             children: [
               Center(
                 child: Container(
-                  width: 36,
+                  width: 40,
                   height: 4,
                   margin: const EdgeInsets.only(
                     bottom: 20,
@@ -2053,20 +2164,20 @@ void dispose() {
               Row(
                 children: [
                   Container(
-                    width: 48,
-                    height: 48,
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
                       color:
-                          color.withOpacity(0.1),
+                          color.withOpacity(0.12),
                       borderRadius:
                           BorderRadius.circular(
-                        14,
+                        16,
                       ),
                     ),
                     child: Icon(
                       icon,
                       color: color,
-                      size: 24,
+                      size: 25,
                     ),
                   ),
                   const SizedBox(width: 14),
@@ -2079,24 +2190,31 @@ void dispose() {
                             FontWeight.w800,
                         color:
                             AppColors.textPrimary,
+                        letterSpacing: -0.2,
                       ),
                     ),
                   ),
                 ],
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 14),
               Container(
                 width: double.infinity,
                 padding:
-                    const EdgeInsets.all(16),
+                    const EdgeInsets.all(18),
                 decoration: BoxDecoration(
-                  color:
-                      color.withOpacity(0.06),
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: [
+                      color.withOpacity(0.10),
+                      color.withOpacity(0.03),
+                    ],
+                  ),
                   borderRadius:
-                      BorderRadius.circular(18),
+                      BorderRadius.circular(20),
                   border: Border.all(
                     color:
-                        color.withOpacity(0.12),
+                        color.withOpacity(0.16),
                   ),
                 ),
                 child: Column(
@@ -2108,21 +2226,22 @@ void dispose() {
                       style: TextStyle(
                         fontSize: 11,
                         fontWeight:
-                            FontWeight.w700,
+                            FontWeight.w800,
                         color: color.withOpacity(
-                          0.8,
+                          0.85,
                         ),
-                        letterSpacing: 0.5,
+                        letterSpacing: 0.6,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 6),
                     Text(
                       value,
                       style: TextStyle(
-                        fontSize: 24,
+                        fontSize: 26,
                         fontWeight:
                             FontWeight.w900,
                         color: color,
+                        letterSpacing: -0.4,
                       ),
                     ),
                   ],
@@ -2135,9 +2254,12 @@ void dispose() {
                     const EdgeInsets.all(16),
                 decoration: BoxDecoration(
                   color:
-                      AppColors.background,
+                      AppColors.surfaceSoft,
                   borderRadius:
                       BorderRadius.circular(16),
+                  border: Border.all(
+                    color: AppColors.divider,
+                  ),
                 ),
                 child: Text(
                   detail,
@@ -2151,7 +2273,6 @@ void dispose() {
                   ),
                 ),
               ),
-              const SizedBox(height: 16),
             ],
           ),
         );
@@ -2266,41 +2387,41 @@ void dispose() {
                   const AlwaysScrollableScrollPhysics(),
               padding:
                   const EdgeInsets.fromLTRB(
-                20,
                 16,
-                20,
-                96,
+                12,
+                16,
+                88,
               ),
               child: Column(
                 crossAxisAlignment:
                     CrossAxisAlignment.start,
                 children: [
                   _buildHeader(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
                   _buildSearchBar(),
-                  const SizedBox(height: 20),
+                  const SizedBox(height: 14),
 
                   if (_isSearching) ...[
                     _buildSearchResults(),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 20),
                   ] else ...[
                     _buildMainInsightCard(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
 
                     _buildRecentEventNotifications(),
 
                     if (_recentEventNotifications
                         .isNotEmpty)
-                      const SizedBox(height: 20),
+                      const SizedBox(height: 14),
 
                     _buildKeyDrivers(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
 
                     _buildClinicDistribution(),
-                    const SizedBox(height: 20),
+                    const SizedBox(height: 14),
 
                     _buildMedicineDemand(),
-                    const SizedBox(height: 28),
+                    const SizedBox(height: 20),
                   ],
                 ],
               ),
@@ -2354,34 +2475,58 @@ void dispose() {
       crossAxisAlignment:
           CrossAxisAlignment.center,
       children: [
-        Column(
-          crossAxisAlignment:
-              CrossAxisAlignment.start,
-          children: [
-            Text(
-              'Hello, $displayName 👋',
-              style: const TextStyle(
-                fontSize: 24,
-                fontWeight:
-                    FontWeight.w900,
-                color:
+        Expanded(
+          child: Column(
+            crossAxisAlignment:
+                CrossAxisAlignment.start,
+            children: [
+              ShaderMask(
+                shaderCallback: (bounds) =>
+                    const LinearGradient(
+                  colors: [
                     AppColors.textPrimary,
-                letterSpacing: -0.5,
+                    AppColors.primary,
+                  ],
+                ).createShader(bounds),
+                child: Text(
+                  'Hello, $displayName 👋',
+                  style: const TextStyle(
+                    fontSize: 24,
+                    fontWeight:
+                        FontWeight.w900,
+                    color: Colors.white,
+                    letterSpacing: -0.7,
+                  ),
+                ),
               ),
-            ),
-            const SizedBox(height: 2),
-            const Text(
-              'Community Health Analytics',
-              style: TextStyle(
-                fontSize: 13,
-                fontWeight:
-                    FontWeight.w600,
-                color:
-                    AppColors.textMuted,
+              const SizedBox(height: 3),
+              Row(
+                children: [
+                  Container(
+                    width: 5,
+                    height: 5,
+                    margin: const EdgeInsets.only(right: 6),
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
+                  const Text(
+                    'Community Health Analytics',
+                    style: TextStyle(
+                      fontSize: 13,
+                      fontWeight:
+                          FontWeight.w600,
+                      color:
+                          AppColors.textMuted,
+                    ),
+                  ),
+                ],
               ),
-            ),
-          ],
+            ],
+          ),
         ),
+        const SizedBox(width: 12),
         Container(
           width: 46,
           height: 46,
@@ -2395,11 +2540,11 @@ void dispose() {
             ),
             boxShadow: [
               BoxShadow(
-                color: AppColors.textPrimary
-                    .withOpacity(0.04),
-                blurRadius: 10,
+                color: AppColors.primary
+                    .withOpacity(0.08),
+                blurRadius: 16,
                 offset:
-                    const Offset(0, 4),
+                    const Offset(0, 6),
               ),
             ],
           ),
@@ -2460,35 +2605,56 @@ void dispose() {
         ? AppColors.warning
         : AppColors.success;
 
-    final bgColor = hasAlert
-        ? const Color(0xFFFFFBEB)
+    final bgColorA = hasAlert
+        ? AppColors.warningBg
         : AppColors.successBg;
 
+    final bgColorB = hasAlert
+        ? const Color(0xFFFFFCF6)
+        : const Color(0xFFF6FEFB);
+
     final borderColor = hasAlert
-        ? const Color(0xFFFDE68A)
-        : const Color(0xFFA7F3D0);
+        ? const Color(0xFFF3DEB0)
+        : const Color(0xFFC0EED9);
 
     return Container(
       width: double.infinity,
       padding:
-          const EdgeInsets.all(16),
+          const EdgeInsets.all(11),
       decoration: BoxDecoration(
-        color: bgColor,
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [bgColorA, bgColorB],
+        ),
         borderRadius:
-            BorderRadius.circular(20),
+            BorderRadius.circular(16),
         border: Border.all(
           color: borderColor,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: color.withOpacity(0.07),
+            blurRadius: 20,
+            offset: const Offset(0, 8),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 44,
-            height: 44,
+            width: 48,
+            height: 48,
             decoration:
                 BoxDecoration(
-              color:
-                  color.withOpacity(0.15),
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  color.withOpacity(0.22),
+                  color.withOpacity(0.10),
+                ],
+              ),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -2498,10 +2664,10 @@ void dispose() {
                   : Icons
                       .check_circle_outline_rounded,
               color: color,
-              size: 24,
+              size: 25,
             ),
           ),
-          const SizedBox(width: 14),
+          const SizedBox(width: 15),
           Expanded(
             child: Column(
               crossAxisAlignment:
@@ -2513,12 +2679,13 @@ void dispose() {
                       : 'System Normal',
                   style: TextStyle(
                     color: color,
-                    fontSize: 14,
+                    fontSize: 14.5,
                     fontWeight:
                         FontWeight.w800,
+                    letterSpacing: -0.1,
                   ),
                 ),
-                const SizedBox(height: 2),
+                const SizedBox(height: 3),
                 Text(
                   healthAlert.toString(),
                   maxLines: 2,
@@ -2555,7 +2722,7 @@ void dispose() {
 
     final colors = [
       AppColors.primary,
-      const Color(0xFF8B5CF6),
+      AppColors.chartViolet,
       AppColors.success,
       AppColors.warning,
     ];
@@ -2659,71 +2826,44 @@ void dispose() {
                               onTaps.length
                           ? index
                           : 0],
-                  child: Container(
+                  child: AnimatedContainer(
+                    duration: const Duration(
+                      milliseconds: 200,
+                    ),
                     width: cardWidth,
                     padding:
                         const EdgeInsets
-                            .all(14),
-                    decoration:
-                        BoxDecoration(
-                      color:
-                          AppColors.surface,
-                      borderRadius:
-                          BorderRadius
-                              .circular(
-                        18,
-                      ),
-                      border:
-                          Border.all(
-                        color:
-                            AppColors
-                                .cardBorder,
-                      ),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors
-                              .textPrimary
-                              .withOpacity(
-                            0.02,
-                          ),
-                          blurRadius: 8,
-                          offset:
-                              const Offset(
-                            0,
-                            4,
-                          ),
-                        ),
-                      ],
-                    ),
+                            .all(4),
+                    
                     child: Column(
                       crossAxisAlignment:
                           CrossAxisAlignment
                               .start,
                       children: [
                         Container(
-                          width: 34,
-                          height: 34,
+                          width: 32,
+                          height: 32,
                           decoration:
                               BoxDecoration(
-                            color: accent
-                                .withOpacity(
-                              0.12,
+                            gradient: LinearGradient(
+                              begin: Alignment.topLeft,
+                              end: Alignment.bottomRight,
+                              colors: [
+                                accent.withOpacity(0.18),
+                                accent.withOpacity(0.08),
+                              ],
                             ),
-                            borderRadius:
-                                BorderRadius
-                                    .circular(
-                              10,
-                            ),
+                            shape: BoxShape.circle,
                           ),
                           child: Icon(
                             icons[
                                 safeIndex],
                             color: accent,
-                            size: 18,
+                            size: 16,
                           ),
                         ),
                         const SizedBox(
-                          height: 12,
+                          height: 7,
                         ),
                         Text(
                           displayValue,
@@ -2739,13 +2879,14 @@ void dispose() {
                             color:
                                 AppColors
                                     .textPrimary,
-                            fontSize: 18,
+                            fontSize: 17,
                             fontWeight:
-                                FontWeight.w800,
+                                FontWeight.w900,
+                            letterSpacing: -0.35,
                           ),
                         ),
                         const SizedBox(
-                          height: 2,
+                          height: 3,
                         ),
                         Text(
                           '${item['label'] ?? ''}',
@@ -2789,16 +2930,24 @@ void dispose() {
     child: patientsPerClinic.isEmpty
         ? Container(
             width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 24),
-            child: const Column(
+            padding: const EdgeInsets.symmetric(vertical: 26),
+            child: Column(
               children: [
-                Icon(
-                  Icons.bar_chart_rounded,
-                  color: AppColors.textMuted,
-                  size: 36,
+                Container(
+                  width: 56,
+                  height: 56,
+                  decoration: BoxDecoration(
+                    color: AppColors.primaryLight,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.bar_chart_rounded,
+                    color: AppColors.primary,
+                    size: 28,
+                  ),
                 ),
-                SizedBox(height: 8),
-                Text(
+                const SizedBox(height: 12),
+                const Text(
                   'No trend data available',
                   style: TextStyle(
                     color: AppColors.textPrimary,
@@ -2812,16 +2961,16 @@ void dispose() {
         : Column(
             children: [
               SizedBox(
-                height: 220,
+                height: 195,
                 width: double.infinity,
                 child: _PatientBarChart(
                   data: displayList,
                   colors: const [
                     AppColors.primary,
-                    Color(0xFF3B82F6),
-                    Color(0xFF8B5CF6),
-                    AppColors.warning,
-                    AppColors.danger,
+                    AppColors.chartSky,
+                    AppColors.chartViolet,
+                    AppColors.accentGold,
+                    AppColors.chartRose,
                   ],
                   maxValue: displayList.fold<double>(
                     0,
@@ -2843,12 +2992,25 @@ void dispose() {
                   ),
                   child: Container(
                     width: double.infinity,
-                    margin: const EdgeInsets.only(top: 12),
-                    padding: const EdgeInsets.symmetric(vertical: 10),
+                    margin: const EdgeInsets.only(top: 9),
+                    padding: const EdgeInsets.symmetric(vertical: 9),
                     decoration: BoxDecoration(
-                      color: AppColors.background,
-                      borderRadius: BorderRadius.circular(12),
-                      border: Border.all(color: AppColors.cardBorder),
+                      gradient: const LinearGradient(
+                        begin: Alignment.topCenter,
+                        end: Alignment.bottomCenter,
+                        colors: [
+                          AppColors.primary,
+                          AppColors.primaryDark,
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(13),
+                      boxShadow: [
+                        BoxShadow(
+                          color: AppColors.primary.withOpacity(0.16),
+                          blurRadius: 10,
+                          offset: const Offset(0, 4),
+                        ),
+                      ],
                     ),
                     child: Row(
                       mainAxisAlignment: MainAxisAlignment.center,
@@ -2858,7 +3020,7 @@ void dispose() {
                               ? 'Show Less'
                               : 'View All (${patientsPerClinic.length} months)',
                           style: const TextStyle(
-                            color: AppColors.primary,
+                            color: Color.fromARGB(255, 255, 255, 255),
                             fontWeight: FontWeight.w700,
                             fontSize: 12,
                           ),
@@ -2898,8 +3060,7 @@ void dispose() {
         mostUsedMedicines.isNotEmpty
             ? mostUsedMedicines.first
             : <String, dynamic>{
-                'name':
-                    'No medicine data',
+                'name': 'No medicine data',
                 'count': 0,
                 'demand': 'Stable',
               };
@@ -2913,35 +3074,23 @@ void dispose() {
     final medicineDemand =
         '${medicine['demand'] ?? 'Stable'}';
 
+    // One premium container holds both trends.
+    // The individual trends intentionally have no card backgrounds,
+    // reducing visual clutter while preserving all existing data.
     return _sectionCard(
       title: 'Top Health Trends',
-      icon:
-          Icons.trending_up_rounded,
-      child: LayoutBuilder(
-        builder: (
-          context,
-          constraints,
-        ) {
-          final sideBySide =
-              constraints.maxWidth >=
-                  470;
-
-          final diagnosisCard =
-              _trendCard(
-            icon:
-                Icons.medical_services_outlined,
-            iconColor:
-                AppColors.primary,
-            iconBackground:
-                AppColors.primaryLight,
-            label:
-                'Most Common Diagnosis',
-            value:
-                diagnosisName,
+      icon: Icons.trending_up_rounded,
+      child: Column(
+        children: [
+          _buildCompactTrendRow(
+            icon: Icons.medical_services_outlined,
+            iconColor: AppColors.primary,
+            iconBackground: AppColors.primaryLight,
+            label: 'Most Common Diagnosis',
+            value: diagnosisName,
             stat:
                 '$diagnosisCount cases ($diagnosisPercentage%)',
-            sparkColor:
-                AppColors.primary,
+            sparkColor: AppColors.primary,
             sparkValues: const [
               0.25,
               0.42,
@@ -2952,24 +3101,23 @@ void dispose() {
               0.48,
               0.70,
             ],
-          );
-
-          final medicineCard =
-              _trendCard(
-            icon:
-                Icons.medication_outlined,
-            iconColor:
-                const Color(0xFF8B5CF6),
-            iconBackground:
-                const Color(0xFFF3E8FF),
-            label:
-                'Most Used Medicine',
-            value:
-                medicineName,
+          ),
+          const Padding(
+            padding: EdgeInsets.symmetric(vertical: 9),
+            child: Divider(
+              height: 1,
+              color: AppColors.divider,
+            ),
+          ),
+          _buildCompactTrendRow(
+            icon: Icons.medication_outlined,
+            iconColor: AppColors.chartViolet,
+            iconBackground: Color(0xFFF0ECFF),
+            label: 'Most Used Medicine',
+            value: medicineName,
             stat:
                 '$medicineCount prescriptions • $medicineDemand',
-            sparkColor:
-                const Color(0xFF8B5CF6),
+            sparkColor: AppColors.chartViolet,
             sparkValues: const [
               0.35,
               0.52,
@@ -2980,44 +3128,13 @@ void dispose() {
               0.45,
               0.76,
             ],
-          );
-
-          return Column(
-            children: [
-              if (sideBySide)
-                Row(
-                  crossAxisAlignment:
-                      CrossAxisAlignment
-                          .start,
-                  children: [
-                    Expanded(
-                      child:
-                          diagnosisCard,
-                    ),
-                    const SizedBox(
-                      width: 12,
-                    ),
-                    Expanded(
-                      child:
-                          medicineCard,
-                    ),
-                  ],
-                )
-              else ...[
-                diagnosisCard,
-                const SizedBox(
-                  height: 12,
-                ),
-                medicineCard,
-              ],
-            ],
-          );
-        },
+          ),
+        ],
       ),
     );
   }
 
-  Widget _trendCard({
+  Widget _buildCompactTrendRow({
     required IconData icon,
     required Color iconColor,
     required Color iconBackground,
@@ -3027,97 +3144,98 @@ void dispose() {
     required Color sparkColor,
     required List<double> sparkValues,
   }) {
-    return Container(
-      width: double.infinity,
-      padding:
-          const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.background,
-        borderRadius:
-            BorderRadius.circular(16),
-        border: Border.all(
-          color: AppColors.cardBorder,
-        ),
-      ),
-      child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
-        children: [
-          Row(
-            children: [
-              Container(
-                width: 36,
-                height: 36,
-                decoration:
-                    BoxDecoration(
-                  color: iconBackground,
-                  shape:
-                      BoxShape.circle,
-                ),
-                child: Icon(
-                  icon,
-                  color: iconColor,
-                  size: 18,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: iconBackground,
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: 17,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label.toUpperCase(),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      color: iconColor,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.45,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 15,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: -0.2,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    stat,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 9.5,
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(width: 6),
+            Container(
+              width: 26,
+              height: 26,
+              decoration: BoxDecoration(
+                color: AppColors.surfaceSoft,
+                borderRadius: BorderRadius.circular(8),
+                border: Border.all(
+                  color: AppColors.cardBorder,
                 ),
               ),
-              const Spacer(),
-              const Icon(
+              child: const Icon(
                 Icons.more_horiz_rounded,
-                color:
-                    AppColors.textMuted,
-                size: 18,
-              ),
-            ],
-          ),
-          const SizedBox(height: 10),
-          Text(
-            label,
-            style: TextStyle(
-              color: iconColor,
-              fontSize: 11,
-              fontWeight:
-                  FontWeight.w700,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            value,
-            maxLines: 1,
-            overflow:
-                TextOverflow.ellipsis,
-            style: const TextStyle(
-              color:
-                  AppColors.textPrimary,
-              fontSize: 15,
-              fontWeight:
-                  FontWeight.w800,
-            ),
-          ),
-          const SizedBox(height: 2),
-          Text(
-            stat,
-            style: const TextStyle(
-              color:
-                  AppColors.textMuted,
-              fontSize: 10.5,
-              fontWeight:
-                  FontWeight.w600,
-            ),
-          ),
-          const SizedBox(height: 12),
-          SizedBox(
-            width: double.infinity,
-            height: 30,
-            child: CustomPaint(
-              painter:
-                  _SparklinePainter(
-                values: sparkValues,
-                color: sparkColor,
+                color: AppColors.textMuted,
+                size: 15,
               ),
             ),
+          ],
+        ),
+        const SizedBox(height: 7),
+        SizedBox(
+          width: double.infinity,
+          height: 38,
+          child: CustomPaint(
+            painter: _SparklinePainter(
+              values: sparkValues,
+              color: sparkColor,
+            ),
           ),
-        ],
-      ),
+        ),
+      ],
     );
   }
 
@@ -3127,11 +3245,11 @@ void dispose() {
 
   Widget _buildSearchBar() {
     return Container(
-      height: 48,
+      height: 44,
       decoration: BoxDecoration(
-        color: AppColors.surface,
+        color: AppColors.surface.withOpacity(0.92),
         borderRadius:
-            BorderRadius.circular(14),
+            BorderRadius.circular(22),
         border: Border.all(
           color: _isSearching
               ? AppColors.primary
@@ -3141,9 +3259,11 @@ void dispose() {
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary
-                .withOpacity(0.03),
-            blurRadius: 10,
+            color: (_isSearching
+                    ? AppColors.primary
+                    : AppColors.textPrimary)
+                .withOpacity(_isSearching ? 0.08 : 0.03),
+            blurRadius: 12,
             offset:
                 const Offset(0, 4),
           ),
@@ -3174,10 +3294,11 @@ void dispose() {
             vertical: 12,
           ),
           prefixIcon:
-              const Icon(
+              Icon(
             Icons.search_rounded,
-            color:
-                AppColors.textMuted,
+            color: _isSearching
+                ? AppColors.primary
+                : AppColors.textMuted,
             size: 20,
           ),
           hintText:
@@ -3232,13 +3353,13 @@ void dispose() {
         width: double.infinity,
         padding:
             const EdgeInsets.symmetric(
-          horizontal: 20,
-          vertical: 32,
+          horizontal: 16,
+          vertical: 26,
         ),
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius:
-              BorderRadius.circular(20),
+              BorderRadius.circular(16),
           border: Border.all(
             color:
                 AppColors.cardBorder,
@@ -3246,13 +3367,21 @@ void dispose() {
         ),
         child: Column(
           children: [
-            const Icon(
-              Icons.search_off_rounded,
-              size: 36,
-              color:
-                  AppColors.textMuted,
+            Container(
+              width: 60,
+              height: 60,
+              decoration: BoxDecoration(
+                color: AppColors.background,
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(
+                Icons.search_off_rounded,
+                size: 28,
+                color:
+                    AppColors.textMuted,
+              ),
             ),
-            const SizedBox(height: 12),
+            const SizedBox(height: 14),
             const Text(
               'No results found',
               style: TextStyle(
@@ -3347,26 +3476,29 @@ void dispose() {
     required String title,
     required Widget child,
     IconData? icon,
+    Color? accent,
   }) {
+    final accentColor = accent ?? AppColors.primary;
+
     return Container(
       width: double.infinity,
       padding:
-          const EdgeInsets.all(18),
+          const EdgeInsets.all(11),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius:
-            BorderRadius.circular(24),
+            BorderRadius.circular(16),
         border: Border.all(
           color:
               AppColors.cardBorder,
         ),
         boxShadow: [
           BoxShadow(
-            color: AppColors.textPrimary
-                .withOpacity(0.02),
-            blurRadius: 12,
+            color: AppColors.primary
+                .withOpacity(0.035),
+            blurRadius: 14,
             offset:
-                const Offset(0, 6),
+                const Offset(0, 5),
           ),
         ],
       ),
@@ -3378,29 +3510,32 @@ void dispose() {
             children: [
               if (icon != null) ...[
                 Container(
-                  width: 32,
-                  height: 32,
+                  width: 30,
+                  height: 30,
                   decoration:
                       BoxDecoration(
-                    color:
-                        AppColors
-                            .primaryLight,
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        accentColor.withOpacity(0.16),
+                        accentColor.withOpacity(0.07),
+                      ],
+                    ),
                     borderRadius:
                         BorderRadius
                             .circular(
-                      10,
+                      11,
                     ),
                   ),
                   child: Icon(
                     icon,
-                    size: 18,
-                    color:
-                        AppColors
-                            .primary,
+                    size: 16,
+                    color: accentColor,
                   ),
                 ),
                 const SizedBox(
-                  width: 10,
+                  width: 11,
                 ),
               ],
               Text(
@@ -3412,14 +3547,14 @@ void dispose() {
                           .textPrimary,
                   fontSize: 16,
                   fontWeight:
-                      FontWeight.w800,
+                      FontWeight.w900,
                   letterSpacing:
                       -0.3,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 9),
           child,
         ],
       ),
@@ -3439,31 +3574,38 @@ void dispose() {
     return Container(
       margin:
           const EdgeInsets.only(
-        bottom: 8,
+        bottom: 9,
       ),
       padding:
-          const EdgeInsets.all(12),
+          const EdgeInsets.all(13),
       decoration: BoxDecoration(
         color: AppColors.surface,
         borderRadius:
-            BorderRadius.circular(16),
+            BorderRadius.circular(17),
         border: Border.all(
           color:
               AppColors.cardBorder,
         ),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.03),
+            blurRadius: 10,
+            offset: const Offset(0, 4),
+          ),
+        ],
       ),
       child: Row(
         children: [
           Container(
-            width: 36,
-            height: 36,
+            width: 38,
+            height: 38,
             decoration:
                 BoxDecoration(
               color:
                   AppColors.primaryLight,
               borderRadius:
                   BorderRadius.circular(
-                10,
+                11,
               ),
             ),
             child: Icon(
@@ -3504,15 +3646,25 @@ void dispose() {
             ),
           ),
           if (trailing.isNotEmpty)
-            Text(
-              trailing,
-              style:
-                  const TextStyle(
-                color:
-                    AppColors.primary,
-                fontWeight:
-                    FontWeight.w800,
-                fontSize: 13,
+            Container(
+              padding: const EdgeInsets.symmetric(
+                horizontal: 9,
+                vertical: 4,
+              ),
+              decoration: BoxDecoration(
+                color: AppColors.primaryTint,
+                borderRadius: BorderRadius.circular(8),
+              ),
+              child: Text(
+                trailing,
+                style:
+                    const TextStyle(
+                  color:
+                      AppColors.primary,
+                  fontWeight:
+                      FontWeight.w800,
+                  fontSize: 12.5,
+                ),
               ),
             ),
         ],

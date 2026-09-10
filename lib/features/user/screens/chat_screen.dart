@@ -15,14 +15,16 @@ import 'package:ramhis_app/services/api/chat_service.dart';
 // Constants
 // ─────────────────────────────────────────────────────────────
 
-const _kPrimary = Color(0xFF5B76F7);
-const _kPrimaryDark = Color(0xFF4564E8);
-const _kOnline = Color(0xFF22C55E);
-const _kTextDark = Color(0xFF1B2559);
-const _kTextMid = Color(0xFF7B8BB2);
-const _kBackground = Color(0xFFF0F2FF);
+const _kPrimary = Color(0xFF0E3D91);
+const _kPrimaryDark = Color(0xFF082A68);
+const _kGold = Color(0xFFD9C27A);
+const _kGoldLight = Color(0xFFF2E6B8);
+const _kOnline = Color(0xFF75A84A);
+const _kTextDark = Color(0xFF111827);
+const _kTextMid = Color(0xFF7A7F8C);
+const _kBackground = Color(0xFFF0F2F8);
 const _kCardShadowColor = Colors.black;
-const _kDividerColor = Color(0xFFE3E7F4);
+const _kDividerColor = Color(0xFFD8DCE6);
 
 // ─────────────────────────────────────────────────────────────
 // Widget
@@ -354,13 +356,13 @@ Future<void> _onGroupChatCreated(dynamic data) async {
   // ── Sub-widgets ────────────────────────────────────────────
 
   Widget _avatar({
-  required String name,
-  String userId = '',
-  double size = 52,
-  bool showOnline = true,
-  bool isGroup = false,
-}) {
-    final bg = isGroup ? _kPrimary : _avatarColor(name);
+    required String name,
+    String userId = '',
+    double size = 52,
+    bool showOnline = true,
+    bool isGroup = false,
+  }) {
+    final bg = isGroup ? _kPrimaryDark : _kPrimary;
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -370,22 +372,26 @@ Future<void> _onGroupChatCreated(dynamic data) async {
           alignment: Alignment.center,
           decoration: BoxDecoration(
             color: bg,
-            shape: BoxShape.circle,
+            borderRadius: BorderRadius.circular(13),
+            border: Border.all(color: _kGold, width: 1.6),
             boxShadow: [
               BoxShadow(
-                color: bg.withValues(alpha: 0.25),
-                blurRadius: 14,
-                offset: const Offset(0, 6),
+                color: Colors.black.withValues(alpha: 0.16),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
               ),
             ],
           ),
           child: isGroup
-              ? Icon(Icons.groups_rounded,
-                  color: Colors.white, size: size >= 50 ? 28 : 22)
+              ? Icon(
+                  Icons.groups_rounded,
+                  color: _kGoldLight,
+                  size: size >= 50 ? 28 : 22,
+                )
               : Text(
                   _initials(name),
                   style: TextStyle(
-                    color: Colors.white,
+                    color: _kGoldLight,
                     fontSize: size >= 50 ? 18 : 15,
                     fontWeight: FontWeight.w900,
                   ),
@@ -393,17 +399,17 @@ Future<void> _onGroupChatCreated(dynamic data) async {
         ),
         if (showOnline && !isGroup)
           Positioned(
-            right: 1,
-            bottom: 1,
+            right: -2,
+            bottom: -2,
             child: Container(
               width: 14,
               height: 14,
               decoration: BoxDecoration(
                 color: OnlineStatusManager.isOnline(userId)
-    ? const Color(0xFF22C55E)
-    : const Color(0xFF9CA3AF),
+                    ? _kOnline
+                    : const Color(0xFF9CA3AF),
                 shape: BoxShape.circle,
-                border: Border.all(color: Colors.white, width: 2),
+                border: Border.all(color: _kGoldLight, width: 2),
               ),
             ),
           ),
@@ -412,19 +418,29 @@ Future<void> _onGroupChatCreated(dynamic data) async {
   }
 
   Widget _roleBadge(String role, {bool isGroup = false}) {
-    final color = isGroup ? _kOnline : _roleColor(role);
+    final color = isGroup ? _kGold : _roleColor(role);
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        gradient: isGroup
+            ? const LinearGradient(
+                colors: [_kGoldLight, _kGold],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              )
+            : null,
+        color: isGroup ? null : color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
+        border: Border.all(
+          color: isGroup ? _kGold : color.withValues(alpha: 0.20),
+        ),
       ),
       child: Text(
         isGroup ? 'GC' : (role.isEmpty ? 'User' : role),
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: color,
+          color: isGroup ? const Color(0xFF4A4025) : color,
           fontSize: 10,
           fontWeight: FontWeight.w900,
         ),
@@ -432,48 +448,51 @@ Future<void> _onGroupChatCreated(dynamic data) async {
     );
   }
 
-  // ── Build ──────────────────────────────────────────────────
 
   @override
-Widget build(BuildContext context) {
-  final bool keyboardOpen = MediaQuery.of(context).viewInsets.bottom > 0;
+  Widget build(BuildContext context) {
+    final bool keyboardOpen =
+        MediaQuery.of(context).viewInsets.bottom > 0;
 
-  return GestureDetector(
-    onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
-    child: Scaffold(
-      key: _scaffoldKey,
-      backgroundColor: _kBackground,
-      resizeToAvoidBottomInset: true,
-      body: SafeArea(
-        child: Column(
-          children: [
-            _buildHeader(),
-            Expanded(
-              child: RefreshIndicator(
-                color: _kPrimary,
-                onRefresh: _loadThreads,
-                child: SizedBox(
-                  width: double.infinity,
-                  child: Column(
-                    children: [
-                      if (_searchQuery.trim().isNotEmpty) ...[
-                        const SizedBox(height: 14),
-                        _buildUserResults(),
-                        const SizedBox(height: 8),
+    return GestureDetector(
+      onTap: () => FocusManager.instance.primaryFocus?.unfocus(),
+      child: Scaffold(
+        key: _scaffoldKey,
+        backgroundColor: _kBackground,
+        resizeToAvoidBottomInset: true,
+        body: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: RefreshIndicator(
+                  color: _kGold,
+                  onRefresh: _loadThreads,
+                  child: SizedBox(
+                    width: double.infinity,
+                    child: Column(
+                      children: [
+                        if (_searchQuery.trim().isNotEmpty) ...[
+                          const SizedBox(height: 14),
+                          _buildUserResults(),
+                          const SizedBox(height: 8),
+                        ],
+                        Expanded(
+                          child: _buildThreadList(),
+                        ),
                       ],
-                      Expanded(child: _buildThreadList()),
-                    ],
+                    ),
                   ),
                 ),
               ),
-            ),
-            if (!keyboardOpen) const CustomNavBar(currentIndex: 2),
-          ],
+              if (!keyboardOpen)
+                const CustomNavBar(currentIndex: 2),
+            ],
+          ),
         ),
       ),
-    ),
-  );
-}
+    );
+  }
 
   Widget _buildHeader() {
     return Container(
@@ -483,9 +502,12 @@ Widget build(BuildContext context) {
           end: Alignment.bottomRight,
           colors: [_kPrimary, _kPrimaryDark],
         ),
+        border: Border(
+          bottom: BorderSide(color: _kGold, width: 1.5),
+        ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(30),
-          bottomRight: Radius.circular(30),
+          bottomLeft: Radius.circular(34),
+          bottomRight: Radius.circular(34),
         ),
       ),
       child: Column(
@@ -494,8 +516,8 @@ Widget build(BuildContext context) {
             padding: const EdgeInsets.fromLTRB(18, 20, 14, 8),
             child: Row(
               children: [
-                _avatar(name: 'RAMHIS User', size: 48),
-                const SizedBox(width: 12),
+                _avatar(name: 'RAMHIS User', size: 52),
+                const SizedBox(width: 14),
                 Expanded(
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
@@ -508,34 +530,17 @@ Widget build(BuildContext context) {
                               maxLines: 1,
                               overflow: TextOverflow.ellipsis,
                               style: TextStyle(
-                                fontSize: 26,
-                                fontWeight: FontWeight.w900,
-                                color: Colors.white,
-                                letterSpacing: -0.5,
+                                fontFamily: 'Georgia',
+                                fontSize: 28,
+                                fontWeight: FontWeight.w700,
+                                color: _kGoldLight,
+                                letterSpacing: 0.1,
                               ),
                             ),
                           ),
                           if (_totalUnread > 0) ...[
-                            const SizedBox(width: 9),
-                            Container(
-                              padding: const EdgeInsets.symmetric(
-                                  horizontal: 9, vertical: 4),
-                              decoration: BoxDecoration(
-                                color: Colors.white.withValues(alpha: 0.18),
-                                borderRadius: BorderRadius.circular(999),
-                                border: Border.all(
-                                    color:
-                                        Colors.white.withValues(alpha: 0.18)),
-                              ),
-                              child: Text(
-                                '$_totalUnread unread',
-                                style: const TextStyle(
-                                  color: Colors.white,
-                                  fontSize: 10.5,
-                                  fontWeight: FontWeight.w900,
-                                ),
-                              ),
-                            ),
+                            const SizedBox(width: 8),
+                            _unreadBadge(),
                           ],
                         ],
                       ),
@@ -545,7 +550,7 @@ Widget build(BuildContext context) {
                         style: TextStyle(
                           fontSize: 13,
                           fontWeight: FontWeight.w600,
-                          color: Color(0xFFEAF0FF),
+                          color: Color(0xFFE9EDF8),
                         ),
                       ),
                     ],
@@ -568,17 +573,51 @@ Widget build(BuildContext context) {
     );
   }
 
+  Widget _unreadBadge() {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+      decoration: BoxDecoration(
+        color: _kGold,
+        borderRadius: BorderRadius.circular(999),
+      ),
+      child: Text(
+        '$_totalUnread unread',
+        style: const TextStyle(
+          color: Color(0xFF3C341E),
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
   Widget _headerIconButton(IconData icon, {required VoidCallback onTap}) {
     return Material(
-      color: Colors.white.withValues(alpha: 0.16),
-      borderRadius: BorderRadius.circular(14),
+      color: Colors.transparent,
+      borderRadius: BorderRadius.circular(15),
       child: InkWell(
-        borderRadius: BorderRadius.circular(14),
+        borderRadius: BorderRadius.circular(15),
         onTap: onTap,
-        child: SizedBox(
-          width: 42,
-          height: 42,
-          child: Icon(icon, color: Colors.white, size: 21),
+        child: Container(
+          width: 46,
+          height: 46,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [_kGoldLight, _kGold],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(15),
+            border: Border.all(color: Colors.white.withValues(alpha: 0.75)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 10,
+                offset: const Offset(0, 5),
+              ),
+            ],
+          ),
+          child: Icon(icon, color: const Color(0xFF162A55), size: 22),
         ),
       ),
     );
@@ -595,21 +634,18 @@ Widget build(BuildContext context) {
           curve: Curves.easeOut,
           margin: EdgeInsets.symmetric(horizontal: hasText || focused ? 14 : 18),
           decoration: BoxDecoration(
-            color: Colors.white,
+            color: const Color(0xFF172E5D),
             borderRadius: BorderRadius.circular(999),
+            border: Border.all(
+              color: focused ? _kGoldLight : _kGold,
+              width: focused ? 2 : 1.5,
+            ),
             boxShadow: [
               BoxShadow(
-                color: _kCardShadowColor
-                    .withValues(alpha: focused ? 0.16 : 0.10),
-                blurRadius: focused ? 20 : 16,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.20),
+                blurRadius: focused ? 18 : 12,
+                offset: const Offset(0, 6),
               ),
-              if (focused)
-                BoxShadow(
-                  color: _kPrimary.withValues(alpha: 0.10),
-                  blurRadius: 8,
-                  spreadRadius: -1,
-                ),
             ],
           ),
           child: TextFormField(
@@ -617,27 +653,27 @@ Widget build(BuildContext context) {
             focusNode: _searchFocusNode,
             textInputAction: TextInputAction.search,
             style: const TextStyle(
-                color: _kTextDark, fontWeight: FontWeight.w600),
+              color: Colors.white,
+              fontWeight: FontWeight.w600,
+            ),
             decoration: InputDecoration(
-              hintText: '⌘ Search people or messages...',
+              hintText: '⌘  Search people or messages...',
               hintStyle: const TextStyle(
-                  color: _kTextMid, fontWeight: FontWeight.w500),
-              prefixIcon: AnimatedSwitcher(
-                duration: const Duration(milliseconds: 180),
-                child: Icon(
-                  Icons.search_rounded,
-                  key: ValueKey(focused),
-                  color: focused ? _kPrimary : _kTextMid,
-                ),
+                color: Color(0xFFAAB5CB),
+                fontWeight: FontWeight.w500,
+              ),
+              prefixIcon: Icon(
+                Icons.search_rounded,
+                color: focused ? _kGoldLight : const Color(0xFFAAB5CB),
               ),
               suffixIcon: hasText
                   ? IconButton(
-                      icon: const Icon(Icons.close_rounded, color: _kTextMid),
+                      icon: const Icon(Icons.close_rounded, color: _kGoldLight),
                       onPressed: _searchController.clear,
                     )
                   : null,
               filled: true,
-              fillColor: Colors.white,
+              fillColor: Colors.transparent,
               contentPadding:
                   const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
               border: OutlineInputBorder(
@@ -650,7 +686,7 @@ Widget build(BuildContext context) {
               ),
               focusedBorder: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(999),
-                borderSide: const BorderSide(color: _kPrimary, width: 1.4),
+                borderSide: BorderSide.none,
               ),
             ),
           ),
@@ -844,7 +880,7 @@ Widget build(BuildContext context) {
     final role = isGroup
         ? 'Group • ${thread.memberCount} members'
         : _roleFromName(displayName);
-    final accentColor = isGroup ? _kPrimary : _roleColor(role);
+    final accentColor = isGroup ? _kGold : _roleColor(role);
     final preview = isGroup
         ? thread.lastMessage.isEmpty
             ? 'Group • ${thread.memberCount} members'
@@ -858,7 +894,7 @@ Widget build(BuildContext context) {
     return _PressableTile(
       onTap: () => _openThread(thread),
       child: Material(
-        color: Colors.white,
+        color: Colors.transparent,
         borderRadius: BorderRadius.circular(22),
         child: InkWell(
           borderRadius: BorderRadius.circular(22),
@@ -867,137 +903,120 @@ Widget build(BuildContext context) {
             decoration: BoxDecoration(
               color: Colors.white,
               borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: hasUnread ? _kGold : const Color(0xFFCFC8AE),
+                width: hasUnread ? 1.7 : 1.25,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: _kCardShadowColor.withValues(alpha: 0.055),
-                  blurRadius: 18,
-                  offset: const Offset(0, 8),
+                  color: Colors.black.withValues(alpha: 0.10),
+                  blurRadius: 14,
+                  offset: const Offset(0, 7),
                 ),
               ],
             ),
-            child: Row(
-              children: [
-                // Unread indicator bar
-                AnimatedContainer(
-                  duration: const Duration(milliseconds: 180),
-                  width: hasUnread ? 3 : 0,
-                  height: 74,
-                  decoration: BoxDecoration(
-                    color: accentColor,
-                    borderRadius: const BorderRadius.only(
-                      topLeft: Radius.circular(22),
-                      bottomLeft: Radius.circular(22),
-                    ),
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(13, 12, 13, 12),
+              child: Row(
+                children: [
+                  _avatar(
+                    name: displayName,
+                    userId: thread.otherUserId,
+                    size: 62,
+                    showOnline: !isGroup,
+                    isGroup: isGroup,
                   ),
-                ),
-                Expanded(
-                  child: Padding(
-                    padding: const EdgeInsets.all(14),
-                    child: Row(
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        _avatar(
-  name: displayName,
-  userId: thread.otherUserId,
-  size: 54,
-  showOnline: !isGroup,
-  isGroup: isGroup,
-),
-                        const SizedBox(width: 13),
-                        Expanded(
-                          child: Column(
-                            crossAxisAlignment: CrossAxisAlignment.start,
-                            children: [
-                              // Name row
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      displayName,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: _kTextDark,
-                                        fontWeight: hasUnread
-                                            ? FontWeight.w900
-                                            : FontWeight.w700,
-                                        fontSize: 15.5,
-                                      ),
-                                    ),
-                                  ),
-                                  const SizedBox(width: 8),
-                                  _roleBadge(role, isGroup: isGroup),
-                                  const SizedBox(width: 8),
-                                  if (timestamp.isNotEmpty)
-                                    Text(
-                                      timestamp,
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        fontWeight: hasUnread
-                                            ? FontWeight.w800
-                                            : FontWeight.w600,
-                                        color: hasUnread
-                                            ? _kPrimary
-                                            : _kTextMid,
-                                      ),
-                                    ),
-                                ],
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                displayName,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: _kTextDark,
+                                  fontWeight: hasUnread
+                                      ? FontWeight.w900
+                                      : FontWeight.w800,
+                                  fontSize: 15.5,
+                                ),
                               ),
-                              const SizedBox(height: 8),
-                              // Preview row
-                              Row(
-                                children: [
-                                  Expanded(
-                                    child: Text(
-                                      preview,
-                                      maxLines: 1,
-                                      overflow: TextOverflow.ellipsis,
-                                      style: TextStyle(
-                                        color: hasUnread
-                                            ? _kTextDark
-                                            : _kTextMid,
-                                        fontWeight: hasUnread
-                                            ? FontWeight.w800
-                                            : FontWeight.w500,
-                                        fontSize: 13,
-                                      ),
-                                    ),
-                                  ),
-                                  if (hasUnread) ...[
-                                    const SizedBox(width: 10),
-                                    Container(
-                                      constraints: const BoxConstraints(
-                                        minWidth: 24,
-                                        minHeight: 24,
-                                      ),
-                                      padding: const EdgeInsets.symmetric(
-                                          horizontal: 7),
-                                      alignment: Alignment.center,
-                                      decoration: const BoxDecoration(
-                                        color: _kPrimary,
-                                        shape: BoxShape.circle,
-                                      ),
-                                      child: Text(
-                                        thread.unread > 99
-                                            ? '99+'
-                                            : '${thread.unread}',
-                                        style: const TextStyle(
-                                          color: Colors.white,
-                                          fontSize: 10,
-                                          fontWeight: FontWeight.w900,
-                                        ),
-                                      ),
-                                    ),
-                                  ],
-                                ],
+                            ),
+                            const SizedBox(width: 7),
+                            _roleBadge(role, isGroup: isGroup),
+                            if (timestamp.isNotEmpty) ...[
+                              const SizedBox(width: 7),
+                              Text(
+                                timestamp,
+                                style: TextStyle(
+                                  fontSize: 11,
+                                  fontWeight: FontWeight.w700,
+                                  color: hasUnread ? _kPrimary : _kTextMid,
+                                ),
                               ),
                             ],
-                          ),
+                          ],
+                        ),
+                        const SizedBox(height: 9),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: Text(
+                                preview,
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: hasUnread ? _kTextDark : _kTextMid,
+                                  fontWeight: hasUnread
+                                      ? FontWeight.w700
+                                      : FontWeight.w500,
+                                  fontSize: 13,
+                                ),
+                              ),
+                            ),
+                            if (hasUnread) ...[
+                              const SizedBox(width: 8),
+                              Container(
+                                constraints: const BoxConstraints(
+                                  minWidth: 24,
+                                  minHeight: 24,
+                                ),
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 7),
+                                alignment: Alignment.center,
+                                decoration: BoxDecoration(
+                                  gradient: const LinearGradient(
+                                    colors: [_kGoldLight, _kGold],
+                                  ),
+                                  shape: BoxShape.circle,
+                                  border: Border.all(
+                                    color: const Color(0xFFB89E50),
+                                  ),
+                                ),
+                                child: Text(
+                                  thread.unread > 99
+                                      ? '99+'
+                                      : '${thread.unread}',
+                                  style: const TextStyle(
+                                    color: Color(0xFF40371F),
+                                    fontSize: 10,
+                                    fontWeight: FontWeight.w900,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ],
                         ),
                       ],
                     ),
                   ),
-                ),
-              ],
+                ],
+              ),
             ),
           ),
         ),
@@ -1102,7 +1121,7 @@ Widget build(BuildContext context) {
       curve: Curves.easeInOut,
       builder: (context, value, _) {
         final color =
-            Color.lerp(const Color(0xFFE8ECFF), _kBackground, value)!;
+            Color.lerp(_kGoldLight, _kBackground, value)!;
         return Container(
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(

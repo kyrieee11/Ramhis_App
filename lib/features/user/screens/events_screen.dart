@@ -16,15 +16,18 @@ import 'package:ramhis_app/services/api/event_service.dart';
 // wherever you place event_helpers.dart in your project.
 import 'package:ramhis_app/utils/event_helpers.dart';
 
-const _kPrimary = Color(0xFF5B76F7);
-const _kAccent = Color(0xFF4564E8);
-const _kBg = Color(0xFFF0F2FF);
-const _kTextPrimary = Color(0xFF1B2559);
-const _kTextSecondary = Color(0xFF7B8BB2);
-const _kGreen = Color(0xFF22C55E);
-const _kOrange = Color(0xFFF59E0B);
-const _kRed = Color(0xFFEF4444);
+const _kPrimary = Color(0xFF24335B);
+const _kAccent = Color(0xFF18233F);
+const _kBg = Color(0xFFEFF3F8);
+const _kTextPrimary = Color(0xFF17213A);
+const _kTextSecondary = Color(0xFF718096);
+const _kGreen = Color(0xFF2E9B67);
+const _kOrange = Color(0xFFC88A2B);
+const _kRed = Color(0xFFB84A4A);
 const _kGray = Color(0xFF6B7280);
+const _kGold = Color(0xFFC7A45A);
+const _kGoldSoft = Color(0xFFE7D5A8);
+const _kNavy = Color(0xFF17233F);
 
 class EventsWidget extends StatefulWidget {
   const EventsWidget({super.key});
@@ -519,7 +522,7 @@ class _EventsWidgetState extends State<EventsWidget> {
                     onRefresh: _loadEvents,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(0, 16, 0, 24),
+                      padding: const EdgeInsets.fromLTRB(0, 14, 0, 24),
                       children: [
                         _buildFilterTabs(),
                         const SizedBox(height: 14),
@@ -555,10 +558,10 @@ class _EventsWidgetState extends State<EventsWidget> {
   Widget _buildTopHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 46, 18, 18),
+      padding: const EdgeInsets.fromLTRB(20, 46, 18, 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF5B76F7), Color(0xFF4564E8)],
+          colors: [_kNavy, Color(0xFF26365E)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -568,55 +571,93 @@ class _EventsWidgetState extends State<EventsWidget> {
         ),
       ),
       child: Stack(
-        alignment: Alignment.center,
         children: [
           Positioned(
-            right: -34,
-            bottom: -42,
+            right: -35,
+            top: -45,
             child: Container(
-              width: 120,
-              height: 120,
+              width: 135,
+              height: 135,
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
-                color: Colors.white.withValues(alpha: 0.12),
-              ),
-            ),
-          ),
-          const Center(
-            child: Text(
-              'Events',
-              style: TextStyle(
-                color: Colors.white,
-                fontSize: 22,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ),
-          Positioned(
-            right: 0,
-            child: Material(
-              color: Colors.white.withValues(alpha: 0.14),
-              borderRadius: BorderRadius.circular(14),
-              child: InkWell(
-                borderRadius: BorderRadius.circular(14),
-                onTap: _loadEvents,
-                child: const SizedBox(
-                  width: 42,
-                  height: 42,
-                  child: Icon(
-                    Icons.refresh_rounded,
-                    color: Colors.white,
-                  ),
+                border: Border.all(
+                  color: _kGold.withValues(alpha: 0.16),
+                  width: 1.5,
                 ),
               ),
             ),
+          ),
+          Positioned(
+            right: 8,
+            bottom: -50,
+            child: Container(
+              width: 100,
+              height: 100,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: _kGold.withValues(alpha: 0.08),
+              ),
+            ),
+          ),
+          Row(
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      'Events',
+                      style: TextStyle(
+                        color: _kGoldSoft,
+                        fontSize: 29,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.3,
+                        height: 1,
+                        fontFamily: 'Georgia',
+                      ),
+                    ),
+                    const SizedBox(height: 7),
+                    Text(
+                      'COMMUNITY • HEALTH • IMPACT',
+                      style: TextStyle(
+                        color: Colors.white.withValues(alpha: 0.70),
+                        fontSize: 9.5,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: 1.15,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Material(
+                color: Colors.white.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(14),
+                child: InkWell(
+                  borderRadius: BorderRadius.circular(14),
+                  onTap: _loadEvents,
+                  child: Container(
+                    width: 44,
+                    height: 44,
+                    decoration: BoxDecoration(
+                      borderRadius: BorderRadius.circular(14),
+                      border: Border.all(
+                        color: _kGold.withValues(alpha: 0.42),
+                      ),
+                    ),
+                    child: const Icon(
+                      Icons.refresh_rounded,
+                      color: _kGoldSoft,
+                      size: 21,
+                    ),
+                  ),
+                ),
+              ),
+            ],
           ),
         ],
       ),
     );
   }
-
   Widget _buildFilterTabs() {
     return SingleChildScrollView(
       scrollDirection: Axis.horizontal,
@@ -626,7 +667,7 @@ class _EventsWidgetState extends State<EventsWidget> {
           final selected = selectedFilter == filter;
 
           return Padding(
-            padding: const EdgeInsets.only(right: 10),
+            padding: const EdgeInsets.only(right: 9),
             child: InkWell(
               borderRadius: BorderRadius.circular(999),
               onTap: () {
@@ -638,31 +679,33 @@ class _EventsWidgetState extends State<EventsWidget> {
                 duration: const Duration(milliseconds: 220),
                 curve: Curves.easeOut,
                 padding: const EdgeInsets.symmetric(
-                  horizontal: 18,
+                  horizontal: 17,
                   vertical: 10,
                 ),
                 decoration: BoxDecoration(
-                  color: selected ? const Color(0xFF3949AB) : Colors.white,
+                  color: selected ? _kNavy : Colors.white,
                   borderRadius: BorderRadius.circular(999),
-                  border: selected
-                      ? null
-                      : Border.all(color: const Color(0xFFE8ECFF)),
+                  border: Border.all(
+                    color: selected ? _kGold : _kGoldSoft,
+                    width: selected ? 1.3 : 1,
+                  ),
                   boxShadow: [
                     BoxShadow(
                       color: selected
-                          ? _kPrimary.withValues(alpha: 0.20)
-                          : Colors.black.withValues(alpha: 0.04),
-                      blurRadius: selected ? 16 : 12,
-                      offset: const Offset(0, 6),
+                          ? _kNavy.withValues(alpha: 0.16)
+                          : Colors.black.withValues(alpha: 0.035),
+                      blurRadius: selected ? 13 : 9,
+                      offset: const Offset(0, 4),
                     ),
                   ],
                 ),
                 child: Text(
                   filter,
                   style: TextStyle(
-                    color: selected ? Colors.white : _kTextSecondary,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w700,
-                    fontSize: 13,
+                    color: selected ? _kGoldSoft : _kTextSecondary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12.5,
+                    letterSpacing: 0.1,
                   ),
                 ),
               ),
@@ -672,7 +715,6 @@ class _EventsWidgetState extends State<EventsWidget> {
       ),
     );
   }
-
   Widget _buildSearchBar() {
     return Padding(
       padding: const EdgeInsets.symmetric(horizontal: 16),
@@ -680,17 +722,17 @@ class _EventsWidgetState extends State<EventsWidget> {
         height: 52,
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(30),
+          borderRadius: BorderRadius.circular(18),
           border: Border.all(
             color: _searchQuery.isNotEmpty
-                ? _kPrimary.withValues(alpha: 0.35)
-                : Colors.grey.withValues(alpha: 0.12),
+                ? _kGold.withValues(alpha: 0.70)
+                : Colors.black.withValues(alpha: 0.055),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 12,
-              offset: const Offset(0, 5),
+              color: _kNavy.withValues(alpha: 0.055),
+              blurRadius: 15,
+              offset: const Offset(0, 6),
             ),
           ],
         ),
@@ -703,22 +745,24 @@ class _EventsWidgetState extends State<EventsWidget> {
           },
           decoration: InputDecoration(
             border: InputBorder.none,
+            contentPadding: const EdgeInsets.symmetric(vertical: 14),
             prefixIcon: const Icon(
               Icons.search_rounded,
-              color: _kTextSecondary,
+              color: _kNavy,
+              size: 21,
             ),
             hintText: 'Search by title, type, date, location...',
             hintStyle: const TextStyle(
               color: _kTextSecondary,
               fontWeight: FontWeight.w500,
-              fontSize: 13,
+              fontSize: 12.5,
             ),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
                     icon: const Icon(
                       Icons.close_rounded,
                       color: _kTextSecondary,
-                      size: 20,
+                      size: 19,
                     ),
                     onPressed: () {
                       setState(() {
@@ -733,7 +777,6 @@ class _EventsWidgetState extends State<EventsWidget> {
       ),
     );
   }
-
   Widget _buildSkeletonList() {
     return ListView.builder(
       itemCount: 6,
@@ -903,134 +946,198 @@ class _EventsWidgetState extends State<EventsWidget> {
   Widget _buildEventCard(EventModel event) {
     final joinStatus = _joinStatus(event);
     final isPastDate = isPastEventDate(event);
-
-    Color accentColor = Colors.transparent;
-
-    if (joinStatus == 'Approved') {
-      accentColor = _kGreen;
-    } else if (joinStatus == 'Pending') {
-      accentColor = _kOrange;
-    }
+    final imageUrl = _imageUrl(event).trim();
+    final type = _typeText(event);
 
     return Container(
-      margin: const EdgeInsets.symmetric(
-        horizontal: 16,
-        vertical: 8,
-      ),
+      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(
+          color: Colors.black.withValues(alpha: 0.045),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: _kNavy.withValues(alpha: 0.09),
+            blurRadius: 22,
+            offset: const Offset(0, 9),
           ),
         ],
       ),
+      clipBehavior: Clip.antiAlias,
       child: InkWell(
-        borderRadius: BorderRadius.circular(18),
         onTap: () => _openEventDetails(event),
-        child: Row(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Container(
-              width: 4,
-              decoration: BoxDecoration(
-                color: accentColor,
-                borderRadius: const BorderRadius.only(
-                  topLeft: Radius.circular(18),
-                  bottomLeft: Radius.circular(18),
-                ),
+            SizedBox(
+              height: 116,
+              width: double.infinity,
+              child: Stack(
+                fit: StackFit.expand,
+                children: [
+                  if (imageUrl.isNotEmpty)
+                    Image.network(
+                      imageUrl,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, __, ___) => _eventBannerFallback(type),
+                    )
+                  else
+                    _eventBannerFallback(type),
+                  DecoratedBox(
+                    decoration: BoxDecoration(
+                      gradient: LinearGradient(
+                        colors: [
+                          _kNavy.withValues(alpha: 0.82),
+                          _kNavy.withValues(alpha: 0.28),
+                        ],
+                        begin: Alignment.bottomLeft,
+                        end: Alignment.topRight,
+                      ),
+                    ),
+                  ),
+                  Positioned(
+                    left: 16,
+                    bottom: 14,
+                    child: Row(
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 10,
+                            vertical: 6,
+                          ),
+                          decoration: BoxDecoration(
+                            color: _kGold.withValues(alpha: 0.94),
+                            borderRadius: BorderRadius.circular(999),
+                          ),
+                          child: Text(
+                            type.toUpperCase(),
+                            style: const TextStyle(
+                              color: _kNavy,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w900,
+                              letterSpacing: 0.8,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  Positioned(
+                    right: 14,
+                    top: 14,
+                    child: Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: _kNavy.withValues(alpha: 0.78),
+                        shape: BoxShape.circle,
+                        border: Border.all(
+                          color: _kGold.withValues(alpha: 0.55),
+                        ),
+                      ),
+                      child: Icon(
+                        _typeIcon(type),
+                        color: _kGoldSoft,
+                        size: 18,
+                      ),
+                    ),
+                  ),
+                ],
               ),
             ),
-            Expanded(
-              child: Padding(
-                padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Spacer(),
-                        if (joinStatus == 'Approved')
-                          _compactBadge('Approved for this mission ✓', _kGreen),
-                        if (joinStatus == 'Pending')
-                          _compactBadge('Pending for this mission', _kOrange),
-                        if (joinStatus == 'Rejected')
-                          _compactBadge('Rejected for this mission', _kRed),
-                        if (joinStatus == 'None' && isPastDate)
-                          _compactBadge('Event date passed', _kGray),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      titleCaseEventText(
-                        event.title.isNotEmpty ? event.title : 'Untitled Event',
-                      ),
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: _kTextPrimary,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w900,
-                        height: 1.3,
-                      ),
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.calendar_month_rounded,
-                          size: 15,
-                          color: _kTextSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            _eventDate(event),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: _kTextSecondary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
+            Padding(
+              padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Expanded(
+                        child: Text(
+                          titleCaseEventText(
+                            event.title.isNotEmpty ? event.title : 'Untitled Event',
+                          ),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: _kTextPrimary,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                            height: 1.2,
                           ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
-                        const Icon(
-                          Icons.location_on_rounded,
-                          size: 15,
-                          color: _kTextSecondary,
-                        ),
-                        const SizedBox(width: 6),
-                        Expanded(
-                          child: Text(
-                            _eventLocation(event),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: _kTextSecondary,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
-                            ),
+                      ),
+                      const SizedBox(width: 10),
+                      _statusPill(
+                        _statusText(event),
+                        _statusColor(_statusText(event)),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 13),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.calendar_month_rounded,
+                        color: _kGold,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _eventDate(event),
+                          style: const TextStyle(
+                            color: _kTextPrimary,
+                            fontSize: 13,
+                            fontWeight: FontWeight.w700,
                           ),
                         ),
-                        const SizedBox(width: 8),
-                        const Icon(
-                          Icons.chevron_right_rounded,
-                          color: _kTextSecondary,
-                          size: 18,
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 9),
+                  Row(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Icon(
+                        Icons.location_on_rounded,
+                        color: _kGold,
+                        size: 18,
+                      ),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          _eventLocation(event),
+                          maxLines: 2,
+                          overflow: TextOverflow.ellipsis,
+                          style: const TextStyle(
+                            color: _kTextSecondary,
+                            fontSize: 12.5,
+                            fontWeight: FontWeight.w600,
+                            height: 1.35,
+                          ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 4),
+                      ),
+                      const SizedBox(width: 8),
+                      const Icon(
+                        Icons.arrow_forward_ios_rounded,
+                        color: _kGold,
+                        size: 13,
+                      ),
+                    ],
+                  ),
+                  if (joinStatus == 'Approved' ||
+                      joinStatus == 'Pending' ||
+                      joinStatus == 'Rejected' ||
+                      (joinStatus == 'None' && isPastDate)) ...[
+                    const SizedBox(height: 13),
+                    _missionBadge(joinStatus, isPastDate),
                   ],
-                ),
+                ],
               ),
             ),
           ],
@@ -1039,96 +1146,159 @@ class _EventsWidgetState extends State<EventsWidget> {
     );
   }
 
-  Widget _compactBadge(String text, Color color) {
+  Widget _eventBannerFallback(String type) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-      decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.12),
-        borderRadius: BorderRadius.circular(30),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Color(0xFF111D38), Color(0xFF30436D)],
+          begin: Alignment.bottomLeft,
+          end: Alignment.topRight,
+        ),
       ),
-      child: Text(
-        text,
-        style: TextStyle(
-          color: color,
-          fontWeight: FontWeight.w800,
-          fontSize: 11,
+      child: Center(
+        child: Icon(
+          _typeIcon(type),
+          color: _kGold.withValues(alpha: 0.75),
+          size: 46,
         ),
       ),
     );
   }
 
+  Widget _statusPill(String text, Color color) {
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.10),
+        borderRadius: BorderRadius.circular(999),
+        border: Border.all(color: color.withValues(alpha: 0.24)),
+      ),
+      child: Text(
+        text,
+        style: TextStyle(
+          color: color,
+          fontSize: 10,
+          fontWeight: FontWeight.w900,
+        ),
+      ),
+    );
+  }
+
+  Widget _missionBadge(String joinStatus, bool isPastDate) {
+    late String text;
+    late Color color;
+    IconData icon;
+
+    if (joinStatus == 'Approved') {
+      text = 'Approved for this mission ✓';
+      color = _kGreen;
+      icon = Icons.verified_rounded;
+    } else if (joinStatus == 'Pending') {
+      text = 'Pending for this mission';
+      color = _kOrange;
+      icon = Icons.hourglass_top_rounded;
+    } else if (joinStatus == 'Rejected') {
+      text = 'Rejected for this mission';
+      color = _kRed;
+      icon = Icons.block_rounded;
+    } else {
+      text = 'Event date passed';
+      color = _kGray;
+      icon = Icons.event_busy_rounded;
+    }
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.08),
+        borderRadius: BorderRadius.circular(12),
+        border: Border.all(color: color.withValues(alpha: 0.20)),
+      ),
+      child: Row(
+        children: [
+          Icon(icon, color: color, size: 16),
+          const SizedBox(width: 7),
+          Expanded(
+            child: Text(
+              text,
+              style: TextStyle(
+                color: color,
+                fontSize: 11.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(28),
+      margin: const EdgeInsets.only(top: 8),
+      padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 34),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(24),
+        borderRadius: BorderRadius.circular(22),
+        border: Border.all(color: _kGoldSoft.withValues(alpha: 0.65)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
+            color: _kNavy.withValues(alpha: 0.06),
             blurRadius: 18,
-            offset: const Offset(0, 6),
+            offset: const Offset(0, 7),
           ),
         ],
       ),
       child: const Column(
         children: [
-          Icon(
-            Icons.event_busy_rounded,
-            size: 58,
-            color: _kPrimary,
-          ),
+          Icon(Icons.event_busy_rounded, size: 54, color: _kGold),
           SizedBox(height: 14),
           Text(
             'No events available',
             style: TextStyle(
               color: _kTextPrimary,
               fontSize: 20,
-              fontWeight: FontWeight.w800,
+              fontWeight: FontWeight.w900,
             ),
           ),
-          SizedBox(height: 8),
+          SizedBox(height: 7),
           Text(
             'Please check again later.',
             textAlign: TextAlign.center,
             style: TextStyle(
               color: _kTextSecondary,
-              fontSize: 14,
+              fontSize: 13,
             ),
           ),
         ],
       ),
     );
   }
-
   Widget _buildFilteredEmptyState() {
     return Container(
       width: double.infinity,
+      margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
       decoration: BoxDecoration(
         gradient: const LinearGradient(
-          colors: [Color(0xFF5B76F7), Color(0xFF4564E8)],
+          colors: [_kNavy, Color(0xFF30436D)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
         borderRadius: BorderRadius.circular(22),
         boxShadow: [
           BoxShadow(
-            color: _kPrimary.withValues(alpha: 0.22),
+            color: _kNavy.withValues(alpha: 0.20),
             blurRadius: 22,
-            offset: const Offset(0, 10),
+            offset: const Offset(0, 9),
           ),
         ],
       ),
       child: Column(
         children: [
-          const Icon(
-            Icons.filter_alt_off_rounded,
-            size: 54,
-            color: Colors.white,
-          ),
-          const SizedBox(height: 14),
+          const Icon(Icons.filter_alt_off_rounded, size: 50, color: _kGoldSoft),
+          const SizedBox(height: 13),
           Text(
             'No $selectedFilter events',
             style: const TextStyle(
@@ -1142,7 +1312,7 @@ class _EventsWidgetState extends State<EventsWidget> {
             'Try another filter or pull down to refresh.',
             textAlign: TextAlign.center,
             style: TextStyle(
-              color: Colors.white,
+              color: Colors.white70,
               fontSize: 13,
             ),
           ),
@@ -1150,20 +1320,20 @@ class _EventsWidgetState extends State<EventsWidget> {
       ),
     );
   }
-
   Widget _buildSearchEmptyState() {
     return Container(
       width: double.infinity,
+      margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: const Color(0xFFE8ECFF)),
+        border: Border.all(color: _kGoldSoft.withValues(alpha: 0.65)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
+            color: _kNavy.withValues(alpha: 0.055),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
@@ -1173,16 +1343,16 @@ class _EventsWidgetState extends State<EventsWidget> {
             width: 64,
             height: 64,
             decoration: BoxDecoration(
-              color: _kPrimary.withValues(alpha: 0.08),
+              color: _kGold.withValues(alpha: 0.10),
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.search_off_rounded,
-              size: 34,
-              color: _kPrimary,
+              size: 32,
+              color: _kGold,
             ),
           ),
-          const SizedBox(height: 16),
+          const SizedBox(height: 15),
           const Text(
             'No results found',
             style: TextStyle(
@@ -1192,10 +1362,6 @@ class _EventsWidgetState extends State<EventsWidget> {
             ),
           ),
           const SizedBox(height: 8),
-          // FIX: removed the stray backslash before `$_searchQuery`
-          // (`\$_searchQuery`), which previously suppressed string
-          // interpolation and showed the literal text "$_searchQuery"
-          // instead of the user's actual search term.
           Text(
             'No events matched "$_searchQuery".\nTry a different keyword.',
             textAlign: TextAlign.center,
@@ -1214,18 +1380,16 @@ class _EventsWidgetState extends State<EventsWidget> {
               });
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(
-                horizontal: 22,
-                vertical: 11,
-              ),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
               decoration: BoxDecoration(
-                color: _kPrimary,
+                color: _kNavy,
                 borderRadius: BorderRadius.circular(999),
+                border: Border.all(color: _kGold),
               ),
               child: const Text(
                 'Clear search',
                 style: TextStyle(
-                  color: Colors.white,
+                  color: _kGoldSoft,
                   fontWeight: FontWeight.w800,
                   fontSize: 13,
                 ),
@@ -1623,7 +1787,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       padding: const EdgeInsets.fromLTRB(8, 46, 18, 18),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF5B76F7), Color(0xFF4564E8)],
+          colors: [_kNavy, Color(0xFF26365E)],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
@@ -1641,35 +1805,37 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               onPressed: () => Navigator.pop(context),
               icon: const Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: Colors.white,
+                color: _kGoldSoft,
               ),
             ),
           ),
           const Text(
             'Event Details',
             style: TextStyle(
-              color: Colors.white,
-              fontSize: 21,
-              fontWeight: FontWeight.w900,
+              color: _kGoldSoft,
+              fontSize: 23,
+              fontWeight: FontWeight.w700,
+              fontFamily: 'Georgia',
+              letterSpacing: 0.2,
             ),
           ),
         ],
       ),
     );
   }
-
   Widget _infoCard() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.all(14),
+      padding: const EdgeInsets.fromLTRB(16, 17, 16, 7),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(color: _kGoldSoft.withValues(alpha: 0.55)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.045),
+            color: _kNavy.withValues(alpha: 0.06),
             blurRadius: 18,
-            offset: const Offset(0, 8),
+            offset: const Offset(0, 7),
           ),
         ],
       ),
@@ -1679,7 +1845,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             icon: Icons.calendar_month_rounded,
             title: 'Date',
             value: widget.dateText,
-            color: _kPrimary,
+            color: _kGold,
           ),
           _infoTile(
             icon: Icons.access_time_rounded,
@@ -1725,7 +1891,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       ),
     );
   }
-
   Future<void> _openLocationInMaps(String location) async {
     if (location.trim().isEmpty) return;
 
@@ -1892,10 +2057,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _kGoldSoft.withValues(alpha: 0.55)),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 14,
+            color: _kNavy.withValues(alpha: 0.055),
+            blurRadius: 16,
             offset: const Offset(0, 6),
           ),
         ],
@@ -1904,11 +2070,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
         children: [
           CircleAvatar(
             radius: 24,
-            backgroundColor: _kPrimary.withValues(alpha: 0.12),
+            backgroundColor: _kNavy,
             child: Text(
               initial,
               style: const TextStyle(
-                color: _kPrimary,
+                color: _kGoldSoft,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -1936,11 +2102,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ],
             ),
           ),
+          const Icon(Icons.verified_rounded, color: _kGold, size: 20),
         ],
       ),
     );
   }
-
   Widget _stickyFooter() {
     final status = widget.statusText.toLowerCase();
     final joinStatus = widget.joinStatus;
@@ -1981,7 +2147,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
     } else {
       text = 'Join Event';
       icon = Icons.how_to_reg_rounded;
-      color = _kPrimary;
+      color = _kNavy;
       canJoin = true;
     }
 
@@ -1989,9 +2155,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       padding: const EdgeInsets.fromLTRB(18, 14, 18, 18),
       decoration: BoxDecoration(
         color: Colors.white,
+        border: const Border(
+          top: BorderSide(color: _kGoldSoft, width: 0.55),
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.055),
+            color: _kNavy.withValues(alpha: 0.08),
             blurRadius: 18,
             offset: const Offset(0, -6),
           ),
@@ -2014,22 +2183,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: Colors.white,
+                                color: _kGoldSoft,
                               ),
                             )
-                          : Icon(icon),
+                          : Icon(icon, color: _kGoldSoft),
                       label: Text(isSubmitting ? 'Please wait...' : text),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: color,
                         disabledBackgroundColor: color.withValues(alpha: 0.70),
-                        foregroundColor: Colors.white,
+                        foregroundColor: _kGoldSoft,
                         elevation: 0,
                         textStyle: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 15,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(17),
+                          side: const BorderSide(color: _kGold, width: 1),
                         ),
                       ),
                     )
@@ -2039,13 +2209,13 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                       label: Text(text),
                       style: OutlinedButton.styleFrom(
                         disabledForegroundColor: color,
-                        side: BorderSide(color: color, width: 1.5),
+                        side: BorderSide(color: color, width: 1.3),
                         textStyle: const TextStyle(
                           fontWeight: FontWeight.w900,
                           fontSize: 15,
                         ),
                         shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(20),
+                          borderRadius: BorderRadius.circular(17),
                         ),
                       ),
                     ),
@@ -2058,9 +2228,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                 label: const Text('Cancel join request'),
                 style: TextButton.styleFrom(
                   foregroundColor: _kRed,
-                  textStyle: const TextStyle(
-                    fontWeight: FontWeight.w800,
-                  ),
+                  textStyle: const TextStyle(fontWeight: FontWeight.w800),
                 ),
               ),
             ],

@@ -15,6 +15,14 @@ import 'package:ramhis_app/features/user/account/acc_privacy_policy.dart';
 import 'package:ramhis_app/features/user/account/acc_termsand_conditions.dart';
 import 'package:ramhis_app/features/user/account/acc_username.dart';
 
+const _kNavy = Color(0xFF123F91);
+const _kNavyDark = Color(0xFF082B6B);
+const _kGold = Color(0xFFD9C27A);
+const _kGoldDark = Color(0xFF9D7D2F);
+const _kCream = Color(0xFFF7F2E5);
+const _kInk = Color(0xFF24304A);
+const _kMuted = Color(0xFF6F7480);
+
 class AccountWidget extends StatefulWidget {
   const AccountWidget({super.key});
 
@@ -353,71 +361,39 @@ class _AccountWidgetState extends State<AccountWidget> {
   Widget build(BuildContext context) {
     return Scaffold(
       key: scaffoldKey,
-      backgroundColor: const Color(0xFFF0F2FF),
+      backgroundColor: _kCream,
       body: SafeArea(
         child: Stack(
           children: [
-            // Blue gradient background behind header + profile card
-            Positioned(
-              top: 0,
-              left: 0,
-              right: 0,
-              child: Container(
-                height: 230,
-                decoration: const BoxDecoration(
-                  gradient: LinearGradient(
-                    colors: [
-                      Color(0xFF5B76F7),
-                      Color(0xFF4564E8),
-                    ],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                ),
+            Positioned.fill(
+              child: CustomPaint(
+                painter: _MarbleBackgroundPainter(),
               ),
             ),
             Column(
               children: [
-                // ── Fixed: header title ──────────────────────────────
                 _buildHeader(),
-
-                // ── Fixed: profile card (never scrolls) ─────────────
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(18, 0, 18, 12),
-                  child: isLoading
-                      ? const SizedBox(
-                          height: 120,
-                          child: Center(
-                            child: CircularProgressIndicator(
-                              color: Colors.white,
-                            ),
-                          ),
-                        )
-                      : _buildProfileCard(),
-                ),
-
-                // ── Scrollable: menu + logout + version ──────────────
+                _buildProfileCard(),
                 Expanded(
                   child: isLoading
                       ? const Center(
                           child: CircularProgressIndicator(
-                            color: Color(0xFF4564E8),
+                            color: _kGoldDark,
                           ),
                         )
                       : SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(18, 8, 18, 20),
+                          padding: const EdgeInsets.fromLTRB(18, 12, 18, 20),
                           child: Column(
                             children: [
                               _buildMenuSection(),
-                              const SizedBox(height: 22),
+                              const SizedBox(height: 16),
                               _buildLogoutButton(),
-                              const SizedBox(height: 22),
+                              const SizedBox(height: 16),
                               _buildVersionInfo(),
                             ],
                           ),
                         ),
                 ),
-
                 const CustomNavBar(currentIndex: 3),
               ],
             ),
@@ -430,23 +406,48 @@ class _AccountWidgetState extends State<AccountWidget> {
   Widget _buildHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 18, 20, 14),
-      child: const Row(
+      padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_kNavy, _kNavyDark],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border(
+          bottom: BorderSide(color: _kGold, width: 1.4),
+        ),
+      ),
+      child: Row(
         children: [
-          SizedBox(width: 54),
-          Expanded(
+          Material(
+            color: Colors.transparent,
+            child: InkWell(
+              customBorder: const CircleBorder(),
+              onTap: () => Navigator.maybePop(context),
+              child: const SizedBox(
+                width: 48,
+                height: 48,
+                child: Icon(
+                  Icons.arrow_back_ios_new_rounded,
+                  color: _kGold,
+                  size: 21,
+                ),
+              ),
+            ),
+          ),
+          const Expanded(
             child: Text(
               'Account',
               textAlign: TextAlign.center,
               style: TextStyle(
-                fontSize: 34,
-                fontWeight: FontWeight.w800,
-                color: Colors.white,
-                letterSpacing: -1,
+                color: _kCream,
+                fontSize: 30,
+                fontWeight: FontWeight.w700,
+                letterSpacing: 0.2,
               ),
             ),
           ),
-          SizedBox(width: 54),
+          const SizedBox(width: 48),
         ],
       ),
     );
@@ -457,131 +458,68 @@ class _AccountWidgetState extends State<AccountWidget> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(22, 24, 22, 24),
-      decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [Color(0xFF5B76F7), Color(0xFF4564E8)],
+      padding: const EdgeInsets.fromLTRB(18, 16, 20, 18),
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [_kNavy, _kNavyDark],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        borderRadius: BorderRadius.circular(34),
-        boxShadow: [
-          BoxShadow(
-            color: const Color(0xFF5B76F7).withValues(alpha: 0.30),
-            blurRadius: 26,
-            offset: const Offset(0, 12),
-          ),
-        ],
+        border: Border(
+          bottom: BorderSide(color: _kGold, width: 1.2),
+        ),
       ),
-      child: Stack(
-        children: [
-          Positioned(
-            right: -44,
-            bottom: -48,
-            child: Container(
-              width: 180,
-              height: 180,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.06),
-                shape: BoxShape.circle,
+      child: isLoading
+          ? const SizedBox(
+              height: 118,
+              child: Center(
+                child: CircularProgressIndicator(color: _kGold),
               ),
-            ),
-          ),
-          Positioned(
-            right: 34,
-            top: 38,
-            child: Container(
-              width: 76,
-              height: 76,
-              decoration: BoxDecoration(
-                border: Border.all(
-                  color: Colors.white.withValues(alpha: 0.09),
-                  width: 15,
+            )
+          : Row(
+              children: [
+                _buildAvatar(),
+                const SizedBox(width: 16),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(
+                        fullName,
+                        maxLines: 2,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: _kCream,
+                          fontSize: 25,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.1,
+                        ),
+                      ),
+                      const SizedBox(height: 7),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 13,
+                          vertical: 6,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _kCream,
+                          borderRadius: BorderRadius.circular(11),
+                          border: Border.all(color: _kGold, width: 1),
+                        ),
+                        child: Text(
+                          accountType,
+                          style: TextStyle(
+                            color: roleColor,
+                            fontSize: 14,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
                 ),
-                shape: BoxShape.circle,
-              ),
+              ],
             ),
-          ),
-          Positioned(
-            left: -42,
-            top: -44,
-            child: Container(
-              width: 130,
-              height: 130,
-              decoration: BoxDecoration(
-                color: Colors.white.withValues(alpha: 0.05),
-                shape: BoxShape.circle,
-              ),
-            ),
-          ),
-          Row(
-            children: [
-              _buildAvatar(),
-              const SizedBox(width: 16),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      fullName,
-                      maxLines: 2,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        fontSize: 24,
-                        fontWeight: FontWeight.w800,
-                        color: Colors.white,
-                        letterSpacing: -0.4,
-                        height: 1.12,
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    Container(
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 8,
-                      ),
-                      decoration: BoxDecoration(
-                        color: Colors.white,
-                        borderRadius: BorderRadius.circular(30),
-                        boxShadow: [
-                          BoxShadow(
-                            color: Colors.black.withValues(alpha: 0.10),
-                            blurRadius: 14,
-                            offset: const Offset(0, 6),
-                          ),
-                        ],
-                      ),
-                      child: Row(
-                        mainAxisSize: MainAxisSize.min,
-                        children: [
-                          Container(
-                            width: 8,
-                            height: 8,
-                            decoration: BoxDecoration(
-                              color: roleColor,
-                              shape: BoxShape.circle,
-                            ),
-                          ),
-                          const SizedBox(width: 8),
-                          Text(
-                            accountType,
-                            style: TextStyle(
-                              color: roleColor,
-                              fontWeight: FontWeight.w800,
-                              fontSize: 13,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-        ],
-      ),
     );
   }
 
@@ -590,22 +528,18 @@ class _AccountWidgetState extends State<AccountWidget> {
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         _sectionTitle('Account Settings'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 7),
         _menuGroup(
           children: [
             _menuTile(
               title: 'User Information',
-              icon: Icons.person_outline_rounded,
-              iconColor: const Color(0xFF4B63D2),
-              iconBg: const Color(0xFFE8EEFF),
+              icon: Icons.person_rounded,
               onTap: _openUserInformation,
             ),
             _divider(),
             _menuTile(
               title: 'Change Password',
-              icon: Icons.lock_outline_rounded,
-              iconColor: const Color(0xFF4B63D2),
-              iconBg: const Color(0xFFE8EEFF),
+              icon: Icons.lock_rounded,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -615,16 +549,14 @@ class _AccountWidgetState extends State<AccountWidget> {
             ),
           ],
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 15),
         _sectionTitle('Legal & Info'),
-        const SizedBox(height: 8),
+        const SizedBox(height: 7),
         _menuGroup(
           children: [
             _menuTile(
               title: 'Privacy Policy',
-              icon: Icons.shield_outlined,
-              iconColor: const Color(0xFF2BBE9B),
-              iconBg: const Color(0xFFE8FFF8),
+              icon: Icons.shield_rounded,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -635,9 +567,7 @@ class _AccountWidgetState extends State<AccountWidget> {
             _divider(),
             _menuTile(
               title: 'Terms & Conditions',
-              icon: Icons.description_outlined,
-              iconColor: const Color(0xFF7A5AF8),
-              iconBg: const Color(0xFFF1ECFF),
+              icon: Icons.description_rounded,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -648,9 +578,7 @@ class _AccountWidgetState extends State<AccountWidget> {
             _divider(),
             _menuTile(
               title: 'About',
-              icon: Icons.info_outline_rounded,
-              iconColor: const Color(0xFF5B76F7),
-              iconBg: const Color(0xFFEAF0FF),
+              icon: Icons.info_rounded,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -666,14 +594,14 @@ class _AccountWidgetState extends State<AccountWidget> {
 
   Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 4),
+      padding: const EdgeInsets.only(left: 2),
       child: Text(
         title.toUpperCase(),
         style: const TextStyle(
-          color: Color(0xFF7B739A),
-          fontSize: 12,
-          fontWeight: FontWeight.w800,
-          letterSpacing: 0.9,
+          color: _kInk,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
         ),
       ),
     );
@@ -683,13 +611,14 @@ class _AccountWidgetState extends State<AccountWidget> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(28),
+        color: _kCream.withValues(alpha: 0.94),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _kGoldDark, width: 1.5),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.05),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 14,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
@@ -699,64 +628,71 @@ class _AccountWidgetState extends State<AccountWidget> {
 
   Widget _divider() {
     return Padding(
-      padding: const EdgeInsets.only(left: 82),
-      child: Container(height: 1, color: const Color(0xFFE9ECF5)),
+      padding: const EdgeInsets.only(left: 84, right: 14),
+      child: Container(
+        height: 1,
+        color: _kNavy.withValues(alpha: 0.85),
+      ),
     );
   }
 
   Widget _menuTile({
     required String title,
     required IconData icon,
-    required Color iconColor,
-    required Color iconBg,
     required VoidCallback onTap,
   }) {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(18),
         onTap: onTap,
-        child: SizedBox(
-          width: double.infinity,
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 15),
-            child: Row(
-              children: [
-                Container(
-                  width: 50,
-                  height: 50,
-                  decoration: BoxDecoration(
-                    color: iconBg,
-                    borderRadius: BorderRadius.circular(17),
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
+          child: Row(
+            children: [
+              Container(
+                width: 58,
+                height: 58,
+                decoration: BoxDecoration(
+                  gradient: const LinearGradient(
+                    colors: [_kNavy, _kNavyDark],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
                   ),
-                  child: Icon(icon, color: iconColor, size: 25),
-                ),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Text(
-                    title,
-                    style: const TextStyle(
-                      fontSize: 16,
-                      fontWeight: FontWeight.w700,
-                      color: Color(0xFF1B2559),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(color: _kGold, width: 1.2),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.12),
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
                     ),
+                  ],
+                ),
+                child: Icon(
+                  icon,
+                  color: _kCream,
+                  size: 29,
+                ),
+              ),
+              const SizedBox(width: 17),
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: _kInk,
+                    fontSize: 18,
+                    fontWeight: FontWeight.w500,
+                    letterSpacing: 0.1,
                   ),
                 ),
-                Container(
-                  width: 30,
-                  height: 30,
-                  decoration: BoxDecoration(
-                    color: const Color(0xFFF0F2FF),
-                    borderRadius: BorderRadius.circular(12),
-                  ),
-                  child: const Icon(
-                    Icons.arrow_forward_ios_rounded,
-                    size: 14,
-                    color: Color(0xFF7B739A),
-                  ),
-                ),
-              ],
-            ),
+              ),
+              const Icon(
+                Icons.arrow_forward_ios_rounded,
+                color: _kGoldDark,
+                size: 19,
+              ),
+            ],
           ),
         ),
       ),
@@ -777,21 +713,22 @@ class _AccountWidgetState extends State<AccountWidget> {
               return StatefulBuilder(
                 builder: (context, setDialogState) {
                   return AlertDialog(
-                    backgroundColor: Colors.white,
+                    backgroundColor: _kCream,
                     shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(24),
+                      borderRadius: BorderRadius.circular(18),
+                      side: const BorderSide(color: _kGold, width: 1.2),
                     ),
                     title: const Text(
                       'Log Out',
                       style: TextStyle(
-                        color: Color(0xFF1B2559),
+                        color: _kInk,
                         fontWeight: FontWeight.w800,
                       ),
                     ),
                     content: const Text(
                       'Are you sure you want to log out?',
                       style: TextStyle(
-                        color: Color(0xFF7B739A),
+                        color: _kMuted,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -805,7 +742,7 @@ class _AccountWidgetState extends State<AccountWidget> {
                         child: const Text(
                           'Cancel',
                           style: TextStyle(
-                            color: Color(0xFF7B739A),
+                            color: _kMuted,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
@@ -818,11 +755,11 @@ class _AccountWidgetState extends State<AccountWidget> {
                                 await _logout();
                               },
                         style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFE84D63),
+                          backgroundColor: const Color(0xFFA72B2B),
                           foregroundColor: Colors.white,
                           elevation: 0,
                           shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(14),
+                            borderRadius: BorderRadius.circular(12),
                           ),
                         ),
                         child: isLoggingOut
@@ -836,8 +773,7 @@ class _AccountWidgetState extends State<AccountWidget> {
                               )
                             : const Text(
                                 'Log Out',
-                                style:
-                                    TextStyle(fontWeight: FontWeight.w800),
+                                style: TextStyle(fontWeight: FontWeight.w800),
                               ),
                       ),
                     ],
@@ -847,22 +783,25 @@ class _AccountWidgetState extends State<AccountWidget> {
             },
           );
         },
-        icon: const Icon(Icons.logout_rounded, color: Color(0xFFE84D63)),
+        icon: const Icon(
+          Icons.logout_rounded,
+          color: Color(0xFFA72B2B),
+        ),
         label: const Text(
           'Log Out',
           style: TextStyle(
             fontSize: 17,
             fontWeight: FontWeight.w800,
-            color: Color(0xFFE84D63),
+            color: Color(0xFFA72B2B),
           ),
         ),
         style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: Color(0xFFE84D63), width: 1.4),
-          padding: const EdgeInsets.symmetric(vertical: 17),
+          side: const BorderSide(color: _kGoldDark, width: 1.5),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(24),
+            borderRadius: BorderRadius.circular(18),
           ),
-          backgroundColor: Colors.white,
+          backgroundColor: _kCream.withValues(alpha: 0.96),
         ),
       ),
     );
@@ -874,22 +813,87 @@ class _AccountWidgetState extends State<AccountWidget> {
         Text(
           'RAMHIS v1.0.0',
           style: TextStyle(
-            color: Color(0xFF7B739A),
-            fontSize: 12,
-            fontWeight: FontWeight.w800,
+            color: _kMuted,
+            fontSize: 11,
+            fontWeight: FontWeight.w700,
           ),
         ),
-        SizedBox(height: 4),
+        SizedBox(height: 3),
         Text(
           'Remote Area Medical Health Information System',
           textAlign: TextAlign.center,
           style: TextStyle(
-            color: Color(0xFF9AA3BD),
-            fontSize: 11,
+            color: _kMuted,
+            fontSize: 10,
             fontWeight: FontWeight.w500,
           ),
         ),
       ],
     );
   }
+
+}
+
+class _MarbleBackgroundPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final base = Paint()..color = _kCream;
+    canvas.drawRect(Offset.zero & size, base);
+
+    final vein = Paint()
+      ..color = const Color(0xFF9EA9B8).withValues(alpha: 0.28)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.0;
+
+    final veinSoft = Paint()
+      ..color = const Color(0xFFBFC6D0).withValues(alpha: 0.32)
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 0.65;
+
+    final paths = <Path>[
+      Path()
+        ..moveTo(size.width * .10, 0)
+        ..cubicTo(size.width * .26, size.height * .12,
+            size.width * .10, size.height * .22,
+            size.width * .38, size.height * .32)
+        ..cubicTo(size.width * .60, size.height * .40,
+            size.width * .36, size.height * .55,
+            size.width * .64, size.height * .67)
+        ..cubicTo(size.width * .80, size.height * .75,
+            size.width * .62, size.height * .90,
+            size.width * .90, size.height),
+      Path()
+        ..moveTo(size.width * .92, size.height * .02)
+        ..cubicTo(size.width * .74, size.height * .16,
+            size.width * .88, size.height * .27,
+            size.width * .65, size.height * .39)
+        ..cubicTo(size.width * .48, size.height * .48,
+            size.width * .72, size.height * .61,
+            size.width * .45, size.height * .80),
+      Path()
+        ..moveTo(size.width * .02, size.height * .72)
+        ..cubicTo(size.width * .20, size.height * .66,
+            size.width * .16, size.height * .84,
+            size.width * .02, size.height * .94),
+    ];
+
+    for (final path in paths) {
+      canvas.drawPath(path, vein);
+    }
+
+    canvas.drawPath(
+      Path()
+        ..moveTo(size.width * .04, size.height * .15)
+        ..cubicTo(size.width * .32, size.height * .21,
+            size.width * .13, size.height * .31,
+            size.width * .44, size.height * .38)
+        ..cubicTo(size.width * .65, size.height * .44,
+            size.width * .43, size.height * .56,
+            size.width * .72, size.height * .65),
+      veinSoft,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
