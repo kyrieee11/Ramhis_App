@@ -22,36 +22,36 @@ class AppConfig {
 
   // ============================================================
   // CURRENT BACKEND
-  // LOCAL
+  // PRODUCTION
   // ============================================================
 
   static const String apiBaseUrl =
-      localApiBaseUrl;
+      productionApiBaseUrl;
 
   static const String baseUrl =
       apiBaseUrl;
 
   // ============================================================
   // SOCKET.IO
-  // LOCAL
+  // PRODUCTION
   // ============================================================
 
   static const String socketBaseUrl =
-      localUrl;
+      productionUrl;
 
   // ============================================================
   // UPLOADED FILES
-  // LOCAL
+  // PRODUCTION
   // ============================================================
 
   static const String uploadsBaseUrl =
-      '$localUrl/uploads';
+      '$productionUrl/uploads';
 
   // ============================================================
   // ENVIRONMENT STATUS
   // ============================================================
 
-  static bool get isLocal => true;
+  static bool get isLocal => false;
 
-  static bool get isProduction => false;
+  static bool get isProduction => true;
 }

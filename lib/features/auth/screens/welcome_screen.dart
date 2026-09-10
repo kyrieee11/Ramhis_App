@@ -4,6 +4,13 @@ import 'package:ramhis_app/features/auth/screens/signup_personal_info_screen.dar
 class WelcomeScreenWidget extends StatelessWidget {
   const WelcomeScreenWidget({super.key});
 
+  static const _navy = Color(0xFF123F91);
+  static const _navyDark = Color(0xFF082B6B);
+  static const _gold = Color(0xFFD9C27A);
+  static const _goldLight = Color(0xFFF1E2AE);
+  static const _cream = Color(0xFFF7F1E2);
+  static const _red = Color(0xFFB9232B);
+
   void _navigate(BuildContext context, String type) {
     Navigator.push(
       context,
@@ -17,16 +24,15 @@ class WelcomeScreenWidget extends StatelessWidget {
   Widget build(BuildContext context) {
     final size = MediaQuery.sizeOf(context);
     final height = size.height;
+    final isSmallHeight = height < 760;
+    final isVerySmallHeight = height < 680;
 
-    final bool isSmallHeight = height < 760;
-    final bool isVerySmallHeight = height < 680;
-
-    final double horizontalPadding = isSmallHeight ? 24 : 32;
-    final double verticalPadding = isVerySmallHeight
-        ? 16
+    final horizontalPadding = isSmallHeight ? 24.0 : 32.0;
+    final verticalPadding = isVerySmallHeight
+        ? 14.0
         : isSmallHeight
-            ? 20
-            : 28;
+            ? 18.0
+            : 26.0;
 
     return Scaffold(
       resizeToAvoidBottomInset: false,
@@ -35,118 +41,151 @@ class WelcomeScreenWidget extends StatelessWidget {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF4169D8),
-              Color(0xFF234AB3),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            colors: [_navy, _navyDark],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
-        child: SafeArea(
-          child: LayoutBuilder(
-            builder: (context, constraints) {
-              return Padding(
+        child: Stack(
+          children: [
+            Positioned(
+              top: -95,
+              right: -90,
+              child: _backgroundRing(250, 0.07),
+            ),
+            Positioned(
+              bottom: -125,
+              left: -120,
+              child: _backgroundRing(300, 0.045),
+            ),
+            SafeArea(
+              child: Padding(
                 padding: EdgeInsets.symmetric(
                   horizontal: horizontalPadding,
                   vertical: verticalPadding,
                 ),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                  children: [
-                    Flexible(
-                      flex: 2,
-                      child: _buildLogo(
-                        isSmallHeight: isSmallHeight,
-                        isVerySmallHeight: isVerySmallHeight,
-                      ),
-                    ),
-
-                    const Text(
-                      'Welcome to',
-                      style: TextStyle(
-                        color: Color(0xFFEAF0FF),
-                        fontSize: 17,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-
-                    Text(
-                      'RAMHIS!',
-                      style: TextStyle(
-                        color: Colors.white,
-                        fontSize: isVerySmallHeight ? 34 : 40,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 1,
-                      ),
-                    ),
-
-                    _buildDividerDot(),
-
-                    const Text(
-                      'How would you like to continue?',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFFEAF0FF),
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-
-                    _buildRoleButton(
-                      title: 'Doctor',
-                      subtitle:
-                          'Access medical tools\nand patient records',
-                      icon: Icons.medical_services_rounded,
-                      color: const Color(0xFFF05261),
-                      onTap: () => _navigate(context, 'doctor'),
-                      compact: isSmallHeight,
-                    ),
-
-                    _buildRoleButton(
-                      title: 'Volunteer',
-                      subtitle:
-                          'Help and support\nyour community',
-                      icon: Icons.volunteer_activism_rounded,
-                      color: const Color(0xFF4E75E8),
-                      onTap: () =>
-                          _navigate(context, 'volunteer'),
-                      compact: isSmallHeight,
-                    ),
-
-                    _buildOrDivider(),
-
-                    SizedBox(
-                      width: 230,
-                      height: isSmallHeight ? 46 : 52,
-                      child: OutlinedButton.icon(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(
-                          Icons.arrow_back_rounded,
+                child: Center(
+                  child: ConstrainedBox(
+                    constraints: const BoxConstraints(maxWidth: 480),
+                    child: Column(
+                      children: [
+                        Flexible(
+                          flex: 2,
+                          child: Center(
+                            child: _buildLogo(
+                              isSmallHeight: isSmallHeight,
+                              isVerySmallHeight: isVerySmallHeight,
+                            ),
+                          ),
                         ),
-                        label: const Text('Back to Login'),
-                        style: OutlinedButton.styleFrom(
-                          foregroundColor: Colors.white,
-                          side: const BorderSide(
-                            color: Colors.white,
-                            width: 1.5,
+                        Text(
+                          'Welcome to',
+                          style: TextStyle(
+                            color: _goldLight,
+                            fontSize: isVerySmallHeight ? 16 : 18,
+                            fontWeight: FontWeight.w500,
                           ),
-                          shape: RoundedRectangleBorder(
-                            borderRadius:
-                                BorderRadius.circular(30),
-                          ),
-                          textStyle: TextStyle(
-                            fontSize:
-                                isSmallHeight ? 14 : 16,
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'RAMHIS!',
+                          style: TextStyle(
+                            color: _goldLight,
+                            fontSize: isVerySmallHeight ? 37 : 43,
                             fontWeight: FontWeight.w800,
+                            letterSpacing: 1.2,
+                            shadows: const [
+                              Shadow(
+                                color: Colors.black45,
+                                blurRadius: 7,
+                                offset: Offset(0, 3),
+                              ),
+                            ],
                           ),
                         ),
-                      ),
+                        SizedBox(height: isVerySmallHeight ? 10 : 15),
+                        _buildDividerDot(),
+                        SizedBox(height: isVerySmallHeight ? 11 : 16),
+                        Text(
+                          'How would you like to continue?',
+                          textAlign: TextAlign.center,
+                          style: TextStyle(
+                            color: _cream,
+                            fontSize: isVerySmallHeight ? 15 : 16,
+                            fontWeight: FontWeight.w600,
+                          ),
+                        ),
+                        SizedBox(height: isVerySmallHeight ? 12 : 17),
+                        _buildRoleButton(
+                          title: 'Doctor',
+                          subtitle: 'Access medical tools\nand patient records',
+                          icon: Icons.medical_services_rounded,
+                          accent: _red,
+                          onTap: () => _navigate(context, 'doctor'),
+                          compact: isSmallHeight,
+                        ),
+                        SizedBox(height: isVerySmallHeight ? 10 : 14),
+                        _buildRoleButton(
+                          title: 'Volunteer',
+                          subtitle: 'Help and support\nyour community',
+                          icon: Icons.volunteer_activism_rounded,
+                          accent: _red,
+                          onTap: () => _navigate(context, 'volunteer'),
+                          compact: isSmallHeight,
+                        ),
+                        SizedBox(height: isVerySmallHeight ? 10 : 15),
+                        _buildOrDivider(),
+                        SizedBox(height: isVerySmallHeight ? 9 : 14),
+                        SizedBox(
+                          width: 230,
+                          height: isSmallHeight ? 47 : 52,
+                          child: OutlinedButton.icon(
+                            onPressed: () => Navigator.pop(context),
+                            icon: const Icon(
+                              Icons.arrow_back_rounded,
+                              size: 20,
+                            ),
+                            label: const Text('Back to Login'),
+                            style: OutlinedButton.styleFrom(
+                              foregroundColor: _goldLight,
+                              side: const BorderSide(
+                                color: _gold,
+                                width: 1.5,
+                              ),
+                              backgroundColor: Colors.transparent,
+                              shape: RoundedRectangleBorder(
+                                borderRadius: BorderRadius.circular(30),
+                              ),
+                              textStyle: TextStyle(
+                                fontSize: isSmallHeight ? 14 : 15,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ),
+                        const Spacer(flex: 1),
+                      ],
                     ),
-                  ],
+                  ),
                 ),
-              );
-            },
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _backgroundRing(double size, double opacity) {
+    return IgnorePointer(
+      child: Container(
+        width: size,
+        height: size,
+        decoration: BoxDecoration(
+          shape: BoxShape.circle,
+          border: Border.all(
+            color: _gold.withValues(alpha: opacity),
+            width: 25,
           ),
         ),
       ),
@@ -159,23 +198,23 @@ class WelcomeScreenWidget extends StatelessWidget {
   }) {
     return SizedBox(
       width: isVerySmallHeight
-          ? 130
+          ? 120
           : isSmallHeight
-              ? 150
-              : 180,
+              ? 140
+              : 165,
       height: isVerySmallHeight
-          ? 80
+          ? 75
           : isSmallHeight
-              ? 90
-              : 110,
+              ? 88
+              : 105,
       child: Image.asset(
         'assets/images/ramhis_logo.png',
         fit: BoxFit.contain,
         errorBuilder: (context, error, stackTrace) {
           return const Icon(
             Icons.health_and_safety_rounded,
-            size: 80,
-            color: Colors.white,
+            size: 70,
+            color: _goldLight,
           );
         },
       ),
@@ -186,17 +225,25 @@ class WelcomeScreenWidget extends StatelessWidget {
     return Row(
       mainAxisAlignment: MainAxisAlignment.center,
       children: [
-        Container(width: 70, height: 2, color: Colors.white38),
         Container(
-          margin: const EdgeInsets.symmetric(horizontal: 8),
+          width: 70,
+          height: 1.5,
+          color: _gold.withValues(alpha: 0.75),
+        ),
+        Container(
+          margin: const EdgeInsets.symmetric(horizontal: 9),
           width: 8,
           height: 8,
           decoration: const BoxDecoration(
-            color: Color(0xFFF05261),
+            color: _red,
             shape: BoxShape.circle,
           ),
         ),
-        Container(width: 70, height: 2, color: Colors.white38),
+        Container(
+          width: 70,
+          height: 1.5,
+          color: _gold.withValues(alpha: 0.75),
+        ),
       ],
     );
   }
@@ -206,7 +253,8 @@ class WelcomeScreenWidget extends StatelessWidget {
       children: [
         Expanded(
           child: Divider(
-            color: Colors.white.withValues(alpha: 0.35),
+            color: _gold.withValues(alpha: 0.48),
+            thickness: 1,
           ),
         ),
         Padding(
@@ -214,15 +262,16 @@ class WelcomeScreenWidget extends StatelessWidget {
           child: Text(
             'OR',
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.65),
-              fontSize: 14,
+              color: _goldLight.withValues(alpha: 0.9),
+              fontSize: 13,
               fontWeight: FontWeight.w800,
             ),
           ),
         ),
         Expanded(
           child: Divider(
-            color: Colors.white.withValues(alpha: 0.35),
+            color: _gold.withValues(alpha: 0.48),
+            thickness: 1,
           ),
         ),
       ],
@@ -233,7 +282,7 @@ class WelcomeScreenWidget extends StatelessWidget {
     required String title,
     required String subtitle,
     required IconData icon,
-    required Color color,
+    required Color accent,
     required VoidCallback onTap,
     required bool compact,
   }) {
@@ -241,43 +290,64 @@ class WelcomeScreenWidget extends StatelessWidget {
       color: Colors.transparent,
       child: InkWell(
         onTap: onTap,
-        borderRadius: BorderRadius.circular(30),
+        borderRadius: BorderRadius.circular(28),
+        splashColor: _gold.withValues(alpha: 0.12),
         child: Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(
-            horizontal: compact ? 14 : 18,
-            vertical: compact ? 12 : 18,
+            horizontal: compact ? 15 : 18,
+            vertical: compact ? 12 : 16,
           ),
           decoration: BoxDecoration(
-            color: color,
-            borderRadius: BorderRadius.circular(30),
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFFE6D09A),
+                Color(0xFFC5A967),
+                Color(0xFFE2CD96),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: Colors.white.withValues(alpha: 0.2),
+              color: _goldLight,
+              width: 1.3,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.18),
-                blurRadius: 18,
-                offset: const Offset(0, 10),
+                color: Colors.black.withValues(alpha: 0.25),
+                blurRadius: 16,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: Row(
             children: [
               Container(
-                width: compact ? 48 : 58,
-                height: compact ? 48 : 58,
-                decoration: const BoxDecoration(
-                  color: Colors.white,
-                  shape: BoxShape.circle,
+                width: compact ? 54 : 60,
+                height: compact ? 54 : 60,
+                decoration: BoxDecoration(
+                  color: _cream,
+                  borderRadius: BorderRadius.circular(14),
+                  border: Border.all(
+                    color: const Color(0xFF9D7D2F),
+                    width: 1.1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.14),
+                      blurRadius: 7,
+                      offset: const Offset(0, 3),
+                    ),
+                  ],
                 ),
                 child: Icon(
                   icon,
-                  color: color,
-                  size: compact ? 25 : 30,
+                  color: accent,
+                  size: compact ? 30 : 34,
                 ),
               ),
-              SizedBox(width: compact ? 14 : 18),
+              SizedBox(width: compact ? 15 : 17),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -285,18 +355,18 @@ class WelcomeScreenWidget extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        color: Colors.white,
-                        fontSize: compact ? 19 : 22,
-                        fontWeight: FontWeight.w900,
+                        color: const Color(0xFF5B4620),
+                        fontSize: compact ? 20 : 22,
+                        fontWeight: FontWeight.w800,
                       ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: Colors.white,
+                        color: const Color(0xFF392F25),
                         fontSize: compact ? 13 : 14,
-                        height: 1.3,
+                        height: 1.28,
                         fontWeight: FontWeight.w500,
                       ),
                     ),
@@ -305,7 +375,7 @@ class WelcomeScreenWidget extends StatelessWidget {
               ),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Colors.white,
+                color: Color(0xFF6E592E),
                 size: 34,
               ),
             ],

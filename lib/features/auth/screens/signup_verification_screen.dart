@@ -181,133 +181,27 @@ class _SignupProfessionalVerificationWidgetState
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      resizeToAvoidBottomInset: true,
-      body: Container(
-        decoration: const BoxDecoration(
-          gradient: LinearGradient(
-            colors: [
-              Color(0xFF4169D8),
-              Color(0xFF234AB3),
-            ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-        ),
-        child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
-                child: Column(
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: InkWell(
-                        onTap: () => Navigator.pop(context),
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          width: 50,
-                          height: 50,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back,
-                            color: Color(0xFF4267D6),
-                          ),
-                        ),
-                      ),
-                    ),
-                    const SizedBox(height: 8),
-                    const Text(
-                      'Create',
-                      style: TextStyle(
-                        color: Colors.white70,
-                        fontSize: 24,
-                        fontWeight: FontWeight.w300,
-                      ),
-                    ),
-                    Text(
-                      _accountTitle,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.bold,
-                      ),
-                    ),
-                    const SizedBox(height: 16),
-                    const LinearProgressIndicator(
-                      value: 3 / 4,
-                      color: Color(0xFFF05261),
-                      backgroundColor: Colors.white24,
-                      minHeight: 6,
-                    ),
-                    const SizedBox(height: 10),
-                    Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 24,
-                          backgroundColor: Colors.white24,
-                          child: Icon(
-                            Icons.verified_user_outlined,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: Text(
-                            'Step 3 of 4\n${_isDoctor ? 'Professional Verification' : _isVolunteer ? 'Volunteer Verification' : 'Account Verification'}',
-                            style: const TextStyle(
-                              color: Colors.white,
-                              height: 1.35,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 12),
-                    Expanded(
-                      child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEAF4FF),
-                          borderRadius: BorderRadius.circular(30),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.18),
-                              blurRadius: 24,
-                              offset: const Offset(0, 12),
-                            ),
-                          ],
-                        ),
-                        child: SingleChildScrollView(
-                          child: _isDoctor
-                              ? _buildDoctorFields()
-                              : _isVolunteer
-                                  ? _buildVolunteerFields()
-                                  : _buildRegularUserFields(),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
-          ),
-        ),
-      ),
+    return _SignupStepScaffold(
+      accountName: _accountTitle,
+      stepLabel: _isDoctor
+          ? 'Professional Verification'
+          : _isVolunteer
+              ? 'Volunteer Verification'
+              : 'Account Verification',
+      currentStep: 3,
+      totalSteps: 4,
+      onBack: () => Navigator.pop(context),
+      child: _isDoctor
+          ? _buildDoctorFields()
+          : _isVolunteer
+              ? _buildVolunteerFields()
+              : _buildRegularUserFields(),
     );
   }
 
   Widget _buildDoctorFields() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _label('PRC License Number'),
         _input(
@@ -315,99 +209,28 @@ class _SignupProfessionalVerificationWidgetState
           'Enter PRC license number',
           Icons.badge_outlined,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         _label('Upload License Proof'),
-        const SizedBox(height: 10),
-        InkWell(
+        _buildUploadBox(
+          emptyTitle: 'Upload Image or PDF',
           onTap: _pickFile,
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFF4267D6),
-                width: 1.5,
-              ),
-            ),
-            child: selectedFileName == null
-                ? const Column(
-                    children: [
-                      Icon(
-                        Icons.cloud_upload_outlined,
-                        color: Color(0xFF4267D6),
-                        size: 40,
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Upload Image or PDF',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4267D6),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'JPG, PNG or PDF (max. 5MB)',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      const Icon(
-                        Icons.insert_drive_file_outlined,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          selectedFileName!,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF243B73),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _removeFile,
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
         ),
-        if (selectedFileName != null) ...[
-          const SizedBox(height: 8),
-          const Text(
-            '✔ File uploaded successfully',
-            style: TextStyle(
-              color: Colors.green,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-        const SizedBox(height: 20),
+        if (selectedFileName != null) _buildUploadedStatus(),
+        const SizedBox(height: 12),
         _label('Specialty'),
         _input(
           _specialtyController,
           'Enter medical specialty',
           Icons.medical_services_outlined,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         _label('Hospital / Clinic'),
         _input(
           _hospitalController,
           'Enter hospital or clinic',
           Icons.local_hospital_outlined,
         ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 16),
         _nextButton(),
       ],
     );
@@ -415,100 +238,29 @@ class _SignupProfessionalVerificationWidgetState
 
   Widget _buildVolunteerFields() {
     return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
+      crossAxisAlignment: CrossAxisAlignment.stretch,
       children: [
         _label('Valid ID'),
-        const SizedBox(height: 10),
-        InkWell(
+        _buildUploadBox(
+          emptyTitle: 'Upload Valid ID',
           onTap: _pickFile,
-          borderRadius: BorderRadius.circular(20),
-          child: Container(
-            width: double.infinity,
-            padding: const EdgeInsets.all(18),
-            decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: const Color(0xFF4267D6),
-                width: 1.5,
-              ),
-            ),
-            child: selectedFileName == null
-                ? const Column(
-                    children: [
-                      Icon(
-                        Icons.cloud_upload_outlined,
-                        color: Color(0xFF4267D6),
-                        size: 40,
-                      ),
-                      SizedBox(height: 8),
-                      Text(
-                        'Upload Valid ID',
-                        style: TextStyle(
-                          fontWeight: FontWeight.bold,
-                          color: Color(0xFF4267D6),
-                        ),
-                      ),
-                      SizedBox(height: 4),
-                      Text(
-                        'JPG, PNG or PDF (max. 5MB)',
-                        style: TextStyle(color: Colors.grey),
-                      ),
-                    ],
-                  )
-                : Row(
-                    children: [
-                      const Icon(
-                        Icons.insert_drive_file_outlined,
-                        color: Colors.green,
-                      ),
-                      const SizedBox(width: 10),
-                      Expanded(
-                        child: Text(
-                          selectedFileName!,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.w600,
-                            color: Color(0xFF243B73),
-                          ),
-                        ),
-                      ),
-                      IconButton(
-                        onPressed: _removeFile,
-                        icon: const Icon(
-                          Icons.delete_outline,
-                          color: Colors.red,
-                        ),
-                      ),
-                    ],
-                  ),
-          ),
         ),
-        if (selectedFileName != null) ...[
-          const SizedBox(height: 8),
-          const Text(
-            '✔ File uploaded successfully',
-            style: TextStyle(
-              color: Colors.green,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
-        ],
-        const SizedBox(height: 20),
+        if (selectedFileName != null) _buildUploadedStatus(),
+        const SizedBox(height: 12),
         _label('Organization'),
         _input(
           _organizationController,
           'Enter organization name',
           Icons.groups_outlined,
         ),
-        const SizedBox(height: 20),
+        const SizedBox(height: 12),
         _label('Skills'),
         _input(
           _skillsController,
           'Ex. logistics, registration, first aid',
           Icons.volunteer_activism_outlined,
         ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 16),
         _nextButton(),
       ],
     );
@@ -522,38 +274,161 @@ class _SignupProfessionalVerificationWidgetState
           'No additional verification is required for regular users.',
           style: TextStyle(
             color: Color(0xFF243B73),
-            fontSize: 16,
+            fontSize: 15,
             fontWeight: FontWeight.w600,
             height: 1.4,
           ),
         ),
-        const SizedBox(height: 30),
+        const SizedBox(height: 22),
         _nextButton(),
       ],
+    );
+  }
+
+  Widget _buildUploadBox({
+    required String emptyTitle,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(19),
+      child: Container(
+        width: double.infinity,
+        constraints: const BoxConstraints(minHeight: 124),
+        padding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 13,
+        ),
+        decoration: BoxDecoration(
+          color: const Color(0xFFF7F1E2),
+          borderRadius: BorderRadius.circular(19),
+          border: Border.all(
+            color: const Color(0xFFA88B4E),
+            width: 1.7,
+          ),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withValues(alpha: 0.08),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
+        child: selectedFileName == null
+            ? Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(
+                    Icons.cloud_upload_outlined,
+                    color: Color(0xFF8E7137),
+                    size: 38,
+                  ),
+                  const SizedBox(height: 6),
+                  Text(
+                    emptyTitle,
+                    style: const TextStyle(
+                      color: Color(0xFF765E2E),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                  const SizedBox(height: 4),
+                  const Text(
+                    'JPG, PNG or PDF (max. 5MB)',
+                    style: TextStyle(
+                      color: Color(0xFF9B8D72),
+                      fontSize: 12,
+                    ),
+                  ),
+                ],
+              )
+            : Row(
+                children: [
+                  Container(
+                    width: 46,
+                    height: 46,
+                    decoration: BoxDecoration(
+                      gradient: const LinearGradient(
+                        colors: [
+                          Color(0xFF17479C),
+                          Color(0xFF0A2B6B),
+                        ],
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: const Icon(
+                      Icons.insert_drive_file_outlined,
+                      color: Color(0xFFE9D9A5),
+                    ),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Text(
+                      selectedFileName!,
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: Color(0xFF3D382E),
+                        fontSize: 13,
+                        fontWeight: FontWeight.w700,
+                      ),
+                    ),
+                  ),
+                  IconButton(
+                    onPressed: _removeFile,
+                    icon: const Icon(
+                      Icons.delete_outline_rounded,
+                      color: Color(0xFFB9232B),
+                    ),
+                  ),
+                ],
+              ),
+      ),
+    );
+  }
+
+  Widget _buildUploadedStatus() {
+    return const Padding(
+      padding: EdgeInsets.only(left: 5, top: 5),
+      child: Text(
+        '✓ File uploaded successfully',
+        style: TextStyle(
+          color: Color(0xFF267A45),
+          fontSize: 12,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
     );
   }
 
   Widget _nextButton() {
     return SizedBox(
       width: double.infinity,
-      height: 46,
+      height: 50,
       child: ElevatedButton.icon(
         onPressed: _goNext,
-        icon: const Icon(Icons.navigate_next),
+        icon: const Icon(
+          Icons.chevron_right_rounded,
+          size: 27,
+        ),
         label: const Text(
           'Next',
           style: TextStyle(
-            fontSize: 20,
-            fontWeight: FontWeight.bold,
+            fontSize: 19,
+            fontWeight: FontWeight.w800,
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFF05261),
-          foregroundColor: Colors.white,
+          backgroundColor: const Color(0xFFB9232B),
+          foregroundColor: const Color(0xFFF8F1DB),
           elevation: 8,
-          shadowColor: Colors.black26,
+          shadowColor: Colors.black45,
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(30),
+            borderRadius: BorderRadius.circular(28),
+            side: const BorderSide(
+              color: Color(0xFFD9C27A),
+              width: 1.4,
+            ),
           ),
         ),
       ),
@@ -562,12 +437,13 @@ class _SignupProfessionalVerificationWidgetState
 
   Widget _label(String text) {
     return Padding(
-      padding: const EdgeInsets.only(bottom: 6),
+      padding: const EdgeInsets.only(left: 5, bottom: 5),
       child: Text(
         text,
         style: const TextStyle(
-          fontWeight: FontWeight.bold,
-          color: Color(0xFF243B73),
+          color: Color(0xFF182A52),
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -580,27 +456,54 @@ class _SignupProfessionalVerificationWidgetState
   ) {
     return TextField(
       controller: controller,
+      style: const TextStyle(
+        color: Color(0xFF3D382E),
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
+      ),
       decoration: InputDecoration(
         hintText: hint,
+        hintStyle: const TextStyle(
+          color: Color(0xFF8B806A),
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
         filled: true,
-        fillColor: Colors.white,
-        prefixIcon: Icon(
-          icon,
-          color: const Color(0xFF4267D6),
+        fillColor: const Color(0xFFF7F1E2),
+        prefixIcon: Container(
+          margin: const EdgeInsets.all(3),
+          width: 46,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF17479C),
+                Color(0xFF0A2B6B),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0xFFE9D9A5),
+            size: 22,
+          ),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
+          horizontal: 12,
+          vertical: 13,
         ),
-        border: OutlineInputBorder(
+        enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(
+            color: Color(0xFFA88B4E),
+            width: 1.7,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(
-            color: Color(0xFF4267D6),
-            width: 1.5,
+            color: Color(0xFF17479C),
+            width: 2,
           ),
         ),
       ),
@@ -608,3 +511,231 @@ class _SignupProfessionalVerificationWidgetState
   }
 }
 
+class _SignupStepScaffold extends StatelessWidget {
+  const _SignupStepScaffold({
+    required this.accountName,
+    required this.stepLabel,
+    required this.currentStep,
+    required this.totalSteps,
+    required this.onBack,
+    required this.child,
+  });
+
+  final String accountName;
+  final String stepLabel;
+  final int currentStep;
+  final int totalSteps;
+  final VoidCallback onBack;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      resizeToAvoidBottomInset: true,
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: LinearGradient(
+            colors: [
+              Color(0xFF123F91),
+              Color(0xFF082B6B),
+            ],
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
+          ),
+        ),
+        child: SafeArea(
+          child: Column(
+            children: [
+              _buildHeader(),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF7F1E2),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(10),
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      const Positioned.fill(
+                        child: _MarbleBackground(),
+                      ),
+                      Positioned.fill(
+                        child: Container(
+                          color: const Color(0xFFF7F1E2),
+                        ),
+                      ),
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(
+                          24,
+                          17,
+                          24,
+                          25,
+                        ),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints:
+                                const BoxConstraints(maxWidth: 430),
+                            child: child,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHeader() {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF17479C),
+            Color(0xFF0B2E73),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFD9C27A),
+            width: 1.2,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 58,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: onBack,
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Color(0xFFE7D59D),
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const Text(
+                  'Create',
+                  style: TextStyle(
+                    color: Color(0xFFEFE2BB),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            accountName,
+            style: const TextStyle(
+              color: Color(0xFFF1E2AE),
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              shadows: [
+                Shadow(
+                  color: Colors.black54,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 17),
+          SizedBox(
+            height: 8,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: currentStep,
+                  child: Container(color: const Color(0xFFB9232B)),
+                ),
+                Expanded(
+                  flex: totalSteps - currentStep,
+                  child: Container(color: const Color(0xFFD9C27A)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _MarbleBackground extends StatelessWidget {
+  const _MarbleBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _MarblePainter(),
+    );
+  }
+}
+
+class _MarblePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = const Color(0xFF7392B7).withValues(alpha: 0.20);
+
+    final path1 = Path()
+      ..moveTo(-30, 90)
+      ..cubicTo(70, 15, 105, 160, 190, 82)
+      ..cubicTo(260, 18, 310, 120, 410, 48);
+
+    final path2 = Path()
+      ..moveTo(-30, 310)
+      ..cubicTo(70, 240, 135, 390, 225, 305)
+      ..cubicTo(300, 235, 350, 350, 470, 270);
+
+    final path3 = Path()
+      ..moveTo(20, size.height - 90)
+      ..cubicTo(
+        120,
+        size.height - 180,
+        190,
+        size.height - 20,
+        290,
+        size.height - 110,
+      )
+      ..cubicTo(
+        360,
+        size.height - 170,
+        420,
+        size.height - 45,
+        size.width + 30,
+        size.height - 115,
+      );
+
+    canvas.drawPath(path1, paint);
+    canvas.drawPath(path2, paint);
+    canvas.drawPath(path3, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MarblePainter oldDelegate) => false;
+}

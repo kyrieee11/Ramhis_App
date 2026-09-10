@@ -199,62 +199,68 @@ class _SignupAccountSecurityWidgetState
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           _buildLabel('Password'),
-
           _buildPasswordField(
             controller: _passwordController,
             hintText: 'Password',
             obscureText: !_passwordVisible1,
             onToggle: () {
               setState(() {
-                _passwordVisible1 =
-                    !_passwordVisible1;
+                _passwordVisible1 = !_passwordVisible1;
               });
             },
           ),
-
-          const SizedBox(height: 8),
-
-          const Text(
-            'Use at least 8 characters.',
-            style: TextStyle(
-              color: Color(0xFF6B7280),
-              fontSize: 13,
-            ),
-          ),
-
-          const SizedBox(height: 16),
-
-          CheckboxListTile(
-            value: _useSamePassword,
-            contentPadding: EdgeInsets.zero,
-            activeColor: const Color(0xFF4267D6),
-            controlAffinity: ListTileControlAffinity.leading,
-            title: const Text(
-              'Use same password for confirmation',
+          const SizedBox(height: 5),
+          const Padding(
+            padding: EdgeInsets.only(left: 6),
+            child: Text(
+              'Use at least 8 characters',
               style: TextStyle(
-                color: Color(0xFF243B73),
-                fontSize: 14,
+                color: Color(0xFF8A7C60),
+                fontSize: 12,
                 fontWeight: FontWeight.w600,
               ),
             ),
-            onChanged: (value) {
-              setState(() {
-                _useSamePassword = value ?? false;
-
-                if (_useSamePassword) {
-                  _confirmPasswordController.text =
-                      _passwordController.text;
-                } else {
-                  _confirmPasswordController.clear();
-                }
-              });
-            },
           ),
-
           const SizedBox(height: 12),
+          Container(
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F1E2),
+              borderRadius: BorderRadius.circular(16),
+              border: Border.all(
+                color: const Color(0xFFA88B4E),
+                width: 1.3,
+              ),
+            ),
+            child: CheckboxListTile(
+              value: _useSamePassword,
+              contentPadding: const EdgeInsets.symmetric(horizontal: 8),
+              activeColor: const Color(0xFF17479C),
+              checkColor: const Color(0xFFF7F1E2),
+              controlAffinity: ListTileControlAffinity.leading,
+              title: const Text(
+                'Use same password for confirmation',
+                style: TextStyle(
+                  color: Color(0xFF5A4A2B),
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                ),
+              ),
+              onChanged: (value) {
+                setState(() {
+                  _useSamePassword = value ?? false;
 
+                  if (_useSamePassword) {
+                    _confirmPasswordController.text =
+                        _passwordController.text;
+                  } else {
+                    _confirmPasswordController.clear();
+                  }
+                });
+              },
+            ),
+          ),
+          const SizedBox(height: 14),
           _buildLabel('Confirm password'),
-
           _buildPasswordField(
             controller: _confirmPasswordController,
             hintText: 'Confirm password',
@@ -262,36 +268,39 @@ class _SignupAccountSecurityWidgetState
             obscureText: !_passwordVisible2,
             onToggle: () {
               setState(() {
-                _passwordVisible2 =
-                    !_passwordVisible2;
+                _passwordVisible2 = !_passwordVisible2;
               });
             },
           ),
-
-          const SizedBox(height: 34),
-
+          const SizedBox(height: 20),
+          _buildPasswordRequirements(),
+          const SizedBox(height: 17),
           SizedBox(
-            height: 58,
+            height: 50,
             child: ElevatedButton.icon(
               onPressed: _goNext,
               icon: const Icon(
-                Icons.navigate_next_rounded,
-                size: 28,
+                Icons.chevron_right_rounded,
+                size: 27,
               ),
               label: const Text(
                 'Next',
                 style: TextStyle(
-                  fontSize: 20,
-                  fontWeight: FontWeight.w900,
+                  fontSize: 19,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF05261),
-                foregroundColor: Colors.white,
-                elevation: 10,
-                shadowColor: Colors.black26,
+                backgroundColor: const Color(0xFFB9232B),
+                foregroundColor: const Color(0xFFF8F1DB),
+                elevation: 8,
+                shadowColor: Colors.black45,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(32),
+                  borderRadius: BorderRadius.circular(28),
+                  side: const BorderSide(
+                    color: Color(0xFFD9C27A),
+                    width: 1.4,
+                  ),
                 ),
               ),
             ),
@@ -303,12 +312,12 @@ class _SignupAccountSecurityWidgetState
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(left: 6, bottom: 8),
+      padding: const EdgeInsets.only(left: 6, bottom: 5),
       child: Text(
         text,
         style: const TextStyle(
-          color: Color(0xFF243B73),
-          fontSize: 16,
+          color: Color(0xFF182A52),
+          fontSize: 14,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -327,18 +336,40 @@ class _SignupAccountSecurityWidgetState
       enabled: enabled,
       obscureText: obscureText,
       style: const TextStyle(
-        color: Color(0xFF334155),
-        fontSize: 16,
+        color: Color(0xFF3D382E),
+        fontSize: 15,
+        fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
         hintText: hintText,
+        hintStyle: const TextStyle(
+          color: Color(0xFF8B806A),
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
         filled: true,
         fillColor: enabled
-            ? Colors.white
-            : Colors.grey.shade100,
-        prefixIcon: const Icon(
-          Icons.lock_outline_rounded,
-          color: Color(0xFF4267D6),
+            ? const Color(0xFFF7F1E2)
+            : const Color(0xFFE9E1CF),
+        prefixIcon: Container(
+          margin: const EdgeInsets.all(3),
+          width: 46,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF17479C),
+                Color(0xFF0A2B6B),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(
+            Icons.lock_outline_rounded,
+            color: Color(0xFFE9D9A5),
+            size: 22,
+          ),
         ),
         suffixIcon: IconButton(
           onPressed: onToggle,
@@ -346,23 +377,74 @@ class _SignupAccountSecurityWidgetState
             obscureText
                 ? Icons.visibility_off_outlined
                 : Icons.visibility_outlined,
+            color: const Color(0xFF8D7B50),
+            size: 23,
           ),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 18,
-          vertical: 20,
+          horizontal: 12,
+          vertical: 13,
         ),
-        border: OutlineInputBorder(
+        enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(
+            color: Color(0xFFA88B4E),
+            width: 1.7,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(
-            color: Color(0xFF4267D6),
-            width: 1.5,
+            color: Color(0xFF17479C),
+            width: 2,
           ),
         ),
+        disabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(
+            color: Color(0xFFA88B4E),
+            width: 1.4,
+          ),
+        ),
+      ),
+    );
+  }
+
+  Widget _buildPasswordRequirements() {
+    return Container(
+      padding: const EdgeInsets.symmetric(
+        horizontal: 13,
+        vertical: 10,
+      ),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F1E2),
+        borderRadius: BorderRadius.circular(15),
+        border: Border.all(
+          color: const Color(0xFFD0B66F),
+          width: 1,
+        ),
+      ),
+      child: const Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Icon(
+            Icons.shield_outlined,
+            color: Color(0xFF17479C),
+            size: 24,
+          ),
+          SizedBox(width: 9),
+          Expanded(
+            child: Text(
+              'Use at least 8 characters with uppercase, lowercase, a number, and a special character.',
+              style: TextStyle(
+                color: Color(0xFF5C5140),
+                fontSize: 11.5,
+                height: 1.35,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -390,127 +472,211 @@ class _SignupStepScaffold extends StatelessWidget {
     final progress = currentStep / totalSteps;
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF4169D8),
-              Color(0xFF234AB3),
+              Color(0xFF123F91),
+              Color(0xFF082B6B),
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.all(24),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
-                  children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: InkWell(
-                        onTap: onBack,
-                        borderRadius: BorderRadius.circular(16),
+          child: Column(
+            children: [
+              _buildHeader(progress),
+              Expanded(
+                child: Container(
+                  width: double.infinity,
+                  decoration: const BoxDecoration(
+                    color: Color(0xFFF7F1E2),
+                    borderRadius: BorderRadius.vertical(
+                      top: Radius.circular(10),
+                    ),
+                  ),
+                  child: Stack(
+                    children: [
+                      const Positioned.fill(
+                        child: _MarbleBackground(),
+                      ),
+                      Positioned.fill(
                         child: Container(
-                          width: 54,
-                          height: 54,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_rounded,
-                            color: Color(0xFF4267D6),
+                          color: Color(0xFFF7F1E2),
+                        ),
+                      ),
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(
+                          24,
+                          18,
+                          24,
+                          28,
+                        ),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints:
+                                const BoxConstraints(maxWidth: 430),
+                            child: child,
                           ),
                         ),
                       ),
-                    ),
-
-                    const SizedBox(height: 30),
-
-                    const Text(
-                      'Create',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFFEAF0FF),
-                        fontSize: 30,
-                        fontWeight: FontWeight.w300,
-                      ),
-                    ),
-
-                    const SizedBox(height: 6),
-
-                    Text(
-                      accountName,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 38,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-
-                    const SizedBox(height: 34),
-
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        color: const Color(0xFFF05261),
-                        backgroundColor: Colors.white24,
-                        minHeight: 7,
-                      ),
-                    ),
-
-                    const SizedBox(height: 18),
-
-                    Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 24,
-                          backgroundColor: Colors.white24,
-                          child: Icon(
-                            Icons.lock_outline_rounded,
-                            color: Colors.white,
-                          ),
-                        ),
-
-                        const SizedBox(width: 12),
-
-                        Text(
-                          'Step $currentStep of $totalSteps\n$stepLabel',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            height: 1.35,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 22),
-
-                    Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(20),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFEAF4FF),
-                        borderRadius: BorderRadius.circular(30),
-                      ),
-                      child: child,
-                    ),
-                  ],
+                    ],
+                  ),
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildHeader(double progress) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF17479C),
+            Color(0xFF0B2E73),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFD9C27A),
+            width: 1.2,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 58,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: onBack,
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Color(0xFFE7D59D),
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const Text(
+                  'Create',
+                  style: TextStyle(
+                    color: Color(0xFFEFE2BB),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            accountName,
+            style: const TextStyle(
+              color: Color(0xFFF1E2AE),
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              shadows: [
+                Shadow(
+                  color: Colors.black54,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 17),
+          SizedBox(
+            height: 8,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: currentStep,
+                  child: Container(color: const Color(0xFFB9232B)),
+                ),
+                Expanded(
+                  flex: totalSteps - currentStep,
+                  child: Container(color: const Color(0xFFD9C27A)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
+class _MarbleBackground extends StatelessWidget {
+  const _MarbleBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _MarblePainter(),
+    );
+  }
+}
+
+class _MarblePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = const Color(0xFF7392B7).withValues(alpha: 0.20);
+
+    final path1 = Path()
+      ..moveTo(-30, 90)
+      ..cubicTo(70, 15, 105, 160, 190, 82)
+      ..cubicTo(260, 18, 310, 120, 410, 48);
+
+    final path2 = Path()
+      ..moveTo(-30, 310)
+      ..cubicTo(70, 240, 135, 390, 225, 305)
+      ..cubicTo(300, 235, 350, 350, 470, 270);
+
+    final path3 = Path()
+      ..moveTo(20, size.height - 90)
+      ..cubicTo(
+        120,
+        size.height - 180,
+        190,
+        size.height - 20,
+        290,
+        size.height - 110,
+      )
+      ..cubicTo(
+        360,
+        size.height - 170,
+        420,
+        size.height - 45,
+        size.width + 30,
+        size.height - 115,
+      );
+
+    canvas.drawPath(path1, paint);
+    canvas.drawPath(path2, paint);
+    canvas.drawPath(path3, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MarblePainter oldDelegate) => false;
+}

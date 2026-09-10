@@ -220,9 +220,7 @@ class _SignupPersonalInformationWidgetState
             hintText: 'Enter your full name',
             icon: Icons.person_outline_rounded,
           ),
-
-          const SizedBox(height: 6),
-
+          const SizedBox(height: 8),
           _buildLabel('Email'),
           _buildTextField(
             controller: _emailController,
@@ -230,9 +228,7 @@ class _SignupPersonalInformationWidgetState
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
           ),
-
-          const SizedBox(height: 10),
-
+          const SizedBox(height: 8),
           _buildLabel('Contact number'),
           _buildTextField(
             controller: _contactController,
@@ -240,9 +236,7 @@ class _SignupPersonalInformationWidgetState
             icon: Icons.phone_outlined,
             keyboardType: TextInputType.phone,
           ),
-
-          const SizedBox(height: 10),
-
+          const SizedBox(height: 8),
           _buildLabel('Birthdate'),
           GestureDetector(
             onTap: _pickBirthdate,
@@ -255,83 +249,35 @@ class _SignupPersonalInformationWidgetState
               ),
             ),
           ),
-
           if (_isDoctor) ...[
-            const SizedBox(height: 10),
-
+            const SizedBox(height: 8),
             _buildLabel('Department'),
-
-            DropdownButtonFormField<String>(
-              value: _selectedDepartment.isEmpty
-                  ? null
-                  : _selectedDepartment,
-              decoration: InputDecoration(
-                hintText: 'Select your department',
-                hintStyle: const TextStyle(
-                  color: Color(0xFF8A8A8A),
-                  fontSize: 15,
-                ),
-                filled: true,
-                fillColor: Colors.white,
-                prefixIcon: const Icon(
-                  Icons.medical_services_outlined,
-                  color: Color(0xFF4267D6),
-                  size: 25,
-                ),
-                contentPadding: const EdgeInsets.symmetric(
-                  horizontal: 16,
-                  vertical: 12,
-                ),
-                border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: BorderSide.none,
-                ),
-                focusedBorder: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(18),
-                  borderSide: const BorderSide(
-                    color: Color(0xFF4267D6),
-                    width: 1.5,
-                  ),
-                ),
-              ),
-              items: _departments.map((department) {
-                return DropdownMenuItem<String>(
-                  value: department,
-                  child: Text(department),
-                );
-              }).toList(),
-              onChanged: (value) {
-                setState(() {
-                  _selectedDepartment = value ?? '';
-                });
-              },
-            ),
+            _buildDepartmentField(),
           ],
-
           const SizedBox(height: 14),
-
           SizedBox(
-            height: 46,
+            height: 49,
             child: ElevatedButton.icon(
               onPressed: _goNext,
-              icon: const Icon(
-                Icons.navigate_next_rounded,
-                size: 26,
-              ),
+              icon: const Icon(Icons.chevron_right_rounded, size: 27),
               label: const Text(
                 'Next',
                 style: TextStyle(
                   fontSize: 19,
-                  fontWeight: FontWeight.w900,
+                  fontWeight: FontWeight.w800,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFF05261),
-                foregroundColor: Colors.white,
-                elevation: 10,
-                shadowColor: Colors.black26,
+                backgroundColor: const Color(0xFFB9232B),
+                foregroundColor: const Color(0xFFF8F1DB),
+                elevation: 8,
+                shadowColor: Colors.black45,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(32),
+                  borderRadius: BorderRadius.circular(28),
+                  side: const BorderSide(
+                    color: Color(0xFFD9C27A),
+                    width: 1.4,
+                  ),
                 ),
               ),
             ),
@@ -343,13 +289,14 @@ class _SignupPersonalInformationWidgetState
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(left: 6, bottom: 5),
+      padding: const EdgeInsets.only(left: 5, bottom: 5),
       child: Text(
         text,
         style: const TextStyle(
-          color: Color(0xFF243B73),
+          color: Color(0xFF182A52),
           fontSize: 14,
           fontWeight: FontWeight.w800,
+          letterSpacing: 0.15,
         ),
       ),
     );
@@ -366,46 +313,147 @@ class _SignupPersonalInformationWidgetState
       controller: controller,
       keyboardType: keyboardType,
       style: const TextStyle(
-        color: Color(0xFF334155),
+        color: Color(0xFF3D382E),
         fontSize: 15,
-        fontWeight: FontWeight.w500,
+        fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(
-          color: Color(0xFF8A8A8A),
+          color: Color(0xFF8B806A),
           fontSize: 15,
+          fontWeight: FontWeight.w600,
         ),
         filled: true,
-        fillColor: Colors.white,
-        prefixIcon: Icon(
-          icon,
-          color: const Color(0xFF4267D6),
-          size: 25,
+        fillColor: const Color(0xFFF7F1E2),
+        prefixIcon: Container(
+          margin: const EdgeInsets.all(3),
+          width: 46,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF17479C),
+                Color(0xFF0A2B6B),
+              ],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            borderRadius: BorderRadius.circular(14),
+            border: const Border(
+              right: BorderSide(
+                color: Color(0xFFD9C27A),
+                width: 1,
+              ),
+            ),
+          ),
+          child: Icon(
+            icon,
+            color: const Color(0xFFE9D9A5),
+            size: 23,
+          ),
         ),
         suffixIcon: suffixIcon == null
             ? null
-            : Icon(
-                suffixIcon,
-                color: const Color(0xFF7A7A7A),
+            : const Icon(
+                Icons.calendar_today_outlined,
+                color: Color(0xFF8B806A),
                 size: 22,
               ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 16,
-          vertical: 12,
+          horizontal: 12,
+          vertical: 13,
         ),
-        border: OutlineInputBorder(
+        enabledBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
-          borderSide: BorderSide.none,
+          borderSide: const BorderSide(
+            color: Color(0xFFA88B4E),
+            width: 1.7,
+          ),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(18),
           borderSide: const BorderSide(
-            color: Color(0xFF4267D6),
-            width: 1.5,
+            color: Color(0xFF17479C),
+            width: 2,
           ),
         ),
       ),
+    );
+  }
+
+  Widget _buildDepartmentField() {
+    return DropdownButtonFormField<String>(
+      value: _selectedDepartment.isEmpty ? null : _selectedDepartment,
+      decoration: InputDecoration(
+        hintText: 'Select your department',
+        hintStyle: const TextStyle(
+          color: Color(0xFF8B806A),
+          fontSize: 15,
+          fontWeight: FontWeight.w600,
+        ),
+        filled: true,
+        fillColor: const Color(0xFFF7F1E2),
+        prefixIcon: Container(
+          margin: const EdgeInsets.all(3),
+          width: 46,
+          decoration: BoxDecoration(
+            gradient: const LinearGradient(
+              colors: [
+                Color(0xFF17479C),
+                Color(0xFF0A2B6B),
+              ],
+            ),
+            borderRadius: BorderRadius.circular(14),
+          ),
+          child: const Icon(
+            Icons.medical_services_outlined,
+            color: Color(0xFFE9D9A5),
+            size: 23,
+          ),
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 12,
+          vertical: 10,
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(
+            color: Color(0xFFA88B4E),
+            width: 1.7,
+          ),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(18),
+          borderSide: const BorderSide(
+            color: Color(0xFF17479C),
+            width: 2,
+          ),
+        ),
+      ),
+      dropdownColor: const Color(0xFFF7F1E2),
+      icon: const Icon(
+        Icons.keyboard_arrow_down_rounded,
+        color: Color(0xFF806B3B),
+        size: 26,
+      ),
+      items: _departments.map((department) {
+        return DropdownMenuItem<String>(
+          value: department,
+          child: Text(
+            department,
+            style: const TextStyle(
+              color: Color(0xFF3D382E),
+              fontSize: 15,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+        );
+      }).toList(),
+      onChanged: (value) {
+        setState(() {
+          _selectedDepartment = value ?? '';
+        });
+      },
     );
   }
 }
@@ -437,115 +485,35 @@ class _SignupStepScaffold extends StatelessWidget {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF4169D8),
-              Color(0xFF234AB3),
+              Color(0xFF123F91),
+              Color(0xFF082B6B),
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
-          child: Center(
-            child: Padding(
-              padding: const EdgeInsets.all(16),
-              child: ConstrainedBox(
-                constraints: const BoxConstraints(maxWidth: 430),
-                child: Column(
-                  mainAxisSize: MainAxisSize.max,
-                  crossAxisAlignment: CrossAxisAlignment.stretch,
+          child: Column(
+            children: [
+              _buildHeader(progress),
+              Expanded(
+                child: Stack(
                   children: [
-                    Align(
-                      alignment: Alignment.centerLeft,
-                      child: InkWell(
-                        onTap: onBack,
-                        borderRadius: BorderRadius.circular(16),
-                        child: Container(
-                          width: 46,
-                          height: 46,
-                          decoration: BoxDecoration(
-                            color: Colors.white.withValues(alpha: 0.9),
-                            borderRadius: BorderRadius.circular(16),
-                          ),
-                          child: const Icon(
-                            Icons.arrow_back_rounded,
-                            color: Color(0xFF4267D6),
-                          ),
-                        ),
+                    Positioned.fill(
+                      child: CustomPaint(
+                        painter: _MarblePainter(),
                       ),
                     ),
-
-                    const SizedBox(height: 12),
-
-                    const Text(
-                      'Create',
-                      textAlign: TextAlign.center,
-                      style: TextStyle(
-                        color: Color(0xFFEAF0FF),
-                        fontSize: 25,
-                        fontWeight: FontWeight.w300,
-                      ),
-                    ),
-
-                    const SizedBox(height: 2),
-
-                    Text(
-                      accountName,
-                      textAlign: TextAlign.center,
-                      style: const TextStyle(
-                        color: Colors.white,
-                        fontSize: 32,
-                        fontWeight: FontWeight.w900,
-                      ),
-                    ),
-
-                    const SizedBox(height: 16),
-
-                    ClipRRect(
-                      borderRadius: BorderRadius.circular(30),
-                      child: LinearProgressIndicator(
-                        value: progress,
-                        color: const Color(0xFFF05261),
-                        backgroundColor: Colors.white24,
-                        minHeight: 7,
-                      ),
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Row(
-                      children: [
-                        const CircleAvatar(
-                          radius: 21,
-                          backgroundColor: Colors.white24,
-                          child: Icon(
-                            Icons.person_outline_rounded,
-                            color: Colors.white,
-                          ),
-                        ),
-                        const SizedBox(width: 10),
-                        Text(
-                          'Step $currentStep of $totalSteps\n$stepLabel',
-                          style: const TextStyle(
-                            color: Colors.white,
-                            height: 1.25,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w600,
-                          ),
-                        ),
-                      ],
-                    ),
-
-                    const SizedBox(height: 12),
-
-                    Expanded(
+                    Positioned.fill(
                       child: Container(
-                        width: double.infinity,
-                        padding: const EdgeInsets.all(16),
-                        decoration: BoxDecoration(
-                          color: const Color(0xFFEAF4FF),
-                          borderRadius: BorderRadius.circular(30),
-                        ),
-                        child: SingleChildScrollView(
+                        color: const Color(0xFFF8F3E5).withValues(alpha: 0.88),
+                      ),
+                    ),
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 430),
                           child: child,
                         ),
                       ),
@@ -553,11 +521,136 @@ class _SignupStepScaffold extends StatelessWidget {
                   ],
                 ),
               ),
-            ),
+            ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildHeader(double progress) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF17479C),
+            Color(0xFF0B2E73),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFD9C27A),
+            width: 1.2,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 58,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: onBack,
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Color(0xFFE7D59D),
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const Text(
+                  'Create',
+                  style: TextStyle(
+                    color: Color(0xFFEFE2BB),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            accountName,
+            style: const TextStyle(
+              color: Color(0xFFF1E2AE),
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.2,
+              shadows: [
+                Shadow(
+                  color: Colors.black54,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 17),
+          SizedBox(
+            height: 8,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: 1,
+                  child: Container(color: const Color(0xFFB9232B)),
+                ),
+                Expanded(
+                  flex: 3,
+                  child: Container(color: const Color(0xFFD9C27A)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
+class _MarblePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.1
+      ..color = const Color(0xFF8DA8C8).withValues(alpha: 0.22);
+
+    final path1 = Path()
+      ..moveTo(-30, 90)
+      ..cubicTo(80, 10, 100, 160, 190, 80)
+      ..cubicTo(250, 25, 300, 110, 390, 45)
+      ..cubicTo(450, 5, 470, 100, 520, 65);
+
+    final path2 = Path()
+      ..moveTo(-40, 330)
+      ..cubicTo(80, 250, 130, 400, 220, 310)
+      ..cubicTo(290, 240, 340, 350, 450, 275);
+
+    final path3 = Path()
+      ..moveTo(40, size.height - 80)
+      ..cubicTo(140, size.height - 170, 180, size.height - 25,
+          290, size.height - 110)
+      ..cubicTo(350, size.height - 165, 410, size.height - 55,
+          size.width + 30, size.height - 120);
+
+    canvas.drawPath(path1, paint);
+    canvas.drawPath(path2, paint);
+    canvas.drawPath(path3, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MarblePainter oldDelegate) => false;
+}

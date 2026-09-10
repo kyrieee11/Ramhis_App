@@ -446,16 +446,20 @@ By submitting your registration, you confirm that you have read and understood t
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
           Container(
-            height: 300,
-            padding: const EdgeInsets.all(20),
+            constraints: const BoxConstraints(minHeight: 325),
+            padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
             decoration: BoxDecoration(
-              color: Colors.white,
-              borderRadius: BorderRadius.circular(24),
+              color: const Color(0xFFF7F1E2).withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(23),
+              border: Border.all(
+                color: const Color(0xFFA88B4E),
+                width: 1.7,
+              ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.05),
-                  blurRadius: 12,
-                  offset: const Offset(0, 6),
+                  color: Colors.black.withValues(alpha: 0.13),
+                  blurRadius: 10,
+                  offset: const Offset(0, 5),
                 ),
               ],
             ),
@@ -467,51 +471,89 @@ By submitting your registration, you confirm that you have read and understood t
                     'TERMS AND CONDITIONS',
                     textAlign: TextAlign.center,
                     style: TextStyle(
+                      color: Color(0xFF725A2A),
                       fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                      fontWeight: FontWeight.w800,
+                      letterSpacing: 0.5,
                     ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 12),
                   Text(
-                    widget.accountType == 'doctor'
-                        ? 'Doctor Account'
-                        : 'Volunteer Account',
+                    _accountName,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
+                      color: Color(0xFF735B2C),
                       fontSize: 18,
-                      fontWeight: FontWeight.w600,
+                      fontWeight: FontWeight.w700,
                     ),
                   ),
-                  const SizedBox(height: 4),
+                  const SizedBox(height: 5),
                   const Text(
                     'Remote Area Medical (RAM) Philippines',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      fontSize: 15,
-                      color: Colors.black54,
+                      color: Color(0xFF9B8D72),
+                      fontSize: 14,
+                      fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 18),
+                  const SizedBox(height: 22),
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: Text(
+                      widget.accountType == 'doctor'
+                          ? 'Welcome to the RAM Philippines Registration System. By completing your registration as a licensed healthcare professional, you acknowledge that you have read, understood, and agreed to the following terms.'
+                          : 'Welcome to the RAM Philippines Registration System. By completing your registration as a volunteer, you acknowledge that you have read, understood, and agreed to the following terms.',
+                      style: const TextStyle(
+                        color: Color(0xFF5C5140),
+                        fontSize: 14,
+                        height: 1.55,
+                        fontWeight: FontWeight.w600,
+                      ),
+                    ),
+                  ),
+                  const SizedBox(height: 14),
+                  Container(
+                    height: 1,
+                    color: const Color(0xFFD0B66F),
+                  ),
+                  const SizedBox(height: 12),
                   Text(
                     termsText,
-                    textAlign: TextAlign.left,
                     style: const TextStyle(
-                      fontSize: 15,
-                      height: 1.55,
-                      color: Color(0xFF111827),
+                      color: Color(0xFF5C5140),
+                      fontSize: 13,
+                      height: 1.5,
                     ),
                   ),
                 ],
               ),
             ),
           ),
-          const SizedBox(height: 22),
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: [
-              Transform.scale(
-                scale: 1.15,
-                child: Checkbox(
+          const SizedBox(height: 16),
+          Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 8,
+            ),
+            decoration: BoxDecoration(
+              color: const Color(0xFFF7F1E2).withValues(alpha: 0.95),
+              borderRadius: BorderRadius.circular(18),
+              border: Border.all(
+                color: const Color(0xFFA88B4E),
+                width: 1.5,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: Colors.black.withValues(alpha: 0.08),
+                  blurRadius: 7,
+                  offset: const Offset(0, 3),
+                ),
+              ],
+            ),
+            child: Row(
+              children: [
+                Checkbox(
                   value: _acceptedTerms,
                   onChanged: _isSubmitting
                       ? null
@@ -520,36 +562,39 @@ By submitting your registration, you confirm that you have read and understood t
                             _acceptedTerms = value ?? false;
                           });
                         },
-                  activeColor: const Color(0xFF4267D6),
-                  checkColor: Colors.white,
+                  activeColor: const Color(0xFF17479C),
+                  checkColor: const Color(0xFFF7F1E2),
                   side: const BorderSide(
-                    color: Color(0xFF172B5F),
+                    color: Color(0xFF8E7137),
                     width: 1.5,
                   ),
-                ),
-              ),
-              const SizedBox(width: 6),
-              const Expanded(
-                child: Text(
-                  'I have read and agree to the Terms and Conditions.',
-                  style: TextStyle(
-                    color: Color(0xFF172B5F),
-                    fontSize: 15,
-                    height: 1.35,
-                    fontWeight: FontWeight.w600,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(3),
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(width: 3),
+                const Expanded(
+                  child: Text(
+                    'I have read and agree to the Terms and Conditions.',
+                    style: TextStyle(
+                      color: Color(0xFF665638),
+                      fontSize: 13.5,
+                      height: 1.35,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-          const SizedBox(height: 24),
+          const SizedBox(height: 14),
           GestureDetector(
             onTap: _isSubmitting ? null : _submit,
             child: AnimatedContainer(
               duration: const Duration(milliseconds: 200),
-              height: 46,
+              height: 51,
               decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(32),
+                borderRadius: BorderRadius.circular(28),
                 gradient: LinearGradient(
                   colors: _isSubmitting
                       ? [
@@ -557,15 +602,19 @@ By submitting your registration, you confirm that you have read and understood t
                           Colors.grey.shade500,
                         ]
                       : const [
-                          Color(0xFFF05261),
+                          Color(0xFFB9232B),
                           Color(0xFFD94350),
                         ],
+                ),
+                border: Border.all(
+                  color: const Color(0xFFD9C27A),
+                  width: 1.4,
                 ),
                 boxShadow: [
                   BoxShadow(
                     color: Colors.black.withValues(alpha: 0.20),
-                    blurRadius: 18,
-                    offset: const Offset(0, 10),
+                    blurRadius: 14,
+                    offset: const Offset(0, 7),
                   ),
                 ],
               ),
@@ -585,16 +634,16 @@ By submitting your registration, you confirm that you have read and understood t
                           Text(
                             'Submit Registration',
                             style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 18,
+                              color: Color(0xFFF8F1DB),
+                              fontSize: 17,
                               fontWeight: FontWeight.w900,
                             ),
                           ),
-                          SizedBox(width: 14),
+                          SizedBox(width: 13),
                           Icon(
                             Icons.arrow_forward_rounded,
-                            color: Colors.white,
-                            size: 28,
+                            color: Color(0xFFF8F1DB),
+                            size: 27,
                           ),
                         ],
                       ),
@@ -634,106 +683,203 @@ class _SignupStepScaffold extends StatelessWidget {
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF4169D8),
-              Color(0xFF234AB3),
+              Color(0xFF123F91),
+              Color(0xFF082B6B),
             ],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
           ),
         ),
         child: SafeArea(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: InkWell(
-                    onTap: onBack,
-                    borderRadius: BorderRadius.circular(16),
-                    child: Container(
-                      width: 50,
-                      height: 50,
-                      decoration: BoxDecoration(
-                        color: Colors.white.withValues(alpha: 0.9),
-                        borderRadius: BorderRadius.circular(16),
-                      ),
-                      child: const Icon(
-                        Icons.arrow_back,
-                        color: Color(0xFF4267D6),
-                      ),
-                    ),
+          child: Column(
+            children: [
+              _buildHeader(progress),
+              Expanded(
+                child: ClipRRect(
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(10),
                   ),
-                ),
-                const SizedBox(height: 8),
-                const Text(
-                  'Create',
-                  style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: 24,
-                    fontWeight: FontWeight.w300,
-                  ),
-                ),
-                Text(
-                  accountName,
-                  textAlign: TextAlign.center,
-                  style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 32,
-                    fontWeight: FontWeight.bold,
-                  ),
-                ),
-                const SizedBox(height: 16),
-                LinearProgressIndicator(
-                  value: progress,
-                  color: const Color(0xFFF05261),
-                  backgroundColor: Colors.white24,
-                  minHeight: 6,
-                ),
-                const SizedBox(height: 10),
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 24,
-                      backgroundColor: Colors.white24,
-                      child: Icon(
-                        Icons.article_outlined,
-                        color: Colors.white,
+                  child: Stack(
+                    children: [
+                      const Positioned.fill(
+                        child: _MarbleBackground(),
                       ),
-                    ),
-                    const SizedBox(width: 12),
-                    Expanded(
-                      child: Text(
-                        'Step $currentStep of $totalSteps\n$stepLabel',
-                        style: const TextStyle(
-                          color: Colors.white,
-                          height: 1.35,
-                          fontWeight: FontWeight.w600,
+                      Positioned.fill(
+                        child: Container(
+                          color: const Color(0xFFF7F1E2).withValues(alpha: 0.86),
                         ),
                       ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 12),
-                Expanded(
-                  child: Container(
-                    width: double.infinity,
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFEAF4FF),
-                      borderRadius: BorderRadius.circular(30),
-                    ),
-                    child: SingleChildScrollView(
-                      child: child,
-                    ),
+                      SingleChildScrollView(
+                        padding: const EdgeInsets.fromLTRB(
+                          24,
+                          17,
+                          24,
+                          25,
+                        ),
+                        child: Center(
+                          child: ConstrainedBox(
+                            constraints:
+                                const BoxConstraints(maxWidth: 430),
+                            child: child,
+                          ),
+                        ),
+                      ),
+                    ],
                   ),
                 ),
-              ],
-            ),
+              ),
+            ],
           ),
         ),
       ),
     );
   }
+
+  Widget _buildHeader(double progress) {
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          colors: [
+            Color(0xFF17479C),
+            Color(0xFF0B2E73),
+          ],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        border: Border(
+          bottom: BorderSide(
+            color: Color(0xFFD9C27A),
+            width: 1.2,
+          ),
+        ),
+        boxShadow: [
+          BoxShadow(
+            color: Colors.black38,
+            blurRadius: 10,
+            offset: Offset(0, 4),
+          ),
+        ],
+      ),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 58,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                Align(
+                  alignment: Alignment.centerLeft,
+                  child: IconButton(
+                    onPressed: onBack,
+                    icon: const Icon(
+                      Icons.arrow_back_rounded,
+                      color: Color(0xFFE7D59D),
+                      size: 28,
+                    ),
+                  ),
+                ),
+                const Text(
+                  'Create',
+                  style: TextStyle(
+                    color: Color(0xFFEFE2BB),
+                    fontSize: 24,
+                    fontWeight: FontWeight.w400,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Text(
+            accountName,
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              color: Color(0xFFF1E2AE),
+              fontSize: 32,
+              fontWeight: FontWeight.w800,
+              shadows: [
+                Shadow(
+                  color: Colors.black54,
+                  blurRadius: 5,
+                  offset: Offset(0, 2),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 17),
+          SizedBox(
+            height: 8,
+            child: Row(
+              children: [
+                Expanded(
+                  flex: currentStep,
+                  child: Container(color: const Color(0xFFB9232B)),
+                ),
+                Expanded(
+                  flex: totalSteps - currentStep,
+                  child: Container(color: const Color(0xFFD9C27A)),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
 }
 
+class _MarbleBackground extends StatelessWidget {
+  const _MarbleBackground();
+
+  @override
+  Widget build(BuildContext context) {
+    return CustomPaint(
+      painter: _MarblePainter(),
+    );
+  }
+}
+
+class _MarblePainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..style = PaintingStyle.stroke
+      ..strokeWidth = 1.2
+      ..color = const Color(0xFF7392B7).withValues(alpha: 0.20);
+
+    final path1 = Path()
+      ..moveTo(-30, 90)
+      ..cubicTo(70, 15, 105, 160, 190, 82)
+      ..cubicTo(260, 18, 310, 120, 410, 48);
+
+    final path2 = Path()
+      ..moveTo(-30, 310)
+      ..cubicTo(70, 240, 135, 390, 225, 305)
+      ..cubicTo(300, 235, 350, 350, 470, 270);
+
+    final path3 = Path()
+      ..moveTo(20, size.height - 90)
+      ..cubicTo(
+        120,
+        size.height - 180,
+        190,
+        size.height - 20,
+        290,
+        size.height - 110,
+      )
+      ..cubicTo(
+        360,
+        size.height - 170,
+        420,
+        size.height - 45,
+        size.width + 30,
+        size.height - 115,
+      );
+
+    canvas.drawPath(path1, paint);
+    canvas.drawPath(path2, paint);
+    canvas.drawPath(path3, paint);
+  }
+
+  @override
+  bool shouldRepaint(covariant _MarblePainter oldDelegate) => false;
+}
