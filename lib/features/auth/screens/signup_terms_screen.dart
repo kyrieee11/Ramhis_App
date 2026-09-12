@@ -6,6 +6,19 @@ import 'package:flutter/material.dart';
 import 'package:ramhis_app/features/auth/screens/signup_verification_screen.dart';
 import 'package:ramhis_app/features/auth/screens/landing_page.dart';
 import 'package:ramhis_app/services/api/auth_service.dart';
+// RAMHIS Medical Blue Theme
+const _kPrimary = Color(0xFF10539B);
+const _kPrimaryDark = Color(0xFF0B4380);
+const _kBlue = Color(0xFF1863B5);
+const _kLightBlue = Color(0xFFE3F2FD);
+const _kSoftBlue = Color(0xFFEBF3FA);
+const _kPageBg = Color(0xFFF8FAFC);
+const _kText = Color(0xFF102A43);
+const _kTextSecondary = Color(0xFF526579);
+const _kMuted = Color(0xFF8292A6);
+const _kBorder = Color(0xFFCDE1EC);
+const _kSuccess = Color(0xFF22A06B);
+
 
 class SignupTermsConditionsWidget extends StatefulWidget {
   const SignupTermsConditionsWidget({
@@ -100,16 +113,17 @@ class _SignupTermsConditionsWidgetState
           child: Material(
             color: Colors.transparent,
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 340),
+              constraints: const BoxConstraints(maxWidth: 360),
               child: Container(
                 margin: const EdgeInsets.symmetric(horizontal: 24),
                 padding: const EdgeInsets.all(24),
                 decoration: BoxDecoration(
                   color: Colors.white,
                   borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: _kBorder),
                   boxShadow: [
                     BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.20),
+                      color: _kPrimary.withValues(alpha: 0.16),
                       blurRadius: 30,
                       offset: const Offset(0, 16),
                     ),
@@ -118,14 +132,20 @@ class _SignupTermsConditionsWidgetState
                 child: Column(
                   mainAxisSize: MainAxisSize.min,
                   children: [
-                    Icon(
-                      isDoctor
-                          ? Icons.local_hospital_rounded
-                          : Icons.check_circle_rounded,
-                      size: 80,
-                      color: isDoctor
-                          ? const Color(0xFF3949AB)
-                          : const Color(0xFF22C55E),
+                    Container(
+                      width: 78,
+                      height: 78,
+                      decoration: const BoxDecoration(
+                        color: _kLightBlue,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        isDoctor
+                            ? Icons.local_hospital_rounded
+                            : Icons.check_circle_rounded,
+                        size: 46,
+                        color: isDoctor ? _kPrimary : _kSuccess,
+                      ),
                     ),
                     const SizedBox(height: 18),
                     Text(
@@ -134,8 +154,8 @@ class _SignupTermsConditionsWidgetState
                           : 'Registration Submitted!',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Color(0xFF1B2559),
-                        fontSize: 22,
+                        color: _kText,
+                        fontSize: 21,
                         fontWeight: FontWeight.w900,
                       ),
                     ),
@@ -146,17 +166,15 @@ class _SignupTermsConditionsWidgetState
                           : 'Thank you for signing up as a Volunteer',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Color(0xFF7B8BB2),
+                        color: _kTextSecondary,
                         fontSize: 14,
                         height: 1.4,
                         fontWeight: FontWeight.w600,
                       ),
                     ),
-                    const SizedBox(height: 20),
-                    Divider(
-                      color: const Color(0xFF7B8BB2).withValues(alpha: 0.20),
-                    ),
                     const SizedBox(height: 18),
+                    Divider(color: _kBorder),
+                    const SizedBox(height: 16),
                     Text(
                       isDoctor
                           ? 'Your professional credentials have been submitted for verification.\n\n'
@@ -170,7 +188,7 @@ class _SignupTermsConditionsWidgetState
                               'This usually takes 1-2 business days.',
                       textAlign: TextAlign.center,
                       style: const TextStyle(
-                        color: Color(0xFF1B2559),
+                        color: _kText,
                         fontSize: 14,
                         height: 1.55,
                         fontWeight: FontWeight.w500,
@@ -184,14 +202,15 @@ class _SignupTermsConditionsWidgetState
                         vertical: 12,
                       ),
                       decoration: BoxDecoration(
-                        color: const Color(0xFFEAF4FF),
+                        color: _kSoftBlue,
                         borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: _kBorder),
                       ),
                       child: Row(
                         children: [
                           const Icon(
                             Icons.email_rounded,
-                            color: Color(0xFF3949AB),
+                            color: _kPrimary,
                             size: 20,
                           ),
                           const SizedBox(width: 10),
@@ -201,7 +220,7 @@ class _SignupTermsConditionsWidgetState
                                   ? 'Updates will be sent to ${widget.email}'
                                   : 'A confirmation will be sent to ${widget.email}',
                               style: const TextStyle(
-                                color: Color(0xFF3949AB),
+                                color: _kPrimary,
                                 fontSize: 12,
                                 height: 1.35,
                                 fontWeight: FontWeight.w700,
@@ -212,35 +231,25 @@ class _SignupTermsConditionsWidgetState
                       ),
                     ),
                     const SizedBox(height: 22),
-                    GestureDetector(
-                      onTap: () => Navigator.of(context).pop(),
-                      child: Container(
-                        width: double.infinity,
-                        height: 52,
-                        decoration: BoxDecoration(
-                          borderRadius: BorderRadius.circular(32),
-                          gradient: const LinearGradient(
-                            colors: [
-                              Color(0xFFF05261),
-                              Color(0xFFD94350),
-                            ],
+                    SizedBox(
+                      width: double.infinity,
+                      height: 52,
+                      child: ElevatedButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: _kPrimary,
+                          foregroundColor: Colors.white,
+                          elevation: 4,
+                          shadowColor: _kPrimary.withValues(alpha: 0.22),
+                          shape: RoundedRectangleBorder(
+                            borderRadius: BorderRadius.circular(28),
                           ),
-                          boxShadow: [
-                            BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.18),
-                              blurRadius: 14,
-                              offset: const Offset(0, 8),
-                            ),
-                          ],
                         ),
-                        child: const Center(
-                          child: Text(
-                            'Got it!',
-                            style: TextStyle(
-                              color: Colors.white,
-                              fontSize: 16,
-                              fontWeight: FontWeight.w900,
-                            ),
+                        child: const Text(
+                          'Got it!',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w900,
                           ),
                         ),
                       ),
@@ -445,23 +454,59 @@ By submitting your registration, you confirm that you have read and understood t
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
         children: [
-          Container(
-            constraints: const BoxConstraints(minHeight: 325),
-            padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
-            decoration: BoxDecoration(
-              color: const Color(0xFFF7F1E2).withValues(alpha: 0.95),
-              borderRadius: BorderRadius.circular(23),
-              border: Border.all(
-                color: const Color(0xFFA88B4E),
-                width: 1.7,
-              ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.13),
-                  blurRadius: 10,
-                  offset: const Offset(0, 5),
+          Row(
+            children: [
+              Container(
+                width: 44,
+                height: 44,
+                decoration: const BoxDecoration(
+                  color: _kLightBlue,
+                  shape: BoxShape.circle,
                 ),
-              ],
+                child: const Icon(
+                  Icons.description_outlined,
+                  color: _kPrimary,
+                  size: 24,
+                ),
+              ),
+              const SizedBox(width: 12),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Review before submitting',
+                      style: TextStyle(
+                        color: _kText,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Please read the terms carefully.',
+                      style: TextStyle(
+                        color: _kMuted,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 18),
+          Container(
+            constraints: const BoxConstraints(minHeight: 360),
+            padding: const EdgeInsets.fromLTRB(18, 20, 18, 20),
+            decoration: BoxDecoration(
+              color: _kSoftBlue,
+              borderRadius: BorderRadius.circular(22),
+              border: Border.all(
+                color: _kBorder,
+                width: 1.3,
+              ),
             ),
             child: SingleChildScrollView(
               child: Column(
@@ -471,59 +516,45 @@ By submitting your registration, you confirm that you have read and understood t
                     'TERMS AND CONDITIONS',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFF725A2A),
-                      fontSize: 20,
-                      fontWeight: FontWeight.w800,
-                      letterSpacing: 0.5,
+                      color: _kPrimary,
+                      fontSize: 19,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.4,
                     ),
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 10),
                   Text(
                     _accountName,
                     textAlign: TextAlign.center,
                     style: const TextStyle(
-                      color: Color(0xFF735B2C),
-                      fontSize: 18,
-                      fontWeight: FontWeight.w700,
+                      color: _kText,
+                      fontSize: 17,
+                      fontWeight: FontWeight.w800,
                     ),
                   ),
-                  const SizedBox(height: 5),
+                  const SizedBox(height: 4),
                   const Text(
                     'Remote Area Medical (RAM) Philippines',
                     textAlign: TextAlign.center,
                     style: TextStyle(
-                      color: Color(0xFF9B8D72),
-                      fontSize: 14,
+                      color: _kMuted,
+                      fontSize: 12.5,
                       fontWeight: FontWeight.w600,
                     ),
                   ),
-                  const SizedBox(height: 22),
-                  Align(
-                    alignment: Alignment.centerLeft,
-                    child: Text(
-                      widget.accountType == 'doctor'
-                          ? 'Welcome to the RAM Philippines Registration System. By completing your registration as a licensed healthcare professional, you acknowledge that you have read, understood, and agreed to the following terms.'
-                          : 'Welcome to the RAM Philippines Registration System. By completing your registration as a volunteer, you acknowledge that you have read, understood, and agreed to the following terms.',
-                      style: const TextStyle(
-                        color: Color(0xFF5C5140),
-                        fontSize: 14,
-                        height: 1.55,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 18),
                   Container(
                     height: 1,
-                    color: const Color(0xFFD0B66F),
+                    color: _kBorder,
                   ),
-                  const SizedBox(height: 12),
+                  const SizedBox(height: 14),
                   Text(
-                    termsText,
+                    termsText.trim(),
                     style: const TextStyle(
-                      color: Color(0xFF5C5140),
-                      fontSize: 13,
+                      color: _kTextSecondary,
+                      fontSize: 12.5,
                       height: 1.5,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -533,23 +564,16 @@ By submitting your registration, you confirm that you have read and understood t
           const SizedBox(height: 16),
           Container(
             padding: const EdgeInsets.symmetric(
-              horizontal: 10,
+              horizontal: 8,
               vertical: 8,
             ),
             decoration: BoxDecoration(
-              color: const Color(0xFFF7F1E2).withValues(alpha: 0.95),
+              color: Colors.white,
               borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: const Color(0xFFA88B4E),
-                width: 1.5,
+                color: _kBorder,
+                width: 1.2,
               ),
-              boxShadow: [
-                BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.08),
-                  blurRadius: 7,
-                  offset: const Offset(0, 3),
-                ),
-              ],
             ),
             child: Row(
               children: [
@@ -562,14 +586,14 @@ By submitting your registration, you confirm that you have read and understood t
                             _acceptedTerms = value ?? false;
                           });
                         },
-                  activeColor: const Color(0xFF17479C),
-                  checkColor: const Color(0xFFF7F1E2),
+                  activeColor: _kPrimary,
+                  checkColor: Colors.white,
                   side: const BorderSide(
-                    color: Color(0xFF8E7137),
+                    color: _kPrimary,
                     width: 1.5,
                   ),
                   shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(3),
+                    borderRadius: BorderRadius.circular(4),
                   ),
                 ),
                 const SizedBox(width: 3),
@@ -577,8 +601,8 @@ By submitting your registration, you confirm that you have read and understood t
                   child: Text(
                     'I have read and agree to the Terms and Conditions.',
                     style: TextStyle(
-                      color: Color(0xFF665638),
-                      fontSize: 13.5,
+                      color: _kText,
+                      fontSize: 13,
                       height: 1.35,
                       fontWeight: FontWeight.w700,
                     ),
@@ -587,66 +611,41 @@ By submitting your registration, you confirm that you have read and understood t
               ],
             ),
           ),
-          const SizedBox(height: 14),
-          GestureDetector(
-            onTap: _isSubmitting ? null : _submit,
-            child: AnimatedContainer(
-              duration: const Duration(milliseconds: 200),
-              height: 51,
-              decoration: BoxDecoration(
-                borderRadius: BorderRadius.circular(28),
-                gradient: LinearGradient(
-                  colors: _isSubmitting
-                      ? [
-                          Colors.grey.shade400,
-                          Colors.grey.shade500,
-                        ]
-                      : const [
-                          Color(0xFFB9232B),
-                          Color(0xFFD94350),
-                        ],
-                ),
-                border: Border.all(
-                  color: const Color(0xFFD9C27A),
-                  width: 1.4,
-                ),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withValues(alpha: 0.20),
-                    blurRadius: 14,
-                    offset: const Offset(0, 7),
-                  ),
-                ],
-              ),
-              child: Center(
-                child: _isSubmitting
-                    ? const SizedBox(
-                        width: 22,
-                        height: 22,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2.4,
-                          color: Colors.white,
-                        ),
-                      )
-                    : const Row(
-                        mainAxisAlignment: MainAxisAlignment.center,
-                        children: [
-                          Text(
-                            'Submit Registration',
-                            style: TextStyle(
-                              color: Color(0xFFF8F1DB),
-                              fontSize: 17,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                          SizedBox(width: 13),
-                          Icon(
-                            Icons.arrow_forward_rounded,
-                            color: Color(0xFFF8F1DB),
-                            size: 27,
-                          ),
-                        ],
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            height: 60,
+            child: ElevatedButton.icon(
+              onPressed: _isSubmitting ? null : _submit,
+              icon: _isSubmitting
+                  ? const SizedBox(
+                      width: 22,
+                      height: 22,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.4,
+                        color: Colors.white,
                       ),
+                    )
+                  : const Icon(
+                      Icons.check_rounded,
+                      size: 28,
+                    ),
+              label: Text(
+                _isSubmitting ? 'Submitting...' : 'Submit Registration',
+                style: const TextStyle(
+                  fontSize: 18,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              style: ElevatedButton.styleFrom(
+                backgroundColor: _kPrimary,
+                disabledBackgroundColor: _kMuted,
+                foregroundColor: Colors.white,
+                elevation: 5,
+                shadowColor: _kPrimary.withValues(alpha: 0.24),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(30),
+                ),
               ),
             ),
           ),
@@ -655,6 +654,7 @@ By submitting your registration, you confirm that you have read and understood t
     );
   }
 }
+
 
 class _SignupStepScaffold extends StatelessWidget {
   const _SignupStepScaffold({
@@ -675,17 +675,13 @@ class _SignupStepScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = currentStep / totalSteps;
-
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      backgroundColor: _kPageBg,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF123F91),
-              Color(0xFF082B6B),
-            ],
+            colors: [_kPrimary, _kPrimaryDark],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -693,39 +689,42 @@ class _SignupStepScaffold extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
-              _buildHeader(progress),
+              _buildHeader(),
               Expanded(
-                child: ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(10),
-                  ),
-                  child: Stack(
-                    children: [
-                      const Positioned.fill(
-                        child: _MarbleBackground(),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(painter: _MarblePainter()),
+                    ),
+                    Positioned.fill(
+                      child: Container(
+                        color: _kPageBg.withValues(alpha: 0.97),
                       ),
-                      Positioned.fill(
-                        child: Container(
-                          color: const Color(0xFFF7F1E2).withValues(alpha: 0.86),
-                        ),
-                      ),
-                      SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(
-                          24,
-                          17,
-                          24,
-                          25,
-                        ),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints:
-                                const BoxConstraints(maxWidth: 430),
+                    ),
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 760),
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(26, 26, 26, 28),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _kPrimary.withValues(alpha: 0.10),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
                             child: child,
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -735,91 +734,158 @@ class _SignupStepScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader(double progress) {
+  Widget _buildHeader() {
+    const labels = [
+      'Personal\nInformation',
+      'Account\nSecurity',
+      'Professional\nVerification',
+      'Review',
+    ];
+
     return Container(
+      padding: const EdgeInsets.only(bottom: 22),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF17479C),
-            Color(0xFF0B2E73),
-          ],
+          colors: [_kPrimary, _kBlue],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFD9C27A),
-            width: 1.2,
-          ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black38,
-            blurRadius: 10,
-            offset: Offset(0, 4),
-          ),
-        ],
       ),
-      child: Column(
+      child: Stack(
         children: [
-          SizedBox(
-            height: 58,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed: onBack,
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: Color(0xFFE7D59D),
-                      size: 28,
+          Positioned(
+            right: -50,
+            top: -45,
+            child: Container(
+              width: 190,
+              height: 190,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _kLightBlue.withValues(alpha: 0.13),
+                  width: 30,
+                ),
+              ),
+            ),
+          ),
+          Column(
+            children: [
+              SizedBox(
+                height: 58,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        onPressed: onBack,
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
                     ),
-                  ),
+                    const Text(
+                      'Create',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
                 ),
-                const Text(
-                  'Create',
-                  style: TextStyle(
-                    color: Color(0xFFEFE2BB),
-                    fontSize: 24,
-                    fontWeight: FontWeight.w400,
-                  ),
+              ),
+              Text(
+                accountName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
                 ),
-              ],
-            ),
-          ),
-          Text(
-            accountName,
-            textAlign: TextAlign.center,
-            style: const TextStyle(
-              color: Color(0xFFF1E2AE),
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              shadows: [
-                Shadow(
-                  color: Colors.black54,
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
+              ),
+              const SizedBox(height: 20),
+              Padding(
+                padding: const EdgeInsets.symmetric(horizontal: 24),
+                child: Column(
+                  children: [
+                    Row(
+                      children: List.generate(4, (index) {
+                        final active = index == currentStep - 1;
+                        final completed = index < currentStep - 1;
+
+                        return Expanded(
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 52,
+                                height: 52,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: active
+                                      ? Colors.white
+                                      : Colors.transparent,
+                                  border: Border.all(
+                                    color: active
+                                        ? Colors.white
+                                        : Colors.white.withValues(alpha: 0.28),
+                                    width: active ? 4 : 3,
+                                  ),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '${index + 1}',
+                                  style: TextStyle(
+                                    color: active
+                                        ? _kPrimary
+                                        : Colors.white.withValues(alpha: 0.55),
+                                    fontSize: 21,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                              if (index < 3)
+                                Expanded(
+                                  child: Container(
+                                    height: 3,
+                                    color: completed
+                                        ? Colors.white
+                                        : Colors.white.withValues(alpha: 0.28),
+                                  ),
+                                ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ),
+                    const SizedBox(height: 10),
+                    Row(
+                      children: labels.asMap().entries.map((entry) {
+                        final active = entry.key == currentStep - 1;
+                        return Expanded(
+                          child: Text(
+                            entry.value,
+                            textAlign: TextAlign.center,
+                            style: TextStyle(
+                              color: active
+                                  ? Colors.white
+                                  : Colors.white.withValues(alpha: 0.60),
+                              fontSize: 13,
+                              height: 1.18,
+                              fontWeight: active
+                                  ? FontWeight.w800
+                                  : FontWeight.w600,
+                            ),
+                          ),
+                        );
+                      }).toList(),
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 17),
-          SizedBox(
-            height: 8,
-            child: Row(
-              children: [
-                Expanded(
-                  flex: currentStep,
-                  child: Container(color: const Color(0xFFB9232B)),
-                ),
-                Expanded(
-                  flex: totalSteps - currentStep,
-                  child: Container(color: const Color(0xFFD9C27A)),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
         ],
       ),
@@ -844,7 +910,7 @@ class _MarblePainter extends CustomPainter {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
-      ..color = const Color(0xFF7392B7).withValues(alpha: 0.20);
+      ..color = _kBlue.withValues(alpha: 0.08);
 
     final path1 = Path()
       ..moveTo(-30, 90)

@@ -11,13 +11,17 @@ import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
 
 import 'package:ramhis_app/core/session_manager.dart';
 
-const _kNavy = Color(0xFF123F91);
-const _kNavyDark = Color(0xFF082B6B);
-const _kGold = Color(0xFFD9C27A);
-const _kGoldDark = Color(0xFF9D7D2F);
-const _kCream = Color(0xFFF7F2E5);
-const _kInk = Color(0xFF24304A);
-const _kMuted = Color(0xFF6F7480);
+const _kNavy = Color(0xFF10539B);
+const _kNavyDark = Color(0xFF0B4380);
+const _kGold = Color(0xFFE3F2FD);
+const _kLightBlue = Color(0xFFE3F2FD);
+const _kGoldDark = Color(0xFFCDE1EC);
+const _kCream = Color(0xFFF8FAFC);
+const _kInk = Color(0xFF102A43);
+const _kMuted = Color(0xFF8292A6);
+const _kBlue = Color(0xFF1863B5);
+const _kSoftBlue = Color(0xFFEBF3FA);
+const _kSuccess = Color(0xFF22A06B);
 
 class AccUsernameWidget extends StatefulWidget {
   const AccUsernameWidget({
@@ -206,9 +210,9 @@ class _AccUsernameWidgetState extends State<AccUsernameWidget> {
       uiSettings: [
         AndroidUiSettings(
           toolbarTitle: 'Crop Profile Picture',
-          toolbarColor: const Color(0xFF3F5FBE),
+          toolbarColor: _kNavy,
           toolbarWidgetColor: Colors.white,
-          activeControlsWidgetColor: const Color(0xFF3F5FBE),
+          activeControlsWidgetColor: _kNavy,
           initAspectRatio: CropAspectRatioPreset.square,
           lockAspectRatio: true,
         ),
@@ -482,21 +486,19 @@ if (!isValidContact) {
     return InputDecoration(
       hintText: hint,
       filled: true,
-      fillColor: _kCream.withValues(alpha: 0.92),
+      fillColor: Colors.white,
       prefixIcon: Container(
-        margin: const EdgeInsets.all(7),
-        width: 50,
-        height: 50,
+        margin: const EdgeInsets.all(3),
+        width: 48,
         decoration: BoxDecoration(
-          gradient: const LinearGradient(
-            colors: [_kNavy, _kNavyDark],
-            begin: Alignment.topLeft,
-            end: Alignment.bottomRight,
-          ),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _kGold, width: 1.1),
+          color: _kSoftBlue,
+          borderRadius: BorderRadius.circular(14),
         ),
-        child: Icon(icon, color: _kCream, size: 25),
+        child: Icon(
+          icon,
+          color: _kNavy,
+          size: 23,
+        ),
       ),
       hintStyle: const TextStyle(
         color: _kMuted,
@@ -504,25 +506,25 @@ if (!isValidContact) {
         fontWeight: FontWeight.w500,
       ),
       contentPadding: const EdgeInsets.symmetric(
-        horizontal: 12,
-        vertical: 13,
+        horizontal: 14,
+        vertical: 17,
       ),
       enabledBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(20),
         borderSide: const BorderSide(
           color: _kGoldDark,
           width: 1.5,
         ),
       ),
       focusedBorder: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(20),
         borderSide: const BorderSide(
           color: _kNavy,
-          width: 1.6,
+          width: 2,
         ),
       ),
       border: OutlineInputBorder(
-        borderRadius: BorderRadius.circular(17),
+        borderRadius: BorderRadius.circular(20),
         borderSide: const BorderSide(
           color: _kGoldDark,
           width: 1.5,
@@ -545,22 +547,25 @@ if (!isValidContact) {
       clipBehavior: Clip.none,
       children: [
         Container(
-          padding: const EdgeInsets.all(6),
+          padding: const EdgeInsets.all(5),
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            color: _kCream,
-            border: Border.all(color: _kGold, width: 2),
+            color: Colors.white,
+            border: Border.all(
+              color: _kLightBlue,
+              width: 3,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.22),
-                blurRadius: 16,
-                offset: const Offset(0, 7),
+                color: _kNavy.withValues(alpha: 0.16),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: CircleAvatar(
             radius: 55,
-            backgroundColor: _kCream,
+            backgroundColor: _kSoftBlue,
             backgroundImage: provider,
             child: provider == null
                 ? const Icon(
@@ -575,27 +580,27 @@ if (!isValidContact) {
           right: -2,
           bottom: 2,
           child: Material(
-            color: _kGold,
+            color: _kNavy,
             shape: const CircleBorder(),
             elevation: 3,
             child: InkWell(
               customBorder: const CircleBorder(),
               onTap: isUploadingImage ? null : _pickAndUploadImage,
               child: SizedBox(
-                width: 52,
-                height: 52,
+                width: 48,
+                height: 48,
                 child: isUploadingImage
                     ? const Padding(
-                        padding: EdgeInsets.all(15),
+                        padding: EdgeInsets.all(13),
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: _kNavy,
+                          color: Colors.white,
                         ),
                       )
                     : const Icon(
                         Icons.camera_alt_rounded,
-                        color: _kNavy,
-                        size: 25,
+                        color: Colors.white,
+                        size: 22,
                       ),
               ),
             ),
@@ -675,13 +680,13 @@ if (!isValidContact) {
 
   Widget _fieldLabel(String label) {
     return Padding(
-      padding: const EdgeInsets.only(left: 8, bottom: 7),
+      padding: const EdgeInsets.only(left: 2, bottom: 7),
       child: Text(
         label,
         style: const TextStyle(
           color: _kInk,
-          fontSize: 13,
-          fontWeight: FontWeight.w600,
+          fontSize: 14,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -711,8 +716,8 @@ if (!isValidContact) {
           maxLength: maxLength,
           style: const TextStyle(
             color: _kInk,
-            fontSize: 17,
-            fontWeight: FontWeight.w500,
+            fontSize: 15,
+            fontWeight: FontWeight.w600,
           ),
           decoration: _input(hint, icon),
         ),
@@ -730,13 +735,12 @@ if (!isValidContact) {
             _buildHeader(),
             Expanded(
               child: SingleChildScrollView(
+                padding: const EdgeInsets.fromLTRB(16, 18, 16, 22),
                 child: Column(
                   children: [
                     _buildPhotoHero(),
-                    Padding(
-                      padding: const EdgeInsets.fromLTRB(18, 20, 18, 24),
-                      child: _buildForm(),
-                    ),
+                    const SizedBox(height: 16),
+                    _buildForm(),
                   ],
                 ),
               ),
@@ -750,7 +754,7 @@ if (!isValidContact) {
 
   Widget _buildHeader() {
     return Container(
-      height: 66,
+      height: 62,
       width: double.infinity,
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -758,24 +762,20 @@ if (!isValidContact) {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border(
-          bottom: BorderSide(color: _kGold, width: 1.3),
-        ),
       ),
       child: Row(
         children: [
           Material(
             color: Colors.transparent,
             child: InkWell(
-              customBorder: const CircleBorder(),
               onTap: () => Navigator.maybePop(context),
               child: const SizedBox(
                 width: 54,
                 height: 54,
                 child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _kGold,
-                  size: 21,
+                  Icons.arrow_back_rounded,
+                  color: Colors.white,
+                  size: 25,
                 ),
               ),
             ),
@@ -785,15 +785,14 @@ if (!isValidContact) {
               'Edit Profile',
               textAlign: TextAlign.center,
               style: TextStyle(
-                color: _kCream,
-                fontSize: 28,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.1,
+                color: Colors.white,
+                fontSize: 22,
+                fontWeight: FontWeight.w800,
               ),
             ),
           ),
           SizedBox(
-            width: 66,
+            width: 70,
             child: TextButton(
               onPressed: isSaving
                   ? null
@@ -802,31 +801,41 @@ if (!isValidContact) {
                         context: context,
                         builder: (_) {
                           return Dialog(
-                            backgroundColor: Colors.transparent,
-                            child: Container(
+                            backgroundColor: Colors.white,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(24),
+                            ),
+                            child: Padding(
                               padding: const EdgeInsets.all(22),
-                              decoration: BoxDecoration(
-                                color: _kCream,
-                                borderRadius: BorderRadius.circular(20),
-                                border: Border.all(
-                                  color: _kGold,
-                                  width: 1.2,
-                                ),
-                              ),
                               child: Column(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
+                                  Container(
+                                    width: 52,
+                                    height: 52,
+                                    decoration: const BoxDecoration(
+                                      color: _kSoftBlue,
+                                      shape: BoxShape.circle,
+                                    ),
+                                    child: const Icon(
+                                      Icons.edit_rounded,
+                                      color: _kNavy,
+                                      size: 25,
+                                    ),
+                                  ),
+                                  const SizedBox(height: 14),
                                   Text(
                                     isEditing
                                         ? 'Save Changes?'
                                         : 'Edit Profile?',
+                                    textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: _kInk,
-                                      fontSize: 22,
+                                      fontSize: 20,
                                       fontWeight: FontWeight.w800,
                                     ),
                                   ),
-                                  const SizedBox(height: 12),
+                                  const SizedBox(height: 10),
                                   Text(
                                     isEditing
                                         ? 'Do you want to save your profile changes?'
@@ -834,11 +843,12 @@ if (!isValidContact) {
                                     textAlign: TextAlign.center,
                                     style: const TextStyle(
                                       color: _kMuted,
-                                      fontSize: 14,
+                                      fontSize: 13,
+                                      height: 1.4,
                                       fontWeight: FontWeight.w500,
                                     ),
                                   ),
-                                  const SizedBox(height: 22),
+                                  const SizedBox(height: 20),
                                   Row(
                                     children: [
                                       Expanded(
@@ -869,11 +879,11 @@ if (!isValidContact) {
                                           },
                                           style: ElevatedButton.styleFrom(
                                             backgroundColor: _kNavy,
-                                            foregroundColor: _kCream,
+                                            foregroundColor: Colors.white,
                                             elevation: 0,
                                             shape: RoundedRectangleBorder(
                                               borderRadius:
-                                                  BorderRadius.circular(12),
+                                                  BorderRadius.circular(14),
                                             ),
                                           ),
                                           child: Text(
@@ -896,8 +906,8 @@ if (!isValidContact) {
               child: Text(
                 isSaving ? '...' : 'Edit',
                 style: const TextStyle(
-                  color: _kCream,
-                  fontSize: 15,
+                  color: Colors.white,
+                  fontSize: 14,
                   fontWeight: FontWeight.w800,
                 ),
               ),
@@ -911,26 +921,38 @@ if (!isValidContact) {
   Widget _buildPhotoHero() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(24, 15, 24, 22),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_kNavy, _kNavyDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border(
-          bottom: BorderSide(color: _kGold, width: 1.2),
-        ),
+      padding: const EdgeInsets.fromLTRB(20, 22, 20, 20),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(color: _kGoldDark),
+        boxShadow: [
+          BoxShadow(
+            color: _kNavy.withValues(alpha: 0.07),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
+          ),
+        ],
       ),
       child: Column(
         children: [
           _buildAvatar(),
           const SizedBox(height: 10),
           const Text(
-            'Change Photo',
+            'Change Profile Photo',
             style: TextStyle(
-              color: _kCream,
-              fontSize: 16,
+              color: _kNavy,
+              fontSize: 15,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 3),
+          const Text(
+            'Tap the camera button to choose a new photo',
+            textAlign: TextAlign.center,
+            style: TextStyle(
+              color: _kMuted,
+              fontSize: 11.5,
               fontWeight: FontWeight.w500,
             ),
           ),
@@ -940,139 +962,111 @@ if (!isValidContact) {
   }
 
   Widget _buildForm() {
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        const Padding(
-          padding: EdgeInsets.only(left: 2, bottom: 14),
-          child: Text(
-            'Personal Information',
-            style: TextStyle(
-              color: _kInk,
-              fontSize: 21,
-              fontWeight: FontWeight.w600,
-            ),
-          ),
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(18, 20, 18, 22),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(24),
+        border: Border.all(
+          color: _kGoldDark,
+          width: 1.2,
         ),
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.fromLTRB(14, 14, 14, 7),
-          decoration: BoxDecoration(
-            color: _kCream.withValues(alpha: 0.76),
-            borderRadius: BorderRadius.circular(19),
-            border: Border.all(color: _kGoldDark, width: 1.4),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.07),
-                blurRadius: 14,
-                offset: const Offset(0, 5),
-              ),
-            ],
+        boxShadow: [
+          BoxShadow(
+            color: _kNavy.withValues(alpha: 0.07),
+            blurRadius: 18,
+            offset: const Offset(0, 7),
           ),
-          child: Column(
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              _formField(
-                label: 'Full Name',
-                controller: fullNameController,
-                icon: Icons.person_rounded,
-                hint: 'Enter full name',
-                keyboardType: TextInputType.name,
-                readOnly: !isEditing,
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: _kLightBlue,
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.person_outline_rounded,
+                  color: _kNavy,
+                  size: 22,
+                ),
               ),
-              const SizedBox(height: 13),
-              _formField(
-                label: 'Email',
-                controller: emailController,
-                icon: Icons.email_rounded,
-                hint: 'Enter email address',
-                keyboardType: TextInputType.emailAddress,
-                readOnly: !isEditing,
-              ),
-              const SizedBox(height: 13),
-              _formField(
-                label: 'Birthdate',
-                controller: birthdateController,
-                icon: Icons.cake_rounded,
-                hint: 'Select birthdate',
-                readOnly: !isEditing,
-                onTap: isEditing ? _showBirthdatePicker : null,
-              ),
-              const SizedBox(height: 13),
-              _formField(
-                label: 'Contact Number',
-                controller: contactController,
-                icon: Icons.phone_rounded,
-                hint: 'Enter contact number',
-                keyboardType: TextInputType.number,
-                readOnly: !isEditing,
-                maxLength: 11,
-                inputFormatters: [
-                  FilteringTextInputFormatter.digitsOnly,
-                ],
+              const SizedBox(width: 10),
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Personal Information',
+                      style: TextStyle(
+                        color: _kInk,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(height: 2),
+                    Text(
+                      'Update your profile details',
+                      style: TextStyle(
+                        color: _kMuted,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                  ],
+                ),
               ),
             ],
           ),
-        ),
-      ],
+          const SizedBox(height: 20),
+          _formField(
+            label: 'Full Name',
+            controller: fullNameController,
+            icon: Icons.person_outline_rounded,
+            hint: 'Enter full name',
+            keyboardType: TextInputType.name,
+            readOnly: !isEditing,
+          ),
+          const SizedBox(height: 17),
+          _formField(
+            label: 'Email',
+            controller: emailController,
+            icon: Icons.email_outlined,
+            hint: 'Enter email address',
+            keyboardType: TextInputType.emailAddress,
+            readOnly: !isEditing,
+          ),
+          const SizedBox(height: 17),
+          _formField(
+            label: 'Birthdate',
+            controller: birthdateController,
+            icon: Icons.calendar_month_outlined,
+            hint: 'Select birthdate',
+            readOnly: !isEditing,
+            onTap: isEditing ? _showBirthdatePicker : null,
+          ),
+          const SizedBox(height: 17),
+          _formField(
+            label: 'Contact Number',
+            controller: contactController,
+            icon: Icons.phone_outlined,
+            hint: 'Enter contact number',
+            keyboardType: TextInputType.number,
+            readOnly: !isEditing,
+            maxLength: 11,
+            inputFormatters: [
+              FilteringTextInputFormatter.digitsOnly,
+            ],
+          ),
+        ],
+      ),
     );
   }
-}
-
-class _MarbleBackgroundPainter extends CustomPainter {
-  @override
-  void paint(Canvas canvas, Size size) {
-    final base = Paint()..color = _kCream;
-    canvas.drawRect(Offset.zero & size, base);
-
-    final vein = Paint()
-      ..color = const Color(0xFF9EA9B8).withValues(alpha: 0.27)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
-
-    final soft = Paint()
-      ..color = const Color(0xFFBDC5D0).withValues(alpha: 0.30)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.65;
-
-    final paths = [
-      Path()
-        ..moveTo(size.width * .06, size.height * .02)
-        ..cubicTo(size.width * .30, size.height * .12,
-            size.width * .12, size.height * .24,
-            size.width * .42, size.height * .34)
-        ..cubicTo(size.width * .60, size.height * .42,
-            size.width * .37, size.height * .56,
-            size.width * .66, size.height * .68)
-        ..cubicTo(size.width * .82, size.height * .76,
-            size.width * .62, size.height * .91,
-            size.width * .93, size.height),
-      Path()
-        ..moveTo(size.width * .93, size.height * .03)
-        ..cubicTo(size.width * .73, size.height * .15,
-            size.width * .88, size.height * .28,
-            size.width * .64, size.height * .40)
-        ..cubicTo(size.width * .48, size.height * .49,
-            size.width * .72, size.height * .60,
-            size.width * .44, size.height * .80),
-    ];
-
-    for (final path in paths) {
-      canvas.drawPath(path, vein);
-    }
-
-    canvas.drawPath(
-      Path()
-        ..moveTo(size.width * .02, size.height * .18)
-        ..cubicTo(size.width * .27, size.height * .22,
-            size.width * .12, size.height * .33,
-            size.width * .45, size.height * .39)
-        ..cubicTo(size.width * .66, size.height * .45,
-            size.width * .42, size.height * .57,
-            size.width * .73, size.height * .66),
-      soft,
-    );
-  }
-
-  @override
-  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }

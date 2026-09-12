@@ -15,16 +15,23 @@ import 'package:ramhis_app/services/api/chat_service.dart';
 // Constants
 // ─────────────────────────────────────────────────────────────
 
-const _kPrimary = Color(0xFF0E3D91);
-const _kPrimaryDark = Color(0xFF082A68);
-const _kGold = Color(0xFFD9C27A);
-const _kGoldLight = Color(0xFFF2E6B8);
-const _kOnline = Color(0xFF75A84A);
-const _kTextDark = Color(0xFF111827);
-const _kTextMid = Color(0xFF7A7F8C);
-const _kBackground = Color(0xFFF0F2F8);
+const _kPrimary = Color(0xFF10539B);
+const _kPrimaryDark = Color(0xFF1863B5);
+const _kBlueAccent = Color(0xFF8EC1DA);
+const _kBlueAccentLight = Color(0xFFE3F2FD);
+const _kOnline = Color(0xFF22A06B);
+const _kTextDark = Color(0xFF102A43);
+const _kTextMid = Color(0xFF526579);
+const _kBackground = Color(0xFFF8FAFC);
 const _kCardShadowColor = Colors.black;
-const _kDividerColor = Color(0xFFD8DCE6);
+const _kDividerColor = Color(0xFFE2E8F0);
+const _kMedBlue = Color(0xFF5D8FC8);
+const _kLightBlue = Color(0xFFEBF3FA);
+const _kGray = Color(0xFF8292A6);
+const _kLightRed = Color(0xFFFFEFEF);
+const _kMedRed = Color(0xFFE58B8B);
+const _kDarkRed = Color(0xFFD95C5C);
+
 
 // ─────────────────────────────────────────────────────────────
 // Widget
@@ -304,21 +311,21 @@ Future<void> _onGroupChatCreated(dynamic data) async {
   /// Background color keyed to the first letter of a name.
   Color _avatarColor(String name) {
     final c = name.trim().isEmpty ? 'A' : name.trim()[0].toUpperCase();
-    if ('ABCDE'.contains(c)) return const Color(0xFFF44336);
-    if ('FGHIJ'.contains(c)) return const Color(0xFF9C27B0);
-    if ('KLMNO'.contains(c)) return const Color(0xFF2196F3);
-    if ('PQRST'.contains(c)) return const Color(0xFF4CAF50);
-    return const Color(0xFFFF9800);
+    if ('ABCDE'.contains(c)) return _kBlueAccent;
+    if ('FGHIJ'.contains(c)) return _kMedBlue;
+    if ('KLMNO'.contains(c)) return _kPrimary;
+    if ('PQRST'.contains(c)) return _kPrimary;
+    return _kMedRed;
   }
 
   /// Accent color for a role label.
   Color _roleColor(String role) {
     final r = role.toLowerCase();
-    if (r.contains('doctor')) return const Color(0xFF1976D2);
-    if (r.contains('volunteer')) return const Color(0xFF388E3C);
-    if (r.contains('pharmacist')) return const Color(0xFF7B1FA2);
-    if (r.contains('admin')) return const Color(0xFFD32F2F);
-    return const Color(0xFF6B4EFF);
+    if (r.contains('doctor')) return _kPrimary;
+    if (r.contains('volunteer')) return _kPrimary;
+    if (r.contains('pharmacist')) return _kMedBlue;
+    if (r.contains('admin')) return _kDarkRed;
+    return _kPrimary;
   }
 
   /// Infer a role string from a display name.
@@ -362,7 +369,7 @@ Future<void> _onGroupChatCreated(dynamic data) async {
     bool showOnline = true,
     bool isGroup = false,
   }) {
-    final bg = isGroup ? _kPrimaryDark : _kPrimary;
+    final initials = _initials(name);
     return Stack(
       clipBehavior: Clip.none,
       children: [
@@ -371,45 +378,57 @@ Future<void> _onGroupChatCreated(dynamic data) async {
           height: size,
           alignment: Alignment.center,
           decoration: BoxDecoration(
-            color: bg,
-            borderRadius: BorderRadius.circular(13),
-            border: Border.all(color: _kGold, width: 1.6),
+            shape: BoxShape.circle,
+            gradient: LinearGradient(
+              colors: isGroup
+                  ? const [_kPrimary, _kMedBlue]
+                  : const [_kPrimary, _kBlueAccent],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
+            ),
+            border: Border.all(
+              color: Colors.white,
+              width: size >= 55 ? 2.5 : 2,
+            ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.16),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
+                color: _kPrimary.withValues(alpha: 0.16),
+                blurRadius: 9,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
           child: isGroup
               ? Icon(
                   Icons.groups_rounded,
-                  color: _kGoldLight,
-                  size: size >= 50 ? 28 : 22,
+                  color: Colors.white,
+                  size: size >= 55 ? 29 : 22,
                 )
               : Text(
-                  _initials(name),
+                  initials,
                   style: TextStyle(
-                    color: _kGoldLight,
-                    fontSize: size >= 50 ? 18 : 15,
+                    color: Colors.white,
+                    fontSize: size >= 55 ? 18 : 14,
                     fontWeight: FontWeight.w900,
                   ),
                 ),
         ),
         if (showOnline && !isGroup)
           Positioned(
-            right: -2,
-            bottom: -2,
+            right: 0,
+            bottom: 0,
             child: Container(
-              width: 14,
-              height: 14,
+              width: size >= 55 ? 15 : 13,
+              height: size >= 55 ? 15 : 13,
               decoration: BoxDecoration(
                 color: OnlineStatusManager.isOnline(userId)
                     ? _kOnline
-                    : const Color(0xFF9CA3AF),
+                    : _kTextMid,
                 shape: BoxShape.circle,
-                border: Border.all(color: _kGoldLight, width: 2),
+                border: Border.all(
+                  color: Colors.white,
+                  width: 2,
+                ),
               ),
             ),
           ),
@@ -418,31 +437,32 @@ Future<void> _onGroupChatCreated(dynamic data) async {
   }
 
   Widget _roleBadge(String role, {bool isGroup = false}) {
-    final color = isGroup ? _kGold : _roleColor(role);
+    final color = isGroup ? _kPrimary : _roleColor(role);
+    final label = isGroup
+        ? 'Group'
+        : (role.isEmpty ? 'User' : role);
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 4),
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
       decoration: BoxDecoration(
-        gradient: isGroup
-            ? const LinearGradient(
-                colors: [_kGoldLight, _kGold],
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-              )
-            : null,
-        color: isGroup ? null : color.withValues(alpha: 0.10),
+        color: isGroup
+            ? _kLightBlue.withValues(alpha: 0.80)
+            : color.withValues(alpha: 0.10),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: isGroup ? _kGold : color.withValues(alpha: 0.20),
+          color: isGroup
+              ? _kMedBlue.withValues(alpha: 0.55)
+              : color.withValues(alpha: 0.18),
         ),
       ),
       child: Text(
-        isGroup ? 'GC' : (role.isEmpty ? 'User' : role),
+        label,
         maxLines: 1,
         overflow: TextOverflow.ellipsis,
         style: TextStyle(
-          color: isGroup ? const Color(0xFF4A4025) : color,
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
+          color: isGroup ? _kPrimary : color,
+          fontSize: 9.5,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -461,27 +481,26 @@ Future<void> _onGroupChatCreated(dynamic data) async {
         backgroundColor: _kBackground,
         resizeToAvoidBottomInset: true,
         body: SafeArea(
+          bottom: false,
           child: Column(
             children: [
               _buildHeader(),
               Expanded(
                 child: RefreshIndicator(
-                  color: _kGold,
+                  color: _kPrimary,
+                  backgroundColor: Colors.white,
                   onRefresh: _loadThreads,
-                  child: SizedBox(
-                    width: double.infinity,
-                    child: Column(
-                      children: [
-                        if (_searchQuery.trim().isNotEmpty) ...[
-                          const SizedBox(height: 14),
-                          _buildUserResults(),
-                          const SizedBox(height: 8),
-                        ],
-                        Expanded(
-                          child: _buildThreadList(),
-                        ),
+                  child: Column(
+                    children: [
+                      if (_searchQuery.trim().isNotEmpty) ...[
+                        const SizedBox(height: 10),
+                        _buildUserResults(),
+                        const SizedBox(height: 4),
                       ],
-                    ),
+                      Expanded(
+                        child: _buildThreadList(),
+                      ),
+                    ],
                   ),
                 ),
               ),
@@ -496,78 +515,61 @@ Future<void> _onGroupChatCreated(dynamic data) async {
 
   Widget _buildHeader() {
     return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 18, 18, 20),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
+          colors: [_kPrimary, _kMedBlue],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
-          colors: [_kPrimary, _kPrimaryDark],
-        ),
-        border: Border(
-          bottom: BorderSide(color: _kGold, width: 1.5),
         ),
         borderRadius: BorderRadius.only(
-          bottomLeft: Radius.circular(34),
-          bottomRight: Radius.circular(34),
+          bottomLeft: Radius.circular(30),
+          bottomRight: Radius.circular(30),
         ),
       ),
       child: Column(
         children: [
-          Padding(
-            padding: const EdgeInsets.fromLTRB(18, 20, 14, 8),
-            child: Row(
-              children: [
-                _avatar(name: 'RAMHIS User', size: 52),
-                const SizedBox(width: 14),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Row(
-                        children: [
-                          const Flexible(
-                            child: Text(
-                              'Messages',
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style: TextStyle(
-                                fontFamily: 'Georgia',
-                                fontSize: 28,
-                                fontWeight: FontWeight.w700,
-                                color: _kGoldLight,
-                                letterSpacing: 0.1,
-                              ),
-                            ),
-                          ),
-                          if (_totalUnread > 0) ...[
-                            const SizedBox(width: 8),
-                            _unreadBadge(),
-                          ],
-                        ],
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.center,
+            children: [
+              const Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Messages',
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 29,
+                        fontWeight: FontWeight.w800,
+                        letterSpacing: -0.4,
+                        height: 1,
                       ),
-                      const SizedBox(height: 3),
-                      const Text(
-                        'RAMHIS Chat',
-                        style: TextStyle(
-                          fontSize: 13,
-                          fontWeight: FontWeight.w600,
-                          color: Color(0xFFE9EDF8),
-                        ),
+                    ),
+                    SizedBox(height: 7),
+                    Text(
+                      'RAMHIS Chat',
+                      style: TextStyle(
+                        color: _kLightBlue,
+                        fontSize: 12.5,
+                        fontWeight: FontWeight.w600,
+                        letterSpacing: 0.2,
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
-                _headerIconButton(
-                  Icons.edit_rounded,
-                  onTap: _searchFocusNode.requestFocus,
-                ),
-                const SizedBox(width: 8),
-                _headerIconButton(Icons.refresh_rounded, onTap: _loadThreads),
-              ],
-            ),
+              ),
+              _headerIconButton(
+                Icons.refresh_rounded,
+                onTap: _loadThreads,
+              ),
+            ],
           ),
-          const SizedBox(height: 14),
+          const SizedBox(height: 16),
           _buildSearchBar(),
-          const SizedBox(height: 22),
         ],
       ),
     );
@@ -575,16 +577,18 @@ Future<void> _onGroupChatCreated(dynamic data) async {
 
   Widget _unreadBadge() {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-      decoration: BoxDecoration(
-        color: _kGold,
-        borderRadius: BorderRadius.circular(999),
+      constraints: const BoxConstraints(minWidth: 22, minHeight: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 4),
+      alignment: Alignment.center,
+      decoration: const BoxDecoration(
+        color: _kMedBlue,
+        shape: BoxShape.circle,
       ),
       child: Text(
-        '$_totalUnread unread',
+        _totalUnread > 99 ? '99+' : '$_totalUnread',
         style: const TextStyle(
-          color: Color(0xFF3C341E),
-          fontSize: 10,
+          color: _kPrimary,
+          fontSize: 9,
           fontWeight: FontWeight.w900,
         ),
       ),
@@ -593,31 +597,25 @@ Future<void> _onGroupChatCreated(dynamic data) async {
 
   Widget _headerIconButton(IconData icon, {required VoidCallback onTap}) {
     return Material(
-      color: Colors.transparent,
-      borderRadius: BorderRadius.circular(15),
+      color: Colors.white.withValues(alpha: 0.16),
+      borderRadius: BorderRadius.circular(14),
       child: InkWell(
-        borderRadius: BorderRadius.circular(15),
+        borderRadius: BorderRadius.circular(14),
         onTap: onTap,
         child: Container(
-          width: 46,
-          height: 46,
+          width: 43,
+          height: 43,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [_kGoldLight, _kGold],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
+            borderRadius: BorderRadius.circular(14),
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.38),
             ),
-            borderRadius: BorderRadius.circular(15),
-            border: Border.all(color: Colors.white.withValues(alpha: 0.75)),
-            boxShadow: [
-              BoxShadow(
-                color: Colors.black.withValues(alpha: 0.18),
-                blurRadius: 10,
-                offset: const Offset(0, 5),
-              ),
-            ],
           ),
-          child: Icon(icon, color: const Color(0xFF162A55), size: 22),
+          child: Icon(
+            icon,
+            color: Colors.white,
+            size: 20,
+          ),
         ),
       ),
     );
@@ -625,26 +623,30 @@ Future<void> _onGroupChatCreated(dynamic data) async {
 
   Widget _buildSearchBar() {
     final hasText = _searchQuery.trim().isNotEmpty;
+
     return AnimatedBuilder(
       animation: _searchFocusNode,
       builder: (context, _) {
         final focused = _searchFocusNode.hasFocus;
+
         return AnimatedContainer(
-          duration: const Duration(milliseconds: 220),
+          duration: const Duration(milliseconds: 180),
           curve: Curves.easeOut,
-          margin: EdgeInsets.symmetric(horizontal: hasText || focused ? 14 : 18),
+          height: 48,
           decoration: BoxDecoration(
-            color: const Color(0xFF172E5D),
+            color: Colors.white.withValues(alpha: 0.94),
             borderRadius: BorderRadius.circular(999),
             border: Border.all(
-              color: focused ? _kGoldLight : _kGold,
-              width: focused ? 2 : 1.5,
+              color: focused
+                  ? Colors.white
+                  : Colors.white.withValues(alpha: 0.55),
+              width: focused ? 1.6 : 1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.20),
-                blurRadius: focused ? 18 : 12,
-                offset: const Offset(0, 6),
+                color: _kPrimary.withValues(alpha: 0.12),
+                blurRadius: focused ? 14 : 9,
+                offset: const Offset(0, 4),
               ),
             ],
           ),
@@ -653,29 +655,38 @@ Future<void> _onGroupChatCreated(dynamic data) async {
             focusNode: _searchFocusNode,
             textInputAction: TextInputAction.search,
             style: const TextStyle(
-              color: Colors.white,
+              color: _kTextDark,
+              fontSize: 13,
               fontWeight: FontWeight.w600,
             ),
             decoration: InputDecoration(
-              hintText: '⌘  Search people or messages...',
+              hintText: 'Search people or messages...',
               hintStyle: const TextStyle(
-                color: Color(0xFFAAB5CB),
+                color: _kTextMid,
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
               ),
-              prefixIcon: Icon(
+              prefixIcon: const Icon(
                 Icons.search_rounded,
-                color: focused ? _kGoldLight : const Color(0xFFAAB5CB),
+                color: _kPrimary,
+                size: 20,
               ),
               suffixIcon: hasText
                   ? IconButton(
-                      icon: const Icon(Icons.close_rounded, color: _kGoldLight),
+                      icon: const Icon(
+                        Icons.close_rounded,
+                        color: _kTextMid,
+                        size: 18,
+                      ),
                       onPressed: _searchController.clear,
                     )
                   : null,
               filled: true,
               fillColor: Colors.transparent,
-              contentPadding:
-                  const EdgeInsets.symmetric(horizontal: 16, vertical: 14),
+              contentPadding: const EdgeInsets.symmetric(
+                horizontal: 14,
+                vertical: 12,
+              ),
               border: OutlineInputBorder(
                 borderRadius: BorderRadius.circular(999),
                 borderSide: BorderSide.none,
@@ -702,8 +713,10 @@ Future<void> _onGroupChatCreated(dynamic data) async {
           child: SizedBox(
             width: 22,
             height: 22,
-            child:
-                CircularProgressIndicator(strokeWidth: 2.5, color: _kPrimary),
+            child: CircularProgressIndicator(
+              strokeWidth: 2.3,
+              color: _kPrimary,
+            ),
           ),
         ),
       );
@@ -714,13 +727,16 @@ Future<void> _onGroupChatCreated(dynamic data) async {
         constrained: false,
         child: const Row(
           children: [
-            Icon(Icons.person_search_rounded, color: _kTextMid),
+            Icon(Icons.person_search_rounded, color: _kPrimary),
             SizedBox(width: 10),
             Expanded(
               child: Text(
                 'No approved users found',
                 style: TextStyle(
-                    color: _kTextMid, fontWeight: FontWeight.w700),
+                  color: _kTextMid,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 13,
+                ),
               ),
             ),
           ],
@@ -729,43 +745,48 @@ Future<void> _onGroupChatCreated(dynamic data) async {
     }
 
     return _userResultsShell(
-  child: SingleChildScrollView(
-    child: Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-          const Padding(
-            padding: EdgeInsets.fromLTRB(4, 0, 4, 8),
-            child: Text(
-              'People',
-              style: TextStyle(
-                color: _kTextMid,
-                fontSize: 12,
-                fontWeight: FontWeight.w900,
-                letterSpacing: 0.5,
+      child: SingleChildScrollView(
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            const Padding(
+              padding: EdgeInsets.fromLTRB(4, 0, 4, 5),
+              child: Text(
+                'PEOPLE',
+                style: TextStyle(
+                  color: _kTextMid,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w900,
+                  letterSpacing: 1,
+                ),
               ),
             ),
-          ),
-          ..._searchUsers.map(_buildUserTile),
-        ],
-    ),
+            ..._searchUsers.map(_buildUserTile),
+          ],
+        ),
       ),
     );
   }
 
-  Widget _userResultsShell({required Widget child, bool constrained = true}) {
+  Widget _userResultsShell({
+    required Widget child,
+    bool constrained = true,
+  }) {
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16),
-      constraints:
-    constrained ? const BoxConstraints(maxHeight: 220) : null,
-      padding: const EdgeInsets.fromLTRB(14, 12, 14, 8),
+      margin: const EdgeInsets.symmetric(horizontal: 14),
+      constraints: constrained
+          ? const BoxConstraints(maxHeight: 220)
+          : null,
+      padding: const EdgeInsets.fromLTRB(13, 11, 13, 7),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: _kLightBlue),
         boxShadow: [
           BoxShadow(
-            color: _kCardShadowColor.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            color: _kPrimary.withValues(alpha: 0.08),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -783,65 +804,63 @@ Future<void> _onGroupChatCreated(dynamic data) async {
     return Material(
       color: Colors.transparent,
       child: InkWell(
-        highlightColor: _kPrimary.withValues(alpha: 0.06),
-        splashColor: _kPrimary.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(16),
+        borderRadius: BorderRadius.circular(14),
         onTap: _isCreatingChat ? null : () => _startChatWithUser(user),
         child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 4, vertical: 10),
+          padding: const EdgeInsets.symmetric(horizontal: 3, vertical: 8),
           child: Row(
             children: [
               _avatar(
-  name: fullName,
-  userId: (user['_id'] ?? user['id'] ?? '').toString(),
-  size: 44,
-),
-              const SizedBox(width: 12),
+                name: fullName,
+                userId: (user['_id'] ?? user['id'] ?? '').toString(),
+                size: 42,
+              ),
+              const SizedBox(width: 11),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(
-                            fullName,
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: _kTextDark,
-                              fontSize: 14,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                        const SizedBox(width: 8),
-                        _roleBadge(accountType),
-                      ],
+                    Text(
+                      fullName,
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: const TextStyle(
+                        color: _kTextDark,
+                        fontSize: 13.5,
+                        fontWeight: FontWeight.w800,
+                      ),
                     ),
-                    const SizedBox(height: 4),
+                    const SizedBox(height: 3),
                     Text(
                       email,
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                          color: _kTextMid,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w500),
+                        color: _kTextMid,
+                        fontSize: 11.5,
+                        fontWeight: FontWeight.w500,
+                      ),
                     ),
                   ],
                 ),
               ),
-              const SizedBox(width: 10),
+              const SizedBox(width: 8),
+              _roleBadge(accountType),
+              const SizedBox(width: 8),
               _isCreatingChat
                   ? const SizedBox(
                       width: 18,
                       height: 18,
                       child: CircularProgressIndicator(
-                          strokeWidth: 2, color: _kPrimary),
+                        strokeWidth: 2,
+                        color: _kPrimary,
+                      ),
                     )
-                  : const Icon(Icons.arrow_forward_ios_rounded,
-                      size: 16, color: _kTextMid),
+                  : const Icon(
+                      Icons.chevron_right_rounded,
+                      size: 20,
+                      color: _kTextMid,
+                    ),
             ],
           ),
         ),
@@ -850,24 +869,17 @@ Future<void> _onGroupChatCreated(dynamic data) async {
   }
 
   Widget _buildThreadList() {
-  if (_isLoading) return _buildLoadingState();
+    if (_isLoading) return _buildLoadingState();
 
-  if (_filteredThreads.isEmpty) {
-    return Container();
-  }
+    if (_filteredThreads.isEmpty) {
+      return _buildEmptyState();
+    }
 
-  return ListView.separated(
+    return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 22),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 22),
       itemCount: _filteredThreads.length,
-      separatorBuilder: (_, __) => Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 12),
-        child: Divider(
-          height: 14,
-          thickness: 1,
-          color: _kDividerColor.withValues(alpha: 0.85),
-        ),
-      ),
+      separatorBuilder: (_, __) => const SizedBox(height: 1),
       itemBuilder: (_, i) => _buildChatTile(_filteredThreads[i]),
     );
   }
@@ -880,7 +892,7 @@ Future<void> _onGroupChatCreated(dynamic data) async {
     final role = isGroup
         ? 'Group • ${thread.memberCount} members'
         : _roleFromName(displayName);
-    final accentColor = isGroup ? _kGold : _roleColor(role);
+
     final preview = isGroup
         ? thread.lastMessage.isEmpty
             ? 'Group • ${thread.memberCount} members'
@@ -888,6 +900,7 @@ Future<void> _onGroupChatCreated(dynamic data) async {
         : thread.lastMessage.isEmpty
             ? 'No messages yet'
             : 'You: ${thread.lastMessage}';
+
     final timestamp =
         _friendlyTime(thread.updatedAt?.toIso8601String() ?? '');
 
@@ -895,128 +908,138 @@ Future<void> _onGroupChatCreated(dynamic data) async {
       onTap: () => _openThread(thread),
       child: Material(
         color: Colors.transparent,
-        borderRadius: BorderRadius.circular(22),
         child: InkWell(
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(18),
           onTap: () => _openThread(thread),
           child: Container(
+            padding: const EdgeInsets.symmetric(
+              horizontal: 10,
+              vertical: 11,
+            ),
             decoration: BoxDecoration(
               color: Colors.white,
-              borderRadius: BorderRadius.circular(22),
+              borderRadius: BorderRadius.circular(18),
               border: Border.all(
-                color: hasUnread ? _kGold : const Color(0xFFCFC8AE),
-                width: hasUnread ? 1.7 : 1.25,
+                color: hasUnread
+                    ? _kMedBlue.withValues(alpha: 0.85)
+                    : _kLightBlue.withValues(alpha: 0.75),
+                width: hasUnread ? 1.2 : 0.8,
               ),
               boxShadow: [
                 BoxShadow(
-                  color: Colors.black.withValues(alpha: 0.10),
-                  blurRadius: 14,
-                  offset: const Offset(0, 7),
+                  color: _kPrimary.withValues(alpha: 0.055),
+                  blurRadius: 10,
+                  offset: const Offset(0, 4),
                 ),
               ],
             ),
-            child: Padding(
-              padding: const EdgeInsets.fromLTRB(13, 12, 13, 12),
-              child: Row(
-                children: [
-                  _avatar(
-                    name: displayName,
-                    userId: thread.otherUserId,
-                    size: 62,
-                    showOnline: !isGroup,
-                    isGroup: isGroup,
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.center,
+              children: [
+                _avatar(
+                  name: displayName,
+                  userId: thread.otherUserId,
+                  size: 56,
+                  showOnline: !isGroup,
+                  isGroup: isGroup,
+                ),
+                const SizedBox(width: 12),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        crossAxisAlignment: CrossAxisAlignment.center,
+                        children: [
+                          Expanded(
+                            child: Text(
+                              displayName,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: _kTextDark,
+                                fontSize: 15,
+                                fontWeight: hasUnread
+                                    ? FontWeight.w900
+                                    : FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                          if (timestamp.isNotEmpty) ...[
+                            const SizedBox(width: 6),
+                            Text(
+                              timestamp,
+                              style: TextStyle(
+                                color: hasUnread
+                                    ? _kPrimary
+                                    : _kTextMid,
+                                fontSize: 10.5,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                      const SizedBox(height: 5),
+                      Row(
+                        children: [
+                          _roleBadge(role, isGroup: isGroup),
+                          const SizedBox(width: 7),
+                          Expanded(
+                            child: Text(
+                              preview,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                color: hasUnread
+                                    ? _kTextDark
+                                    : _kTextMid,
+                                fontSize: 11.8,
+                                fontWeight: hasUnread
+                                    ? FontWeight.w700
+                                    : FontWeight.w500,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                displayName,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: _kTextDark,
-                                  fontWeight: hasUnread
-                                      ? FontWeight.w900
-                                      : FontWeight.w800,
-                                  fontSize: 15.5,
-                                ),
-                              ),
-                            ),
-                            const SizedBox(width: 7),
-                            _roleBadge(role, isGroup: isGroup),
-                            if (timestamp.isNotEmpty) ...[
-                              const SizedBox(width: 7),
-                              Text(
-                                timestamp,
-                                style: TextStyle(
-                                  fontSize: 11,
-                                  fontWeight: FontWeight.w700,
-                                  color: hasUnread ? _kPrimary : _kTextMid,
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                        const SizedBox(height: 9),
-                        Row(
-                          children: [
-                            Expanded(
-                              child: Text(
-                                preview,
-                                maxLines: 1,
-                                overflow: TextOverflow.ellipsis,
-                                style: TextStyle(
-                                  color: hasUnread ? _kTextDark : _kTextMid,
-                                  fontWeight: hasUnread
-                                      ? FontWeight.w700
-                                      : FontWeight.w500,
-                                  fontSize: 13,
-                                ),
-                              ),
-                            ),
-                            if (hasUnread) ...[
-                              const SizedBox(width: 8),
-                              Container(
-                                constraints: const BoxConstraints(
-                                  minWidth: 24,
-                                  minHeight: 24,
-                                ),
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 7),
-                                alignment: Alignment.center,
-                                decoration: BoxDecoration(
-                                  gradient: const LinearGradient(
-                                    colors: [_kGoldLight, _kGold],
-                                  ),
-                                  shape: BoxShape.circle,
-                                  border: Border.all(
-                                    color: const Color(0xFFB89E50),
-                                  ),
-                                ),
-                                child: Text(
-                                  thread.unread > 99
-                                      ? '99+'
-                                      : '${thread.unread}',
-                                  style: const TextStyle(
-                                    color: Color(0xFF40371F),
-                                    fontSize: 10,
-                                    fontWeight: FontWeight.w900,
-                                  ),
-                                ),
-                              ),
-                            ],
-                          ],
-                        ),
-                      ],
+                ),
+                if (hasUnread) ...[
+                  const SizedBox(width: 8),
+                  Container(
+                    constraints: const BoxConstraints(
+                      minWidth: 22,
+                      minHeight: 22,
+                    ),
+                    padding: const EdgeInsets.symmetric(horizontal: 5),
+                    alignment: Alignment.center,
+                    decoration: const BoxDecoration(
+                      color: _kPrimary,
+                      shape: BoxShape.circle,
+                    ),
+                    child: Text(
+                      thread.unread > 99
+                          ? '99+'
+                          : '${thread.unread}',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 8.5,
+                        fontWeight: FontWeight.w900,
+                      ),
                     ),
                   ),
-                ],
-              ),
+                ] else
+                  const Padding(
+                    padding: EdgeInsets.only(left: 5),
+                    child: Icon(
+                      Icons.chevron_right_rounded,
+                      color: _kTextMid,
+                      size: 21,
+                    ),
+                  ),
+              ],
             ),
           ),
         ),
@@ -1027,71 +1050,82 @@ Future<void> _onGroupChatCreated(dynamic data) async {
   Widget _buildEmptyState() {
     return ListView(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(22, 54, 22, 22),
+      padding: const EdgeInsets.fromLTRB(18, 34, 18, 24),
       children: [
         Container(
-          padding: const EdgeInsets.fromLTRB(28, 34, 28, 34),
+          padding: const EdgeInsets.fromLTRB(26, 30, 26, 30),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
+              colors: [_kPrimary, _kMedBlue],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
-              colors: [_kPrimary, _kPrimaryDark],
             ),
-            borderRadius: BorderRadius.circular(28),
+            borderRadius: BorderRadius.circular(24),
             boxShadow: [
               BoxShadow(
-                color: _kPrimary.withValues(alpha: 0.22),
-                blurRadius: 24,
-                offset: const Offset(0, 12),
+                color: _kPrimary.withValues(alpha: 0.16),
+                blurRadius: 20,
+                offset: const Offset(0, 9),
               ),
             ],
           ),
           child: Column(
             children: [
               Container(
-                width: 82,
-                height: 82,
+                width: 72,
+                height: 72,
                 alignment: Alignment.center,
                 decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.16),
+                  color: Colors.white.withValues(alpha: 0.18),
                   shape: BoxShape.circle,
+                  border: Border.all(
+                    color: Colors.white.withValues(alpha: 0.32),
+                  ),
                 ),
-                child: const Text('💬', style: TextStyle(fontSize: 40)),
+                child: const Icon(
+                  Icons.forum_outlined,
+                  color: Colors.white,
+                  size: 34,
+                ),
               ),
-              const SizedBox(height: 20),
+              const SizedBox(height: 17),
               const Text(
                 'No conversations yet',
                 textAlign: TextAlign.center,
                 style: TextStyle(
                   color: Colors.white,
-                  fontSize: 21,
+                  fontSize: 20,
                   fontWeight: FontWeight.w900,
                 ),
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 7),
               const Text(
-                'Search for a user above to start chatting',
+                'Search for an approved user above to start chatting.',
                 textAlign: TextAlign.center,
                 style: TextStyle(
-                  color: Color(0xFFEAF0FF),
-                  fontSize: 13,
+                  color: _kLightBlue,
+                  fontSize: 12.5,
+                  height: 1.45,
                   fontWeight: FontWeight.w500,
-                  height: 1.4,
                 ),
               ),
-              const SizedBox(height: 22),
+              const SizedBox(height: 19),
               ElevatedButton.icon(
                 onPressed: _searchFocusNode.requestFocus,
-                icon: const Icon(Icons.edit_rounded),
+                icon: const Icon(Icons.edit_rounded, size: 17),
                 label: const Text('Start New Chat'),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.white,
                   foregroundColor: _kPrimary,
                   elevation: 0,
                   padding: const EdgeInsets.symmetric(
-                      horizontal: 18, vertical: 12),
-                  textStyle:
-                      const TextStyle(fontWeight: FontWeight.w900),
+                    horizontal: 18,
+                    vertical: 11,
+                  ),
+                  textStyle: const TextStyle(
+                    fontSize: 12.5,
+                    fontWeight: FontWeight.w900,
+                  ),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(999),
                   ),
@@ -1107,48 +1141,62 @@ Future<void> _onGroupChatCreated(dynamic data) async {
   Widget _buildLoadingState() {
     return ListView.separated(
       physics: const AlwaysScrollableScrollPhysics(),
-      padding: const EdgeInsets.fromLTRB(16, 18, 16, 22),
-      itemCount: 3,
-      separatorBuilder: (_, __) => const SizedBox(height: 12),
+      padding: const EdgeInsets.fromLTRB(12, 12, 12, 22),
+      itemCount: 5,
+      separatorBuilder: (_, __) => const SizedBox(height: 7),
       itemBuilder: (_, i) => _buildSkeletonTile(i),
     );
   }
 
   Widget _buildSkeletonTile(int index) {
     return TweenAnimationBuilder<double>(
-      tween: Tween(begin: 0, end: 1),
-      duration: Duration(milliseconds: 850 + (index * 120)),
+      tween: Tween(begin: 0.15, end: 0.75),
+      duration: Duration(milliseconds: 700 + (index * 100)),
       curve: Curves.easeInOut,
       builder: (context, value, _) {
         final color =
-            Color.lerp(_kGoldLight, _kBackground, value)!;
+            Color.lerp(_kLightBlue, _kBackground, value)!;
+
         return Container(
-          padding: const EdgeInsets.all(14),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 12,
+            vertical: 13,
+          ),
           decoration: BoxDecoration(
             color: Colors.white,
-            borderRadius: BorderRadius.circular(22),
-            boxShadow: [
-              BoxShadow(
-                color: _kCardShadowColor.withValues(alpha: 0.045),
-                blurRadius: 18,
-                offset: const Offset(0, 8),
-              ),
-            ],
+            borderRadius: BorderRadius.circular(18),
+            border: Border.all(color: _kLightBlue),
           ),
           child: Row(
             children: [
-              _skeletonBox(width: 54, height: 54, color: color, circle: true),
-              const SizedBox(width: 13),
+              _skeletonBox(
+                width: 56,
+                height: 56,
+                color: color,
+                circle: true,
+              ),
+              const SizedBox(width: 12),
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     _skeletonBox(
-                        width: double.infinity, height: 15, color: color),
-                    const SizedBox(height: 10),
-                    _skeletonBox(width: 72, height: 18, color: color),
-                    const SizedBox(height: 10),
-                    _skeletonBox(width: 230, height: 12, color: color),
+                      width: double.infinity,
+                      height: 14,
+                      color: color,
+                    ),
+                    const SizedBox(height: 9),
+                    _skeletonBox(
+                      width: 190,
+                      height: 11,
+                      color: color,
+                    ),
+                    const SizedBox(height: 8),
+                    _skeletonBox(
+                      width: 105,
+                      height: 10,
+                      color: color,
+                    ),
                   ],
                 ),
               ),

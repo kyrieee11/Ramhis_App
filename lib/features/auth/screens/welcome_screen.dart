@@ -4,12 +4,16 @@ import 'package:ramhis_app/features/auth/screens/signup_personal_info_screen.dar
 class WelcomeScreenWidget extends StatelessWidget {
   const WelcomeScreenWidget({super.key});
 
-  static const _navy = Color(0xFF123F91);
-  static const _navyDark = Color(0xFF082B6B);
-  static const _gold = Color(0xFFD9C27A);
-  static const _goldLight = Color(0xFFF1E2AE);
-  static const _cream = Color(0xFFF7F1E2);
-  static const _red = Color(0xFFB9232B);
+  static const _primary = Color(0xFF10539B);
+  static const _primaryDark = Color(0xFF0B4380);
+  static const _primaryLight = Color(0xFFE3F2FD);
+  static const _primarySoft = Color(0xFFEBF3FA);
+  static const _background = Color(0xFFF8FAFC);
+  static const _textPrimary = Color(0xFF102A43);
+  static const _textSecondary = Color(0xFF526579);
+  static const _textMuted = Color(0xFF8292A6);
+  static const _border = Color(0xFFCDE1EC);
+  static const _success = Color(0xFF22A06B);
 
   void _navigate(BuildContext context, String type) {
     Navigator.push(
@@ -41,7 +45,7 @@ class WelcomeScreenWidget extends StatelessWidget {
         height: double.infinity,
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [_navy, _navyDark],
+            colors: [_primary, _primaryDark],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -81,7 +85,7 @@ class WelcomeScreenWidget extends StatelessWidget {
                         Text(
                           'Welcome to',
                           style: TextStyle(
-                            color: _goldLight,
+                            color: _primaryLight,
                             fontSize: isVerySmallHeight ? 16 : 18,
                             fontWeight: FontWeight.w500,
                           ),
@@ -90,7 +94,7 @@ class WelcomeScreenWidget extends StatelessWidget {
                         Text(
                           'RAMHIS!',
                           style: TextStyle(
-                            color: _goldLight,
+                            color: _primaryLight,
                             fontSize: isVerySmallHeight ? 37 : 43,
                             fontWeight: FontWeight.w800,
                             letterSpacing: 1.2,
@@ -110,7 +114,7 @@ class WelcomeScreenWidget extends StatelessWidget {
                           'How would you like to continue?',
                           textAlign: TextAlign.center,
                           style: TextStyle(
-                            color: _cream,
+                            color: _background,
                             fontSize: isVerySmallHeight ? 15 : 16,
                             fontWeight: FontWeight.w600,
                           ),
@@ -120,7 +124,7 @@ class WelcomeScreenWidget extends StatelessWidget {
                           title: 'Doctor',
                           subtitle: 'Access medical tools\nand patient records',
                           icon: Icons.medical_services_rounded,
-                          accent: _red,
+                          accent: _primary,
                           onTap: () => _navigate(context, 'doctor'),
                           compact: isSmallHeight,
                         ),
@@ -129,7 +133,7 @@ class WelcomeScreenWidget extends StatelessWidget {
                           title: 'Volunteer',
                           subtitle: 'Help and support\nyour community',
                           icon: Icons.volunteer_activism_rounded,
-                          accent: _red,
+                          accent: _primary,
                           onTap: () => _navigate(context, 'volunteer'),
                           compact: isSmallHeight,
                         ),
@@ -147,9 +151,9 @@ class WelcomeScreenWidget extends StatelessWidget {
                             ),
                             label: const Text('Back to Login'),
                             style: OutlinedButton.styleFrom(
-                              foregroundColor: _goldLight,
+                              foregroundColor: _primaryLight,
                               side: const BorderSide(
-                                color: _gold,
+                                color: _border,
                                 width: 1.5,
                               ),
                               backgroundColor: Colors.transparent,
@@ -184,7 +188,7 @@ class WelcomeScreenWidget extends StatelessWidget {
         decoration: BoxDecoration(
           shape: BoxShape.circle,
           border: Border.all(
-            color: _gold.withValues(alpha: opacity),
+            color: _primaryLight.withValues(alpha: opacity),
             width: 25,
           ),
         ),
@@ -214,7 +218,7 @@ class WelcomeScreenWidget extends StatelessWidget {
           return const Icon(
             Icons.health_and_safety_rounded,
             size: 70,
-            color: _goldLight,
+            color: _primaryLight,
           );
         },
       ),
@@ -228,21 +232,21 @@ class WelcomeScreenWidget extends StatelessWidget {
         Container(
           width: 70,
           height: 1.5,
-          color: _gold.withValues(alpha: 0.75),
+          color: _border.withValues(alpha: 0.75),
         ),
         Container(
           margin: const EdgeInsets.symmetric(horizontal: 9),
           width: 8,
           height: 8,
           decoration: const BoxDecoration(
-            color: _red,
+            color: _primary,
             shape: BoxShape.circle,
           ),
         ),
         Container(
           width: 70,
           height: 1.5,
-          color: _gold.withValues(alpha: 0.75),
+          color: _border.withValues(alpha: 0.75),
         ),
       ],
     );
@@ -253,7 +257,7 @@ class WelcomeScreenWidget extends StatelessWidget {
       children: [
         Expanded(
           child: Divider(
-            color: _gold.withValues(alpha: 0.48),
+            color: _border.withValues(alpha: 0.48),
             thickness: 1,
           ),
         ),
@@ -262,7 +266,7 @@ class WelcomeScreenWidget extends StatelessWidget {
           child: Text(
             'OR',
             style: TextStyle(
-              color: _goldLight.withValues(alpha: 0.9),
+              color: _primaryLight.withValues(alpha: 0.9),
               fontSize: 13,
               fontWeight: FontWeight.w800,
             ),
@@ -270,7 +274,7 @@ class WelcomeScreenWidget extends StatelessWidget {
         ),
         Expanded(
           child: Divider(
-            color: _gold.withValues(alpha: 0.48),
+            color: _border.withValues(alpha: 0.48),
             thickness: 1,
           ),
         ),
@@ -291,7 +295,7 @@ class WelcomeScreenWidget extends StatelessWidget {
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(28),
-        splashColor: _gold.withValues(alpha: 0.12),
+        splashColor: _border.withValues(alpha: 0.12),
         child: Container(
           width: double.infinity,
           padding: EdgeInsets.symmetric(
@@ -301,23 +305,22 @@ class WelcomeScreenWidget extends StatelessWidget {
           decoration: BoxDecoration(
             gradient: const LinearGradient(
               colors: [
-                Color(0xFFE6D09A),
-                Color(0xFFC5A967),
-                Color(0xFFE2CD96),
+                _primaryDark,
+                _primary,
               ],
               begin: Alignment.topLeft,
               end: Alignment.bottomRight,
             ),
             borderRadius: BorderRadius.circular(28),
             border: Border.all(
-              color: _goldLight,
-              width: 1.3,
+              color: _primaryLight,
+              width: 1.1,
             ),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withValues(alpha: 0.25),
-                blurRadius: 16,
-                offset: const Offset(0, 8),
+                color: Colors.black.withValues(alpha: 0.18),
+                blurRadius: 12,
+                offset: const Offset(0, 6),
               ),
             ],
           ),
@@ -327,10 +330,10 @@ class WelcomeScreenWidget extends StatelessWidget {
                 width: compact ? 54 : 60,
                 height: compact ? 54 : 60,
                 decoration: BoxDecoration(
-                  color: _cream,
+                  color: Colors.white,
                   borderRadius: BorderRadius.circular(14),
                   border: Border.all(
-                    color: const Color(0xFF9D7D2F),
+                    color: _border,
                     width: 1.1,
                   ),
                   boxShadow: [
@@ -355,7 +358,7 @@ class WelcomeScreenWidget extends StatelessWidget {
                     Text(
                       title,
                       style: TextStyle(
-                        color: const Color(0xFF5B4620),
+                        color: Colors.white,
                         fontSize: compact ? 20 : 22,
                         fontWeight: FontWeight.w800,
                       ),
@@ -364,7 +367,7 @@ class WelcomeScreenWidget extends StatelessWidget {
                     Text(
                       subtitle,
                       style: TextStyle(
-                        color: const Color(0xFF392F25),
+                        color: Colors.white,
                         fontSize: compact ? 13 : 14,
                         height: 1.28,
                         fontWeight: FontWeight.w500,
@@ -375,8 +378,8 @@ class WelcomeScreenWidget extends StatelessWidget {
               ),
               const Icon(
                 Icons.chevron_right_rounded,
-                color: Color(0xFF6E592E),
-                size: 34,
+                color: Colors.white,
+                size: 32,
               ),
             ],
           ),

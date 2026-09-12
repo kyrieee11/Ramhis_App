@@ -4,15 +4,17 @@ import 'package:ramhis_app/features/user/widgets/bottom_nav.dart';
 class AccTermsandConditionsWidget extends StatelessWidget {
   const AccTermsandConditionsWidget({super.key});
 
-  static const Color _cream = Color(0xFFF7F1E2);
-  static const Color _creamLight = Color(0xFFFBF7EC);
-  static const Color _navy = Color(0xFF123F91);
-  static const Color _navyDark = Color(0xFF082B6B);
-  static const Color _gold = Color(0xFFD8C17A);
-  static const Color _goldDark = Color(0xFF9D7D2F);
-  static const Color _text = Color(0xFF26344A);
-  static const Color _body = Color(0xFF4E514F);
-  static const Color _muted = Color(0xFF77746D);
+  static const Color _cream = Color(0xFFF8FAFC);
+  static const Color _creamLight = Color(0xFFFFFFFF);
+  static const Color _navy = Color(0xFF10539B);
+  static const Color _navyDark = Color(0xFF0B4380);
+  static const Color _blue = Color(0xFF1863B5);
+  static const Color _lightBlue = Color(0xFFE3F2FD);
+  static const Color _softBlue = Color(0xFFEBF3FA);
+  static const Color _border = Color(0xFFCDE1EC);
+  static const Color _text = Color(0xFF102A43);
+  static const Color _body = Color(0xFF526579);
+  static const Color _muted = Color(0xFF8292A6);
 
   @override
   Widget build(BuildContext context) {
@@ -25,7 +27,7 @@ class AccTermsandConditionsWidget extends StatelessWidget {
         leading: IconButton(
           icon: const Icon(
             Icons.arrow_back_ios_new_rounded,
-            color: _gold,
+            color: _lightBlue,
             size: 21,
           ),
           onPressed: () => Navigator.maybePop(context),
@@ -47,7 +49,7 @@ class AccTermsandConditionsWidget extends StatelessWidget {
             ),
             border: Border(
               bottom: BorderSide(
-                color: _gold,
+                color: _lightBlue,
                 width: 1.2,
               ),
             ),
@@ -57,7 +59,7 @@ class AccTermsandConditionsWidget extends StatelessWidget {
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [_cream, Color(0xFFF0E7D0), _creamLight],
+            colors: [_cream, _softBlue, _creamLight],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -173,14 +175,14 @@ class _TermsHero extends StatelessWidget {
           end: Alignment.bottomRight,
         ),
         border: Border.all(
-          color: AccTermsandConditionsWidget._gold,
+          color: AccTermsandConditionsWidget._lightBlue,
           width: 1.2,
         ),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.16),
-            blurRadius: 15,
-            offset: const Offset(0, 7),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
           ),
         ],
       ),
@@ -195,7 +197,7 @@ class _TermsHero extends StatelessWidget {
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 border: Border.all(
-                  color: AccTermsandConditionsWidget._gold.withValues(
+                  color: AccTermsandConditionsWidget._lightBlue.withValues(
                     alpha: 0.10,
                   ),
                   width: 16,
@@ -225,10 +227,10 @@ class _TermsHero extends StatelessWidget {
                     width: 63,
                     height: 63,
                     decoration: BoxDecoration(
-                      color: AccTermsandConditionsWidget._cream,
+                      color: AccTermsandConditionsWidget._softBlue,
                       borderRadius: BorderRadius.circular(10),
                       border: Border.all(
-                        color: AccTermsandConditionsWidget._gold,
+                        color: AccTermsandConditionsWidget._lightBlue,
                         width: 1.2,
                       ),
                     ),
@@ -243,7 +245,7 @@ class _TermsHero extends StatelessWidget {
                     child: Text(
                       'Terms & Conditions',
                       style: TextStyle(
-                        color: AccTermsandConditionsWidget._cream,
+                        color: Colors.white,
                         fontSize: 24,
                         fontWeight: FontWeight.w600,
                       ),
@@ -255,7 +257,7 @@ class _TermsHero extends StatelessWidget {
               const Text(
                 'Please read these terms carefully. These guidelines explain the responsibilities, service limitations, and participation rules for Remote Area Medical (RAM) Philippines.',
                 style: TextStyle(
-                  color: AccTermsandConditionsWidget._cream,
+                  color: Colors.white,
                   fontSize: 13.5,
                   height: 1.48,
                   fontWeight: FontWeight.w500,
@@ -267,7 +269,7 @@ class _TermsHero extends StatelessWidget {
                 child: Text(
                   'Effective Date: 2025',
                   style: TextStyle(
-                    color: AccTermsandConditionsWidget._gold,
+                    color: AccTermsandConditionsWidget._lightBlue,
                     fontSize: 12,
                     fontWeight: FontWeight.w800,
                   ),
@@ -302,7 +304,7 @@ class _TermsSection extends StatelessWidget {
         color: AccTermsandConditionsWidget._creamLight.withValues(alpha: 0.97),
         borderRadius: BorderRadius.circular(17),
         border: Border.all(
-          color: AccTermsandConditionsWidget._goldDark,
+          color: AccTermsandConditionsWidget._border,
           width: 1.1,
         ),
         boxShadow: [
@@ -332,14 +334,14 @@ class _TermsSection extends StatelessWidget {
                   ),
                   shape: BoxShape.circle,
                   border: Border.all(
-                    color: AccTermsandConditionsWidget._gold,
+                    color: AccTermsandConditionsWidget._lightBlue,
                     width: 1,
                   ),
                 ),
                 child: Text(
                   '$number',
                   style: const TextStyle(
-                    color: AccTermsandConditionsWidget._cream,
+                    color: Colors.white,
                     fontSize: 14,
                     fontWeight: FontWeight.w800,
                   ),
@@ -387,10 +389,10 @@ class _TermsFooter extends StatelessWidget {
           width: 50,
           height: 50,
           decoration: BoxDecoration(
-            color: AccTermsandConditionsWidget._cream,
+            color: Colors.white,
             shape: BoxShape.circle,
             border: Border.all(
-              color: AccTermsandConditionsWidget._gold,
+              color: AccTermsandConditionsWidget._lightBlue,
               width: 1.2,
             ),
           ),

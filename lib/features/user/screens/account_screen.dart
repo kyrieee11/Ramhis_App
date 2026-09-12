@@ -15,13 +15,20 @@ import 'package:ramhis_app/features/user/account/acc_privacy_policy.dart';
 import 'package:ramhis_app/features/user/account/acc_termsand_conditions.dart';
 import 'package:ramhis_app/features/user/account/acc_username.dart';
 
-const _kNavy = Color(0xFF123F91);
-const _kNavyDark = Color(0xFF082B6B);
-const _kGold = Color(0xFFD9C27A);
-const _kGoldDark = Color(0xFF9D7D2F);
-const _kCream = Color(0xFFF7F2E5);
-const _kInk = Color(0xFF24304A);
-const _kMuted = Color(0xFF6F7480);
+const _kNavy = Color(0xFF10539B);
+const _kNavyDark = Color(0xFF1863B5);
+const _kBlueAccent = Color(0xFF8EC1DA);
+const _kBlueAccentDark = Color(0xFF1863B5);
+const _kCream = Color(0xFFF8FAFC);
+const _kInk = Color(0xFF102A43);
+const _kMuted = Color(0xFF8292A6);
+const _kMedBlue = Color(0xFF5D8FC8);
+const _kLightBlue = Color(0xFFEBF3FA);
+const _kGray = Color(0xFFEDEDED);
+const _kLightRed = Color(0xFFFFEFEF);
+const _kMedRed = Color(0xFFE58B8B);
+const _kDarkRed = Color(0xFFD95C5C);
+
 
 class AccountWidget extends StatefulWidget {
   const AccountWidget({super.key});
@@ -280,20 +287,20 @@ class _AccountWidgetState extends State<AccountWidget> {
 
   Color _roleColor(String role) {
     final normalized = role.toLowerCase();
-    if (normalized.contains('doctor')) return const Color(0xFF1976D2);
-    if (normalized.contains('volunteer')) return const Color(0xFF388E3C);
-    if (normalized.contains('pharmacist')) return const Color(0xFF7B1FA2);
-    if (normalized.contains('admin')) return const Color(0xFFD32F2F);
-    return const Color(0xFF3949AB);
+    if (normalized.contains('doctor')) return _kNavy;
+    if (normalized.contains('volunteer')) return _kNavy;
+    if (normalized.contains('pharmacist')) return _kMedBlue;
+    if (normalized.contains('admin')) return _kDarkRed;
+    return _kNavy;
   }
 
   Color _avatarFallbackColor(String name) {
     final first = name.trim().isEmpty ? 'A' : name.trim()[0].toUpperCase();
-    if ('ABCDE'.contains(first)) return const Color(0xFFF44336);
-    if ('FGHIJ'.contains(first)) return const Color(0xFF9C27B0);
-    if ('KLMNO'.contains(first)) return const Color(0xFF2196F3);
-    if ('PQRST'.contains(first)) return const Color(0xFF4CAF50);
-    return const Color(0xFFFF9800);
+    if ('ABCDE'.contains(first)) return _kMedRed;
+    if ('FGHIJ'.contains(first)) return _kMedBlue;
+    if ('KLMNO'.contains(first)) return _kNavy;
+    if ('PQRST'.contains(first)) return _kNavy;
+    return _kMedRed;
   }
 
   String _initials(String value) {
@@ -357,169 +364,152 @@ class _AccountWidgetState extends State<AccountWidget> {
     );
   }
 
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       key: scaffoldKey,
       backgroundColor: _kCream,
       body: SafeArea(
-        child: Stack(
+        bottom: false,
+        child: Column(
           children: [
-            Positioned.fill(
-              child: CustomPaint(
-                painter: _MarbleBackgroundPainter(),
-              ),
+            _buildProfileHeader(),
+            Expanded(
+              child: isLoading
+                  ? const Center(
+                      child: CircularProgressIndicator(color: _kNavy),
+                    )
+                  : SingleChildScrollView(
+                      physics: const BouncingScrollPhysics(),
+                      padding: const EdgeInsets.fromLTRB(16, 18, 16, 24),
+                      child: Column(
+                        children: [
+                          _buildMenuSection(),
+                          const SizedBox(height: 18),
+                          _buildLogoutButton(),
+                          const SizedBox(height: 14),
+                          _buildVersionInfo(),
+                        ],
+                      ),
+                    ),
             ),
-            Column(
-              children: [
-                _buildHeader(),
-                _buildProfileCard(),
-                Expanded(
-                  child: isLoading
-                      ? const Center(
-                          child: CircularProgressIndicator(
-                            color: _kGoldDark,
-                          ),
-                        )
-                      : SingleChildScrollView(
-                          padding: const EdgeInsets.fromLTRB(18, 12, 18, 20),
-                          child: Column(
-                            children: [
-                              _buildMenuSection(),
-                              const SizedBox(height: 16),
-                              _buildLogoutButton(),
-                              const SizedBox(height: 16),
-                              _buildVersionInfo(),
-                            ],
-                          ),
-                        ),
-                ),
-                const CustomNavBar(currentIndex: 3),
-              ],
-            ),
+            const CustomNavBar(currentIndex: 3),
           ],
         ),
       ),
     );
   }
 
-  Widget _buildHeader() {
-    return Container(
+  Widget _buildProfileHeader() {
+    final roleColor = _roleColor(accountType);
+
+    return SizedBox(
+      height: 224,
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(8, 8, 8, 10),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_kNavy, _kNavyDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border(
-          bottom: BorderSide(color: _kGold, width: 1.4),
-        ),
-      ),
-      child: Row(
+      child: Stack(
+        clipBehavior: Clip.none,
         children: [
-          Material(
-            color: Colors.transparent,
-            child: InkWell(
-              customBorder: const CircleBorder(),
-              onTap: () => Navigator.maybePop(context),
-              child: const SizedBox(
-                width: 48,
-                height: 48,
-                child: Icon(
-                  Icons.arrow_back_ios_new_rounded,
-                  color: _kGold,
-                  size: 21,
+          Positioned.fill(
+            child: CustomPaint(
+              painter: _AccountHeaderPainter(),
+            ),
+          ),
+          Positioned(
+            top: 10,
+            left: 8,
+            child: Material(
+              color: Colors.transparent,
+              child: InkWell(
+                customBorder: const CircleBorder(),
+                onTap: () => Navigator.maybePop(context),
+                child: const SizedBox(
+                  width: 44,
+                  height: 44,
+                  child: Icon(
+                    Icons.arrow_back_ios_new_rounded,
+                    color: Colors.white,
+                    size: 19,
+                  ),
                 ),
               ),
             ),
           ),
-          const Expanded(
-            child: Text(
-              'Account',
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                color: _kCream,
-                fontSize: 30,
-                fontWeight: FontWeight.w700,
-                letterSpacing: 0.2,
-              ),
-            ),
-          ),
-          const SizedBox(width: 48),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildProfileCard() {
-    final roleColor = _roleColor(accountType);
-
-    return Container(
-      width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(18, 16, 20, 18),
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_kNavy, _kNavyDark],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        border: Border(
-          bottom: BorderSide(color: _kGold, width: 1.2),
-        ),
-      ),
-      child: isLoading
-          ? const SizedBox(
-              height: 118,
-              child: Center(
-                child: CircularProgressIndicator(color: _kGold),
-              ),
-            )
-          : Row(
-              children: [
-                _buildAvatar(),
-                const SizedBox(width: 16),
-                Expanded(
-                  child: Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text(
-                        fullName,
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis,
-                        style: const TextStyle(
-                          color: _kCream,
-                          fontSize: 25,
-                          fontWeight: FontWeight.w700,
-                          letterSpacing: 0.1,
-                        ),
+          Positioned(
+            left: 20,
+            right: 20,
+            top: 72,
+            child: isLoading
+                ? const SizedBox(
+                    height: 105,
+                    child: Center(
+                      child: CircularProgressIndicator(
+                        color: Colors.white,
                       ),
-                      const SizedBox(height: 7),
-                      Container(
-                        padding: const EdgeInsets.symmetric(
-                          horizontal: 13,
-                          vertical: 6,
-                        ),
-                        decoration: BoxDecoration(
-                          color: _kCream,
-                          borderRadius: BorderRadius.circular(11),
-                          border: Border.all(color: _kGold, width: 1),
-                        ),
-                        child: Text(
-                          accountType,
-                          style: TextStyle(
-                            color: roleColor,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w800,
+                    ),
+                  )
+                : Row(
+                    crossAxisAlignment: CrossAxisAlignment.center,
+                    children: [
+                      _buildAvatar(),
+                      const SizedBox(width: 17),
+                      Expanded(
+                        child: Padding(
+                          padding: const EdgeInsets.only(top: 3),
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                fullName,
+                                maxLines: 2,
+                                overflow: TextOverflow.ellipsis,
+                                style: const TextStyle(
+                                  color: Colors.white,
+                                  fontSize: 23,
+                                  fontWeight: FontWeight.w800,
+                                  height: 1.08,
+                                ),
+                              ),
+                              const SizedBox(height: 7),
+                              if (email.isNotEmpty)
+                                Text(
+                                  email,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: Colors.white.withValues(alpha: 0.86),
+                                    fontSize: 12,
+                                    fontWeight: FontWeight.w500,
+                                  ),
+                                ),
+                              const SizedBox(height: 9),
+                              Container(
+                                padding: const EdgeInsets.symmetric(
+                                  horizontal: 11,
+                                  vertical: 5,
+                                ),
+                                decoration: BoxDecoration(
+                                  color: Colors.white.withValues(alpha: 0.94),
+                                  borderRadius: BorderRadius.circular(999),
+                                ),
+                                child: Text(
+                                  accountType,
+                                  style: TextStyle(
+                                    color: roleColor,
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.w800,
+                                  ),
+                                ),
+                              ),
+                            ],
                           ),
                         ),
                       ),
                     ],
                   ),
-                ),
-              ],
-            ),
+          ),
+        ],
+      ),
     );
   }
 
@@ -527,19 +517,19 @@ class _AccountWidgetState extends State<AccountWidget> {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        _sectionTitle('Account Settings'),
-        const SizedBox(height: 7),
+        _sectionTitle('Account'),
+        const SizedBox(height: 8),
         _menuGroup(
           children: [
             _menuTile(
               title: 'User Information',
-              icon: Icons.person_rounded,
+              icon: Icons.person_outline_rounded,
               onTap: _openUserInformation,
             ),
             _divider(),
             _menuTile(
               title: 'Change Password',
-              icon: Icons.lock_rounded,
+              icon: Icons.lock_outline_rounded,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -549,14 +539,14 @@ class _AccountWidgetState extends State<AccountWidget> {
             ),
           ],
         ),
-        const SizedBox(height: 15),
-        _sectionTitle('Legal & Info'),
-        const SizedBox(height: 7),
+        const SizedBox(height: 18),
+        _sectionTitle('Legal & Information'),
+        const SizedBox(height: 8),
         _menuGroup(
           children: [
             _menuTile(
               title: 'Privacy Policy',
-              icon: Icons.shield_rounded,
+              icon: Icons.shield_outlined,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -567,7 +557,7 @@ class _AccountWidgetState extends State<AccountWidget> {
             _divider(),
             _menuTile(
               title: 'Terms & Conditions',
-              icon: Icons.description_rounded,
+              icon: Icons.description_outlined,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -578,7 +568,7 @@ class _AccountWidgetState extends State<AccountWidget> {
             _divider(),
             _menuTile(
               title: 'About',
-              icon: Icons.info_rounded,
+              icon: Icons.info_outline_rounded,
               onTap: () => Navigator.push(
                 context,
                 MaterialPageRoute(
@@ -594,14 +584,14 @@ class _AccountWidgetState extends State<AccountWidget> {
 
   Widget _sectionTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.only(left: 2),
+      padding: const EdgeInsets.only(left: 4),
       child: Text(
-        title.toUpperCase(),
+        title,
         style: const TextStyle(
-          color: _kInk,
+          color: _kNavy,
           fontSize: 13,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.5,
+          fontWeight: FontWeight.w800,
+          letterSpacing: 0.2,
         ),
       ),
     );
@@ -611,14 +601,17 @@ class _AccountWidgetState extends State<AccountWidget> {
     return Container(
       width: double.infinity,
       decoration: BoxDecoration(
-        color: _kCream.withValues(alpha: 0.94),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _kGoldDark, width: 1.5),
+        border: Border.all(
+          color: _kLightBlue.withValues(alpha: 0.85),
+          width: 1,
+        ),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.08),
-            blurRadius: 14,
-            offset: const Offset(0, 5),
+            color: _kNavy.withValues(alpha: 0.07),
+            blurRadius: 16,
+            offset: const Offset(0, 6),
           ),
         ],
       ),
@@ -628,10 +621,10 @@ class _AccountWidgetState extends State<AccountWidget> {
 
   Widget _divider() {
     return Padding(
-      padding: const EdgeInsets.only(left: 84, right: 14),
+      padding: const EdgeInsets.only(left: 68, right: 16),
       child: Container(
         height: 1,
-        color: _kNavy.withValues(alpha: 0.85),
+        color: _kGray,
       ),
     );
   }
@@ -647,50 +640,37 @@ class _AccountWidgetState extends State<AccountWidget> {
         borderRadius: BorderRadius.circular(18),
         onTap: onTap,
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(13, 11, 13, 11),
+          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
           child: Row(
             children: [
               Container(
-                width: 58,
-                height: 58,
+                width: 42,
+                height: 42,
                 decoration: BoxDecoration(
-                  gradient: const LinearGradient(
-                    colors: [_kNavy, _kNavyDark],
-                    begin: Alignment.topLeft,
-                    end: Alignment.bottomRight,
-                  ),
-                  borderRadius: BorderRadius.circular(13),
-                  border: Border.all(color: _kGold, width: 1.2),
-                  boxShadow: [
-                    BoxShadow(
-                      color: Colors.black.withValues(alpha: 0.12),
-                      blurRadius: 7,
-                      offset: const Offset(0, 3),
-                    ),
-                  ],
+                  color: _kLightBlue,
+                  borderRadius: BorderRadius.circular(11),
                 ),
                 child: Icon(
                   icon,
-                  color: _kCream,
-                  size: 29,
+                  color: _kNavy,
+                  size: 21,
                 ),
               ),
-              const SizedBox(width: 17),
+              const SizedBox(width: 13),
               Expanded(
                 child: Text(
                   title,
                   style: const TextStyle(
-                    color: _kInk,
-                    fontSize: 18,
-                    fontWeight: FontWeight.w500,
-                    letterSpacing: 0.1,
+                    color: Color(0xFF202333),
+                    fontSize: 14.5,
+                    fontWeight: FontWeight.w600,
                   ),
                 ),
               ),
               const Icon(
-                Icons.arrow_forward_ios_rounded,
-                color: _kGoldDark,
-                size: 19,
+                Icons.chevron_right_rounded,
+                color: Color(0xFFB7BCC5),
+                size: 23,
               ),
             ],
           ),
@@ -702,106 +682,116 @@ class _AccountWidgetState extends State<AccountWidget> {
   Widget _buildLogoutButton() {
     return SizedBox(
       width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: () {
-          showDialog(
-            context: context,
-            barrierDismissible: false,
-            builder: (dialogContext) {
-              bool isLoggingOut = false;
+      child: Material(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(17),
+        child: InkWell(
+          borderRadius: BorderRadius.circular(17),
+          onTap: () {
+            showDialog(
+              context: context,
+              barrierDismissible: false,
+              builder: (dialogContext) {
+                bool isLoggingOut = false;
 
-              return StatefulBuilder(
-                builder: (context, setDialogState) {
-                  return AlertDialog(
-                    backgroundColor: _kCream,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(18),
-                      side: const BorderSide(color: _kGold, width: 1.2),
-                    ),
-                    title: const Text(
-                      'Log Out',
-                      style: TextStyle(
-                        color: _kInk,
-                        fontWeight: FontWeight.w800,
+                return StatefulBuilder(
+                  builder: (context, setDialogState) {
+                    return AlertDialog(
+                      backgroundColor: Colors.white,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(18),
                       ),
-                    ),
-                    content: const Text(
-                      'Are you sure you want to log out?',
-                      style: TextStyle(
-                        color: _kMuted,
-                        fontWeight: FontWeight.w500,
-                      ),
-                    ),
-                    actionsPadding:
-                        const EdgeInsets.fromLTRB(18, 0, 18, 18),
-                    actions: [
-                      TextButton(
-                        onPressed: isLoggingOut
-                            ? null
-                            : () => Navigator.pop(dialogContext),
-                        child: const Text(
-                          'Cancel',
-                          style: TextStyle(
-                            color: _kMuted,
-                            fontWeight: FontWeight.w800,
-                          ),
+                      title: const Text(
+                        'Log Out',
+                        style: TextStyle(
+                          color: Color(0xFF202333),
+                          fontWeight: FontWeight.w800,
                         ),
                       ),
-                      ElevatedButton(
-                        onPressed: isLoggingOut
-                            ? null
-                            : () async {
-                                setDialogState(() => isLoggingOut = true);
-                                await _logout();
-                              },
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: const Color(0xFFA72B2B),
-                          foregroundColor: Colors.white,
-                          elevation: 0,
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(12),
+                      content: const Text(
+                        'Are you sure you want to log out?',
+                        style: TextStyle(
+                          color: _kMuted,
+                          fontWeight: FontWeight.w500,
+                        ),
+                      ),
+                      actionsPadding:
+                          const EdgeInsets.fromLTRB(18, 0, 18, 18),
+                      actions: [
+                        TextButton(
+                          onPressed: isLoggingOut
+                              ? null
+                              : () => Navigator.pop(dialogContext),
+                          child: const Text(
+                            'Cancel',
+                            style: TextStyle(
+                              color: _kMuted,
+                              fontWeight: FontWeight.w700,
+                            ),
                           ),
                         ),
-                        child: isLoggingOut
-                            ? const SizedBox(
-                                width: 18,
-                                height: 18,
-                                child: CircularProgressIndicator(
-                                  strokeWidth: 2,
-                                  color: Colors.white,
+                        ElevatedButton(
+                          onPressed: isLoggingOut
+                              ? null
+                              : () async {
+                                  setDialogState(
+                                    () => isLoggingOut = true,
+                                  );
+                                  await _logout();
+                                },
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: _kDarkRed,
+                            foregroundColor: Colors.white,
+                            elevation: 0,
+                            shape: RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(11),
+                            ),
+                          ),
+                          child: isLoggingOut
+                              ? const SizedBox(
+                                  width: 17,
+                                  height: 17,
+                                  child: CircularProgressIndicator(
+                                    strokeWidth: 2,
+                                    color: Colors.white,
+                                  ),
+                                )
+                              : const Text(
+                                  'Log Out',
+                                  style: TextStyle(
+                                    fontWeight: FontWeight.w800,
+                                  ),
                                 ),
-                              )
-                            : const Text(
-                                'Log Out',
-                                style: TextStyle(fontWeight: FontWeight.w800),
-                              ),
-                      ),
-                    ],
-                  );
-                },
-              );
-            },
-          );
-        },
-        icon: const Icon(
-          Icons.logout_rounded,
-          color: Color(0xFFA72B2B),
-        ),
-        label: const Text(
-          'Log Out',
-          style: TextStyle(
-            fontSize: 17,
-            fontWeight: FontWeight.w800,
-            color: Color(0xFFA72B2B),
+                        ),
+                      ],
+                    );
+                  },
+                );
+              },
+            );
+          },
+          child: const Padding(
+            padding: EdgeInsets.symmetric(vertical: 14),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(
+                  Icons.logout_rounded,
+                  color: _kDarkRed,
+                  size: 19,
+                ),
+                SizedBox(width: 8),
+                Text(
+                  'Log Out',
+                  style: TextStyle(
+                    color: _kDarkRed,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-        style: OutlinedButton.styleFrom(
-          side: const BorderSide(color: _kGoldDark, width: 1.5),
-          padding: const EdgeInsets.symmetric(vertical: 14),
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(18),
-          ),
-          backgroundColor: _kCream.withValues(alpha: 0.96),
         ),
       ),
     );
@@ -814,7 +804,7 @@ class _AccountWidgetState extends State<AccountWidget> {
           'RAMHIS v1.0.0',
           style: TextStyle(
             color: _kMuted,
-            fontSize: 11,
+            fontSize: 10.5,
             fontWeight: FontWeight.w700,
           ),
         ),
@@ -824,14 +814,70 @@ class _AccountWidgetState extends State<AccountWidget> {
           textAlign: TextAlign.center,
           style: TextStyle(
             color: _kMuted,
-            fontSize: 10,
+            fontSize: 9.5,
             fontWeight: FontWeight.w500,
           ),
         ),
       ],
     );
   }
+}
 
+class _AccountHeaderPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..shader = const LinearGradient(
+        colors: [_kNavy, _kBlueAccentDark],
+        begin: Alignment.topLeft,
+        end: Alignment.bottomRight,
+      ).createShader(Offset.zero & size);
+
+    final path = Path()
+      ..moveTo(0, 0)
+      ..lineTo(size.width, 0)
+      ..lineTo(size.width, size.height * 0.66)
+      ..cubicTo(
+        size.width * 0.82,
+        size.height * 0.88,
+        size.width * 0.58,
+        size.height * 0.94,
+        size.width * 0.38,
+        size.height * 0.78,
+      )
+      ..cubicTo(
+        size.width * 0.20,
+        size.height * 0.64,
+        size.width * 0.08,
+        size.height * 0.72,
+        0,
+        size.height * 0.56,
+      )
+      ..close();
+
+    canvas.drawPath(path, paint);
+
+    final highlight = Paint()
+      ..color = _kBlueAccent.withValues(alpha: 0.24);
+
+    final highlightPath = Path()
+      ..moveTo(size.width * 0.62, 0)
+      ..cubicTo(
+        size.width * 0.83,
+        size.height * 0.18,
+        size.width * 0.74,
+        size.height * 0.40,
+        size.width,
+        size.height * 0.46,
+      )
+      ..lineTo(size.width, 0)
+      ..close();
+
+    canvas.drawPath(highlightPath, highlight);
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
 
 class _MarbleBackgroundPainter extends CustomPainter {
@@ -840,58 +886,31 @@ class _MarbleBackgroundPainter extends CustomPainter {
     final base = Paint()..color = _kCream;
     canvas.drawRect(Offset.zero & size, base);
 
-    final vein = Paint()
-      ..color = const Color(0xFF9EA9B8).withValues(alpha: 0.28)
+    final line = Paint()
+      ..color = _kLightBlue.withValues(alpha: 0.22)
       ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.0;
+      ..strokeWidth = 0.8;
 
-    final veinSoft = Paint()
-      ..color = const Color(0xFFBFC6D0).withValues(alpha: 0.32)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 0.65;
+    final path = Path()
+      ..moveTo(0, size.height * .22)
+      ..cubicTo(
+        size.width * .25,
+        size.height * .12,
+        size.width * .18,
+        size.height * .42,
+        size.width * .48,
+        size.height * .52,
+      )
+      ..cubicTo(
+        size.width * .70,
+        size.height * .60,
+        size.width * .62,
+        size.height * .82,
+        size.width,
+        size.height * .72,
+      );
 
-    final paths = <Path>[
-      Path()
-        ..moveTo(size.width * .10, 0)
-        ..cubicTo(size.width * .26, size.height * .12,
-            size.width * .10, size.height * .22,
-            size.width * .38, size.height * .32)
-        ..cubicTo(size.width * .60, size.height * .40,
-            size.width * .36, size.height * .55,
-            size.width * .64, size.height * .67)
-        ..cubicTo(size.width * .80, size.height * .75,
-            size.width * .62, size.height * .90,
-            size.width * .90, size.height),
-      Path()
-        ..moveTo(size.width * .92, size.height * .02)
-        ..cubicTo(size.width * .74, size.height * .16,
-            size.width * .88, size.height * .27,
-            size.width * .65, size.height * .39)
-        ..cubicTo(size.width * .48, size.height * .48,
-            size.width * .72, size.height * .61,
-            size.width * .45, size.height * .80),
-      Path()
-        ..moveTo(size.width * .02, size.height * .72)
-        ..cubicTo(size.width * .20, size.height * .66,
-            size.width * .16, size.height * .84,
-            size.width * .02, size.height * .94),
-    ];
-
-    for (final path in paths) {
-      canvas.drawPath(path, vein);
-    }
-
-    canvas.drawPath(
-      Path()
-        ..moveTo(size.width * .04, size.height * .15)
-        ..cubicTo(size.width * .32, size.height * .21,
-            size.width * .13, size.height * .31,
-            size.width * .44, size.height * .38)
-        ..cubicTo(size.width * .65, size.height * .44,
-            size.width * .43, size.height * .56,
-            size.width * .72, size.height * .65),
-      veinSoft,
-    );
+    canvas.drawPath(path, line);
   }
 
   @override

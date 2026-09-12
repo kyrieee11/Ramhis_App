@@ -2,13 +2,16 @@ import 'package:flutter/material.dart';
 
 import 'package:ramhis_app/services/api/user_service.dart';
 
-const _kNavy = Color(0xFF123F91);
-const _kNavyDark = Color(0xFF082B6B);
-const _kGold = Color(0xFFD9C27A);
-const _kGoldDark = Color(0xFF9D7D2F);
-const _kCream = Color(0xFFF7F2E5);
-const _kInk = Color(0xFF24304A);
-const _kMuted = Color(0xFF77746D);
+const _kNavy = Color(0xFF10539B);
+const _kNavyDark = Color(0xFF0B4380);
+const _kBlue = Color(0xFF1863B5);
+const _kLightBlue = Color(0xFFE3F2FD);
+const _kSoftBlue = Color(0xFFEBF3FA);
+const _kCream = Color(0xFFF8FAFC);
+const _kInk = Color(0xFF102A43);
+const _kMuted = Color(0xFF8292A6);
+const _kBorder = Color(0xFFCDE1EC);
+const _kSuccess = Color(0xFF22A06B);
 
 class AccountChangePasswordScreen extends StatefulWidget {
   const AccountChangePasswordScreen({super.key});
@@ -118,7 +121,7 @@ class _AccountChangePasswordScreenState
             end: Alignment.bottomRight,
           ),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: _kGold, width: 1.1),
+          border: Border.all(color: _kLightBlue, width: 1.1),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.10),
@@ -127,7 +130,7 @@ class _AccountChangePasswordScreenState
             ),
           ],
         ),
-        child: Icon(prefixIcon, color: _kCream, size: 24),
+        child: Icon(prefixIcon, color: Colors.white, size: 24),
       ),
       suffixIcon: IconButton(
         onPressed: toggle,
@@ -135,7 +138,7 @@ class _AccountChangePasswordScreenState
           obscureText
               ? Icons.visibility_off_outlined
               : Icons.visibility_outlined,
-          color: _kGoldDark,
+          color: _kBorder,
         ),
       ),
       hintStyle: const TextStyle(
@@ -145,7 +148,7 @@ class _AccountChangePasswordScreenState
       ),
       enabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(17),
-        borderSide: const BorderSide(color: _kGoldDark, width: 1.5),
+        borderSide: const BorderSide(color: _kBorder, width: 1.5),
       ),
       focusedBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(17),
@@ -153,11 +156,11 @@ class _AccountChangePasswordScreenState
       ),
       disabledBorder: OutlineInputBorder(
         borderRadius: BorderRadius.circular(17),
-        borderSide: const BorderSide(color: _kGoldDark, width: 1.3),
+        borderSide: const BorderSide(color: _kBorder, width: 1.3),
       ),
       border: OutlineInputBorder(
         borderRadius: BorderRadius.circular(17),
-        borderSide: const BorderSide(color: _kGoldDark, width: 1.5),
+        borderSide: const BorderSide(color: _kBorder, width: 1.5),
       ),
       contentPadding: const EdgeInsets.symmetric(horizontal: 12, vertical: 13),
     );
@@ -244,7 +247,7 @@ class _AccountChangePasswordScreenState
   Color _passwordStrengthColor(String value) {
     final level = _passwordStrengthLevel(value);
     if (level == 1) return const Color(0xFFB84242);
-    if (level == 2) return const Color(0xFFC49A38);
+    if (level == 2) return _kBlue;
     if (level == 3) return _kNavy;
     return const Color(0xFF3E8C59);
   }
@@ -307,7 +310,7 @@ class _AccountChangePasswordScreenState
       decoration: BoxDecoration(
         color: _kCream.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(21),
-        border: Border.all(color: _kGold, width: 1.1),
+        border: Border.all(color: _kLightBlue, width: 1.1),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.12),
@@ -324,7 +327,7 @@ class _AccountChangePasswordScreenState
             decoration: BoxDecoration(
               shape: BoxShape.circle,
               gradient: const LinearGradient(
-                colors: [_kGold, _kGoldDark],
+                colors: [_kBlue, _kNavyDark],
                 begin: Alignment.topLeft,
                 end: Alignment.bottomRight,
               ),
@@ -342,7 +345,7 @@ class _AccountChangePasswordScreenState
               decoration: BoxDecoration(
                 shape: BoxShape.circle,
                 color: Colors.white,
-                border: Border.all(color: _kGoldDark, width: 1),
+                border: Border.all(color: _kBorder, width: 1),
               ),
               child: const Icon(
                 Icons.shield_rounded,
@@ -385,7 +388,7 @@ class _AccountChangePasswordScreenState
       decoration: BoxDecoration(
         color: _kCream.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(21),
-        border: Border.all(color: _kGoldDark, width: 1.3),
+        border: Border.all(color: _kBorder, width: 1.3),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.11),
@@ -451,7 +454,7 @@ class _AccountChangePasswordScreenState
               ),
         color: isSaving ? const Color(0xFF8E99B2) : null,
         borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _kGoldDark, width: 1.2),
+        border: Border.all(color: _kBorder, width: 1.2),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.14),
@@ -466,7 +469,7 @@ class _AccountChangePasswordScreenState
           backgroundColor: Colors.transparent,
           disabledBackgroundColor: Colors.transparent,
           shadowColor: Colors.transparent,
-          foregroundColor: _kCream,
+          foregroundColor: Colors.white,
           shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(18),
           ),
@@ -477,13 +480,13 @@ class _AccountChangePasswordScreenState
                 height: 20,
                 child: CircularProgressIndicator(
                   strokeWidth: 2.2,
-                  color: _kCream,
+                  color: Colors.white,
                 ),
               )
             : const Text(
                 'Update Password',
                 style: TextStyle(
-                  color: _kCream,
+                  color: Colors.white,
                   fontSize: 18,
                   fontWeight: FontWeight.w500,
                 ),
@@ -499,7 +502,7 @@ class _AccountChangePasswordScreenState
       decoration: BoxDecoration(
         color: _kCream.withValues(alpha: 0.92),
         borderRadius: BorderRadius.circular(17),
-        border: Border.all(color: _kGoldDark, width: 1.2),
+        border: Border.all(color: _kBorder, width: 1.2),
       ),
       child: const Row(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -543,13 +546,13 @@ class _AccountChangePasswordScreenState
             ),
           ),
           backgroundColor: Colors.transparent,
-          foregroundColor: _kGold,
+          foregroundColor: Colors.white,
           elevation: 0,
           centerTitle: true,
           leading: IconButton(
             icon: const Icon(
               Icons.arrow_back_ios_new_rounded,
-              color: _kGold,
+              color: Colors.white,
               size: 21,
             ),
             onPressed: () => Navigator.maybePop(context),
@@ -562,7 +565,7 @@ class _AccountChangePasswordScreenState
                 end: Alignment.bottomRight,
               ),
               border: Border(
-                bottom: BorderSide(color: _kGold, width: 1.3),
+                bottom: BorderSide(color: _kLightBlue, width: 1.3),
               ),
             ),
           ),
@@ -572,7 +575,7 @@ class _AccountChangePasswordScreenState
           height: double.infinity,
           decoration: const BoxDecoration(
             gradient: LinearGradient(
-              colors: [_kCream, Color(0xFFF4EDDA), _kCream],
+              colors: [_kCream, _kSoftBlue, _kCream],
               begin: Alignment.topCenter,
               end: Alignment.bottomCenter,
             ),

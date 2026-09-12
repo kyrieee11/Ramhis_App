@@ -5,12 +5,16 @@ import 'package:ramhis_app/features/user/screens/chat_screen.dart';
 import 'package:ramhis_app/features/user/screens/account_screen.dart';
 import 'package:ramhis_app/features/user/screens/events_screen.dart';
 
-// Brand colors
-const _kNavBgStart = Color(0xFF123F91);
-const _kNavBgEnd = Color(0xFF082B6B);
+// RAMHIS Medical Blue Theme
+const _kNavBg = Color(0xFF10539B);
+const _kNavBgDark = Color(0xFF0B4380);
 
-const _kActiveFg = Color(0xFFF2E4AF);
-const _kIdleFg = Color(0xFFBFC7D7);
+const _kActiveFg = Color(0xFFFFFFFF);
+const _kActiveBg = Color(0xFF1863B5);
+const _kActiveAccent = Color(0xFF8EC1DA);
+
+const _kIdleFg = Color(0xFFCDE1EC);
+const _kBorder = Color(0xFFE3F2FD);
 
 class CustomNavBar extends StatelessWidget {
   final int currentIndex;
@@ -78,11 +82,18 @@ class CustomNavBar extends StatelessWidget {
         child: AnimatedContainer(
           duration: const Duration(milliseconds: 220),
           curve: Curves.easeOutCubic,
-          padding: const EdgeInsets.symmetric(vertical: 8),
+          margin: const EdgeInsets.symmetric(
+            horizontal: 5,
+            vertical: 4,
+          ),
+          padding: const EdgeInsets.symmetric(
+            horizontal: 4,
+            vertical: 5,
+          ),
           child: AnimatedScale(
             duration: const Duration(milliseconds: 220),
             curve: Curves.easeOutBack,
-            scale: selected ? 1.08 : 1.0,
+            scale: selected ? 1.04 : 1.0,
             child: Column(
               mainAxisAlignment: MainAxisAlignment.center,
               mainAxisSize: MainAxisSize.min,
@@ -101,17 +112,18 @@ class CustomNavBar extends StatelessWidget {
                   child: Icon(
                     selected ? activeIcon : icon,
                     key: ValueKey('$label-$selected'),
-                    size: selected ? 25 : 24,
+                    size: selected ? 23 : 22,
                     color: selected ? _kActiveFg : _kIdleFg,
                   ),
                 ),
-                const SizedBox(height: 5),
+                const SizedBox(height: 4),
                 AnimatedDefaultTextStyle(
                   duration: const Duration(milliseconds: 180),
                   curve: Curves.easeOut,
                   style: TextStyle(
-                    fontSize: selected ? 12 : 11,
-                    fontWeight: selected ? FontWeight.w800 : FontWeight.w600,
+                    fontSize: selected ? 11.5 : 10.5,
+                    fontWeight:
+                        selected ? FontWeight.w800 : FontWeight.w600,
                     color: selected ? _kActiveFg : _kIdleFg,
                     letterSpacing: 0.1,
                   ),
@@ -135,28 +147,28 @@ class CustomNavBar extends StatelessWidget {
       top: false,
       child: Container(
         width: double.infinity,
-        height: 74,
-        padding: const EdgeInsets.symmetric(horizontal: 0, vertical: 6),
+        height: 76,
+        padding: const EdgeInsets.fromLTRB(5, 5, 5, 5),
         decoration: BoxDecoration(
           gradient: const LinearGradient(
-            begin: Alignment.centerLeft,
-            end: Alignment.centerRight,
+            begin: Alignment.topCenter,
+            end: Alignment.bottomCenter,
             colors: [
-              _kNavBgStart,
-              _kNavBgEnd,
+              _kNavBg,
+              _kNavBgDark,
             ],
           ),
           border: const Border(
             top: BorderSide(
-              color: Color(0xFFD9C27A),
-              width: 1.2,
+              color: _kBorder,
+              width: 0.8,
             ),
           ),
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withValues(alpha: 0.14),
-              blurRadius: 14,
-              offset: const Offset(0, -2),
+              color: Colors.black.withValues(alpha: 0.12),
+              blurRadius: 16,
+              offset: const Offset(0, -4),
             ),
           ],
         ),

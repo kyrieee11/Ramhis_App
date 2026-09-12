@@ -4,6 +4,19 @@ import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
 import 'package:ramhis_app/features/auth/screens/signup_terms_screen.dart';
+// RAMHIS Medical Blue Theme
+const _kPrimary = Color(0xFF10539B);
+const _kPrimaryDark = Color(0xFF0B4380);
+const _kBlue = Color(0xFF1863B5);
+const _kLightBlue = Color(0xFFE3F2FD);
+const _kSoftBlue = Color(0xFFEBF3FA);
+const _kPageBg = Color(0xFFF8FAFC);
+const _kText = Color(0xFF102A43);
+const _kTextSecondary = Color(0xFF526579);
+const _kMuted = Color(0xFF8292A6);
+const _kBorder = Color(0xFFCDE1EC);
+const _kSuccess = Color(0xFF22A06B);
+
 
 class SignupProfessionalVerificationWidget extends StatefulWidget {
   const SignupProfessionalVerificationWidget({
@@ -209,28 +222,28 @@ class _SignupProfessionalVerificationWidgetState
           'Enter PRC license number',
           Icons.badge_outlined,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 17),
         _label('Upload License Proof'),
         _buildUploadBox(
           emptyTitle: 'Upload Image or PDF',
           onTap: _pickFile,
         ),
         if (selectedFileName != null) _buildUploadedStatus(),
-        const SizedBox(height: 12),
+        const SizedBox(height: 17),
         _label('Specialty'),
         _input(
           _specialtyController,
           'Enter medical specialty',
           Icons.medical_services_outlined,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 17),
         _label('Hospital / Clinic'),
         _input(
           _hospitalController,
           'Enter hospital or clinic',
           Icons.local_hospital_outlined,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 25),
         _nextButton(),
       ],
     );
@@ -246,21 +259,21 @@ class _SignupProfessionalVerificationWidgetState
           onTap: _pickFile,
         ),
         if (selectedFileName != null) _buildUploadedStatus(),
-        const SizedBox(height: 12),
+        const SizedBox(height: 17),
         _label('Organization'),
         _input(
           _organizationController,
           'Enter organization name',
           Icons.groups_outlined,
         ),
-        const SizedBox(height: 12),
+        const SizedBox(height: 17),
         _label('Skills'),
         _input(
           _skillsController,
           'Ex. logistics, registration, first aid',
           Icons.volunteer_activism_outlined,
         ),
-        const SizedBox(height: 16),
+        const SizedBox(height: 25),
         _nextButton(),
       ],
     );
@@ -273,7 +286,7 @@ class _SignupProfessionalVerificationWidgetState
         const Text(
           'No additional verification is required for regular users.',
           style: TextStyle(
-            color: Color(0xFF243B73),
+            color: _kTextSecondary,
             fontSize: 15,
             fontWeight: FontWeight.w600,
             height: 1.4,
@@ -291,43 +304,44 @@ class _SignupProfessionalVerificationWidgetState
   }) {
     return InkWell(
       onTap: onTap,
-      borderRadius: BorderRadius.circular(19),
+      borderRadius: BorderRadius.circular(20),
       child: Container(
         width: double.infinity,
-        constraints: const BoxConstraints(minHeight: 124),
+        constraints: const BoxConstraints(minHeight: 132),
         padding: const EdgeInsets.symmetric(
-          horizontal: 14,
-          vertical: 13,
+          horizontal: 16,
+          vertical: 14,
         ),
         decoration: BoxDecoration(
-          color: const Color(0xFFF7F1E2),
-          borderRadius: BorderRadius.circular(19),
+          color: _kSoftBlue,
+          borderRadius: BorderRadius.circular(20),
           border: Border.all(
-            color: const Color(0xFFA88B4E),
-            width: 1.7,
+            color: _kBorder,
+            width: 1.6,
           ),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.08),
-              blurRadius: 6,
-              offset: const Offset(0, 3),
-            ),
-          ],
         ),
         child: selectedFileName == null
             ? Column(
                 mainAxisAlignment: MainAxisAlignment.center,
                 children: [
-                  const Icon(
-                    Icons.cloud_upload_outlined,
-                    color: Color(0xFF8E7137),
-                    size: 38,
+                  Container(
+                    width: 52,
+                    height: 52,
+                    decoration: const BoxDecoration(
+                      color: Colors.white,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(
+                      Icons.cloud_upload_outlined,
+                      color: _kPrimary,
+                      size: 29,
+                    ),
                   ),
-                  const SizedBox(height: 6),
+                  const SizedBox(height: 8),
                   Text(
                     emptyTitle,
                     style: const TextStyle(
-                      color: Color(0xFF765E2E),
+                      color: _kText,
                       fontSize: 14,
                       fontWeight: FontWeight.w800,
                     ),
@@ -336,8 +350,9 @@ class _SignupProfessionalVerificationWidgetState
                   const Text(
                     'JPG, PNG or PDF (max. 5MB)',
                     style: TextStyle(
-                      color: Color(0xFF9B8D72),
+                      color: _kMuted,
                       fontSize: 12,
+                      fontWeight: FontWeight.w500,
                     ),
                   ),
                 ],
@@ -345,30 +360,26 @@ class _SignupProfessionalVerificationWidgetState
             : Row(
                 children: [
                   Container(
-                    width: 46,
-                    height: 46,
+                    width: 50,
+                    height: 50,
                     decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        colors: [
-                          Color(0xFF17479C),
-                          Color(0xFF0A2B6B),
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(12),
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(14),
                     ),
                     child: const Icon(
                       Icons.insert_drive_file_outlined,
-                      color: Color(0xFFE9D9A5),
+                      color: _kPrimary,
+                      size: 25,
                     ),
                   ),
-                  const SizedBox(width: 10),
+                  const SizedBox(width: 12),
                   Expanded(
                     child: Text(
                       selectedFileName!,
                       maxLines: 2,
                       overflow: TextOverflow.ellipsis,
                       style: const TextStyle(
-                        color: Color(0xFF3D382E),
+                        color: _kText,
                         fontSize: 13,
                         fontWeight: FontWeight.w700,
                       ),
@@ -378,7 +389,7 @@ class _SignupProfessionalVerificationWidgetState
                     onPressed: _removeFile,
                     icon: const Icon(
                       Icons.delete_outline_rounded,
-                      color: Color(0xFFB9232B),
+                      color: _kPrimary,
                     ),
                   ),
                 ],
@@ -389,11 +400,11 @@ class _SignupProfessionalVerificationWidgetState
 
   Widget _buildUploadedStatus() {
     return const Padding(
-      padding: EdgeInsets.only(left: 5, top: 5),
+      padding: EdgeInsets.only(left: 4, top: 6),
       child: Text(
         '✓ File uploaded successfully',
         style: TextStyle(
-          color: Color(0xFF267A45),
+          color: _kSuccess,
           fontSize: 12,
           fontWeight: FontWeight.w700,
         ),
@@ -404,31 +415,27 @@ class _SignupProfessionalVerificationWidgetState
   Widget _nextButton() {
     return SizedBox(
       width: double.infinity,
-      height: 50,
+      height: 60,
       child: ElevatedButton.icon(
         onPressed: _goNext,
         icon: const Icon(
           Icons.chevron_right_rounded,
-          size: 27,
+          size: 30,
         ),
         label: const Text(
           'Next',
           style: TextStyle(
-            fontSize: 19,
+            fontSize: 20,
             fontWeight: FontWeight.w800,
           ),
         ),
         style: ElevatedButton.styleFrom(
-          backgroundColor: const Color(0xFFB9232B),
-          foregroundColor: const Color(0xFFF8F1DB),
-          elevation: 8,
-          shadowColor: Colors.black45,
+          backgroundColor: _kPrimary,
+          foregroundColor: Colors.white,
+          elevation: 5,
+          shadowColor: _kPrimary.withValues(alpha: 0.24),
           shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(28),
-            side: const BorderSide(
-              color: Color(0xFFD9C27A),
-              width: 1.4,
-            ),
+            borderRadius: BorderRadius.circular(30),
           ),
         ),
       ),
@@ -437,12 +444,12 @@ class _SignupProfessionalVerificationWidgetState
 
   Widget _label(String text) {
     return Padding(
-      padding: const EdgeInsets.only(left: 5, bottom: 5),
+      padding: const EdgeInsets.only(left: 2, bottom: 7),
       child: Text(
         text,
         style: const TextStyle(
-          color: Color(0xFF182A52),
-          fontSize: 14,
+          color: _kText,
+          fontSize: 15,
           fontWeight: FontWeight.w800,
         ),
       ),
@@ -457,58 +464,54 @@ class _SignupProfessionalVerificationWidgetState
     return TextField(
       controller: controller,
       style: const TextStyle(
-        color: Color(0xFF3D382E),
+        color: _kText,
         fontSize: 15,
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
         hintText: hint,
         hintStyle: const TextStyle(
-          color: Color(0xFF8B806A),
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
+          color: _kMuted,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
         ),
         filled: true,
-        fillColor: const Color(0xFFF7F1E2),
+        fillColor: Colors.white,
         prefixIcon: Container(
           margin: const EdgeInsets.all(3),
-          width: 46,
+          width: 48,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF17479C),
-                Color(0xFF0A2B6B),
-              ],
-            ),
+            color: _kSoftBlue,
             borderRadius: BorderRadius.circular(14),
           ),
           child: Icon(
             icon,
-            color: const Color(0xFFE9D9A5),
-            size: 22,
+            color: _kPrimary,
+            size: 23,
           ),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 13,
+          horizontal: 14,
+          vertical: 17,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(
-            color: Color(0xFFA88B4E),
-            width: 1.7,
+            color: _kBorder,
+            width: 1.6,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(
-            color: Color(0xFF17479C),
+            color: _kPrimary,
             width: 2,
           ),
         ),
       ),
     );
   }
+
 }
 
 class _SignupStepScaffold extends StatelessWidget {
@@ -530,15 +533,15 @@ class _SignupStepScaffold extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final progress = currentStep / totalSteps;
+
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      backgroundColor: _kPageBg,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
-            colors: [
-              Color(0xFF123F91),
-              Color(0xFF082B6B),
-            ],
+            colors: [_kPrimary, _kPrimaryDark],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
           ),
@@ -546,43 +549,42 @@ class _SignupStepScaffold extends StatelessWidget {
         child: SafeArea(
           child: Column(
             children: [
-              _buildHeader(),
+              _buildHeader(progress),
               Expanded(
-                child: Container(
-                  width: double.infinity,
-                  decoration: const BoxDecoration(
-                    color: Color(0xFFF7F1E2),
-                    borderRadius: BorderRadius.vertical(
-                      top: Radius.circular(10),
+                child: Stack(
+                  children: [
+                    Positioned.fill(
+                      child: CustomPaint(painter: _MarblePainter()),
                     ),
-                  ),
-                  child: Stack(
-                    children: [
-                      const Positioned.fill(
-                        child: _MarbleBackground(),
+                    Positioned.fill(
+                      child: Container(
+                        color: _kPageBg.withValues(alpha: 0.97),
                       ),
-                      Positioned.fill(
-                        child: Container(
-                          color: const Color(0xFFF7F1E2),
-                        ),
-                      ),
-                      SingleChildScrollView(
-                        padding: const EdgeInsets.fromLTRB(
-                          24,
-                          17,
-                          24,
-                          25,
-                        ),
-                        child: Center(
-                          child: ConstrainedBox(
-                            constraints:
-                                const BoxConstraints(maxWidth: 430),
+                    ),
+                    SingleChildScrollView(
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
+                      child: Center(
+                        child: ConstrainedBox(
+                          constraints: const BoxConstraints(maxWidth: 760),
+                          child: Container(
+                            padding: const EdgeInsets.fromLTRB(26, 26, 26, 28),
+                            decoration: BoxDecoration(
+                              color: Colors.white,
+                              borderRadius: BorderRadius.circular(28),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _kPrimary.withValues(alpha: 0.10),
+                                  blurRadius: 24,
+                                  offset: const Offset(0, 10),
+                                ),
+                              ],
+                            ),
                             child: child,
                           ),
                         ),
                       ),
-                    ],
-                  ),
+                    ),
+                  ],
                 ),
               ),
             ],
@@ -592,90 +594,158 @@ class _SignupStepScaffold extends StatelessWidget {
     );
   }
 
-  Widget _buildHeader() {
+  Widget _buildHeader(double progress) {
     return Container(
+      padding: const EdgeInsets.only(bottom: 22),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [
-            Color(0xFF17479C),
-            Color(0xFF0B2E73),
-          ],
+          colors: [_kPrimary, _kBlue],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFD9C27A),
-            width: 1.2,
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -50,
+            top: -45,
+            child: Container(
+              width: 190,
+              height: 190,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _kLightBlue.withValues(alpha: 0.13),
+                  width: 30,
+                ),
+              ),
+            ),
           ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black38,
-            blurRadius: 10,
-            offset: Offset(0, 4),
+          Column(
+            children: [
+              SizedBox(
+                height: 58,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        onPressed: onBack,
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                    const Text(
+                      'Create',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                accountName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildStepIndicator(),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStepIndicator() {
+    const labels = [
+      'Personal\nInformation',
+      'Account\nSecurity',
+      'Professional\nVerification',
+      'Review',
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          SizedBox(
-            height: 58,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed: onBack,
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: Color(0xFFE7D59D),
-                      size: 28,
+          Row(
+            children: List.generate(4, (index) {
+              final active = index == currentStep - 1;
+              final completed = index < currentStep - 1;
+
+              return Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: active ? Colors.white : Colors.transparent,
+                        border: Border.all(
+                          color: active
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.28),
+                          width: active ? 4 : 3,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          color: active
+                              ? _kPrimary
+                              : Colors.white.withValues(alpha: 0.55),
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (index < 3)
+                      Expanded(
+                        child: Container(
+                          height: 3,
+                          color: completed
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.28),
+                        ),
+                      ),
+                  ],
                 ),
-                const Text(
-                  'Create',
+              );
+            }),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: labels.asMap().entries.map((entry) {
+              final active = entry.key == currentStep - 1;
+              return Expanded(
+                child: Text(
+                  entry.value,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Color(0xFFEFE2BB),
-                    fontSize: 24,
-                    fontWeight: FontWeight.w400,
+                    color: active
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.60),
+                    fontSize: 13,
+                    height: 1.18,
+                    fontWeight: active ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
-              ],
-            ),
-          ),
-          Text(
-            accountName,
-            style: const TextStyle(
-              color: Color(0xFFF1E2AE),
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              shadows: [
-                Shadow(
-                  color: Colors.black54,
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 17),
-          SizedBox(
-            height: 8,
-            child: Row(
-              children: [
-                Expanded(
-                  flex: currentStep,
-                  child: Container(color: const Color(0xFFB9232B)),
-                ),
-                Expanded(
-                  flex: totalSteps - currentStep,
-                  child: Container(color: const Color(0xFFD9C27A)),
-                ),
-              ],
-            ),
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -700,7 +770,7 @@ class _MarblePainter extends CustomPainter {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.2
-      ..color = const Color(0xFF7392B7).withValues(alpha: 0.20);
+      ..color = _kBlue.withValues(alpha: 0.08);
 
     final path1 = Path()
       ..moveTo(-30, 90)

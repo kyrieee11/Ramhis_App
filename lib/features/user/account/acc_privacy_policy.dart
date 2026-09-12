@@ -3,13 +3,16 @@ import 'package:flutter/material.dart';
 class AccPrivacyPolicyWidget extends StatelessWidget {
   const AccPrivacyPolicyWidget({super.key});
 
-  static const Color _pageBg = Color(0xFFF0F2FF);
-  static const Color _primaryBlue = Color(0xFF5B76F7);
-  static const Color _gradientEnd = Color(0xFF4564E8);
-  static const Color _softBlue = Color(0xFFEAF1FF);
-  static const Color _textDark = Color(0xFF1B2559);
-  static const Color _bodyText = Color(0xFF4A5568);
-  static const Color _textSecondary = Color(0xFF7B8BB2);
+  static const Color _pageBg = Color(0xFFF8FAFC);
+  static const Color _primaryBlue = Color(0xFF10539B);
+  static const Color _gradientEnd = Color(0xFF0B4380);
+  static const Color _blue = Color(0xFF1863B5);
+  static const Color _softBlue = Color(0xFFEBF3FA);
+  static const Color _lightBlue = Color(0xFFE3F2FD);
+  static const Color _border = Color(0xFFCDE1EC);
+  static const Color _textDark = Color(0xFF102A43);
+  static const Color _bodyText = Color(0xFF526579);
+  static const Color _textSecondary = Color(0xFF8292A6);
 
   @override
   Widget build(BuildContext context) {
@@ -153,7 +156,7 @@ class _HeaderCard extends StatelessWidget {
         borderRadius: BorderRadius.circular(24),
         boxShadow: [
           BoxShadow(
-            color: AccPrivacyPolicyWidget._primaryBlue.withValues(alpha: 0.25),
+            color: AccPrivacyPolicyWidget._primaryBlue.withValues(alpha: 0.16),
             blurRadius: 24,
             offset: const Offset(0, 12),
           ),
@@ -227,7 +230,7 @@ class _HeaderCard extends StatelessWidget {
                 style: TextStyle(
                   fontSize: 14,
                   height: 1.5,
-                  color: Color(0xFFEAF0FF),
+                  color: Color(0xFFE3F2FD),
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -237,7 +240,7 @@ class _HeaderCard extends StatelessWidget {
                 child: Text(
                   'Last updated: 2025',
                   style: TextStyle(
-                    color: Color(0xFFEAF0FF),
+                    color: Color(0xFFE3F2FD),
                     fontSize: 12,
                     fontWeight: FontWeight.w700,
                   ),
@@ -271,7 +274,11 @@ class _Section extends StatelessWidget {
       child: Container(
         decoration: BoxDecoration(
           color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: AccPrivacyPolicyWidget._border,
+            width: 1,
+          ),
           boxShadow: [
             BoxShadow(
               color: Colors.black.withValues(alpha: 0.06),
@@ -281,7 +288,7 @@ class _Section extends StatelessWidget {
           ],
         ),
         child: ClipRRect(
-          borderRadius: BorderRadius.circular(16),
+          borderRadius: BorderRadius.circular(18),
           child: IntrinsicHeight(
             child: Row(
               crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -368,9 +375,7 @@ class _Footer extends StatelessWidget {
               color: AccPrivacyPolicyWidget._softBlue,
               shape: BoxShape.circle,
               border: Border.all(
-                color: AccPrivacyPolicyWidget._primaryBlue.withValues(
-                  alpha: 0.16,
-                ),
+                color: AccPrivacyPolicyWidget._border,
               ),
             ),
             child: const Icon(

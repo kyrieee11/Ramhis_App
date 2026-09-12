@@ -13,13 +13,20 @@ import 'package:ramhis_app/core/online_status_manager.dart';
 import 'package:ramhis_app/models/chat_message_model.dart';
 import 'package:ramhis_app/services/api/chat_service.dart';
 
-const _kNavy = Color(0xFF123F91);
-const _kNavyDark = Color(0xFF082B6B);
-const _kGold = Color(0xFFD9C27A);
-const _kGoldDark = Color(0xFF9D7D2F);
-const _kCream = Color(0xFFF7F2E5);
-const _kInk = Color(0xFF17213A);
-const _kMuted = Color(0xFF777B86);
+const _kNavy = Color(0xFF10539B);
+const _kNavyDark = Color(0xFF1863B5);
+const _kBlueAccent = Color(0xFF8EC1DA);
+const _kBlueAccentDark = Color(0xFF1863B5);
+const _kCream = Color(0xFFF8FAFC);
+const _kInk = Color(0xFF102A43);
+const _kMuted = Color(0xFF8292A6);
+const _kMedBlue = Color(0xFF5D8FC8);
+const _kLightBlue = Color(0xFFEBF3FA);
+const _kGray = Color(0xFFEDEDED);
+const _kLightRed = Color(0xFFFFEFEF);
+const _kMedRed = Color(0xFFE58B8B);
+const _kDarkRed = Color(0xFFD95C5C);
+
 
 class ChatRoomWidget extends StatefulWidget {
   const ChatRoomWidget({
@@ -533,11 +540,11 @@ Future<void> _retryPendingMessage() async {
 
   Color _avatarColor(String name) {
     final c = name.trim().isEmpty ? 'A' : name.trim()[0].toUpperCase();
-    if ('ABCDE'.contains(c)) return const Color(0xFFF44336);
-    if ('FGHIJ'.contains(c)) return const Color(0xFF9C27B0);
-    if ('KLMNO'.contains(c)) return const Color(0xFF2196F3);
-    if ('PQRST'.contains(c)) return const Color(0xFF4CAF50);
-    return const Color(0xFFFF9800);
+    if ('ABCDE'.contains(c)) return _kMedRed;
+    if ('FGHIJ'.contains(c)) return _kMedBlue;
+    if ('KLMNO'.contains(c)) return _kNavy;
+    if ('PQRST'.contains(c)) return _kNavy;
+    return _kMedRed;
   }
 
   String _initials(String name) {
@@ -550,11 +557,11 @@ Future<void> _retryPendingMessage() async {
   Color _senderRoleColor() {
     final lower = widget.threadTitle.toLowerCase();
     if (lower.contains('dr.') || lower.contains('doctor')) {
-      return const Color(0xFF1976D2);
+      return _kNavy;
     }
-    if (lower.contains('pharma')) return const Color(0xFF7B1FA2);
-    if (lower.contains('admin')) return const Color(0xFFD32F2F);
-    return const Color(0xFF388E3C);
+    if (lower.contains('pharma')) return _kMedBlue;
+    if (lower.contains('admin')) return _kDarkRed;
+    return _kNavy;
   }
 
   DateTime? _parseDate(String raw) {
@@ -605,8 +612,8 @@ Future<void> _retryPendingMessage() async {
 
   Color _statusColor() {
     return otherUserOnline
-        ? const Color(0xFF22C55E)
-        : const Color(0xFFEAF0FF);
+        ? _kNavy
+        : _kLightBlue;
   }
 
   void _showSnack(String msg) {
@@ -673,7 +680,7 @@ Future<void> _retryPendingMessage() async {
                         child: Material(
                           color: _kNavy,
                           shape: const CircleBorder(
-                            side: BorderSide(color: _kGold, width: 1.2),
+                            side: BorderSide(color: _kBlueAccent, width: 1.2),
                           ),
                           elevation: 5,
                           child: InkWell(
@@ -684,7 +691,7 @@ Future<void> _retryPendingMessage() async {
                               height: 44,
                               child: Icon(
                                 Icons.keyboard_arrow_down_rounded,
-                                color: _kGold,
+                                color: _kBlueAccent,
                               ),
                             ),
                           ),
@@ -713,7 +720,7 @@ Future<void> _retryPendingMessage() async {
           end: Alignment.bottomRight,
         ),
         border: Border(
-          bottom: BorderSide(color: _kGold, width: 1.4),
+          bottom: BorderSide(color: _kBlueAccent, width: 1.4),
         ),
         boxShadow: [
           BoxShadow(
@@ -739,7 +746,7 @@ Future<void> _retryPendingMessage() async {
                 decoration: BoxDecoration(
                   color: _kCream,
                   shape: BoxShape.circle,
-                  border: Border.all(color: _kGold, width: 1.8),
+                  border: Border.all(color: _kBlueAccent, width: 1.8),
                   boxShadow: const [
                     BoxShadow(
                       color: Colors.black26,
@@ -766,8 +773,8 @@ Future<void> _retryPendingMessage() async {
                   height: 13,
                   decoration: BoxDecoration(
                     color: otherUserOnline
-                        ? const Color(0xFF4CAF50)
-                        : const Color(0xFF9CA3AF),
+                        ? _kNavy
+                        : _kMuted,
                     shape: BoxShape.circle,
                     border: Border.all(color: _kNavy, width: 2),
                   ),
@@ -795,7 +802,7 @@ Future<void> _retryPendingMessage() async {
                 Text(
                   _statusText(),
                   style: TextStyle(
-                    color: otherUserOnline ? const Color(0xFF8BE28B) : _kGold,
+                    color: otherUserOnline ? const Color(0xFF8BE28B) : _kBlueAccent,
                     fontSize: 11.5,
                     fontWeight: FontWeight.w600,
                   ),
@@ -803,9 +810,6 @@ Future<void> _retryPendingMessage() async {
               ],
             ),
           ),
-          _goldHeaderButton(Icons.videocam_rounded, () {}),
-          _goldHeaderButton(Icons.call_rounded, () {}),
-          _goldHeaderButton(Icons.refresh_rounded, _loadMessages),
         ],
       ),
     );
@@ -813,7 +817,7 @@ Future<void> _retryPendingMessage() async {
 
   Widget _goldHeaderButton(IconData icon, VoidCallback onTap) {
     return Material(
-      color: _kGold,
+      color: _kBlueAccent,
       shape: const CircleBorder(),
       elevation: 2,
       child: InkWell(
@@ -849,7 +853,7 @@ Future<void> _retryPendingMessage() async {
                 child: Text(
                   widget.threadTitle,
                   style: const TextStyle(
-                    color: _kGoldDark,
+                    color: _kBlueAccentDark,
                     fontSize: 10.5,
                     fontWeight: FontWeight.w900,
                   ),
@@ -868,7 +872,7 @@ Future<void> _retryPendingMessage() async {
                   bottomRight: const Radius.circular(18),
                 ),
                 border: Border.all(
-                  color: isMine ? _kGold : const Color(0xFFD9C99B),
+                  color: isMine ? _kBlueAccent : _kLightBlue,
                   width: isMine ? 1.1 : 1,
                 ),
                 boxShadow: [
@@ -908,7 +912,7 @@ Future<void> _retryPendingMessage() async {
                   const Icon(
                     Icons.done_all_rounded,
                     size: 13,
-                    color: _kGoldDark,
+                    color: _kBlueAccentDark,
                   ),
                 ],
               ],
@@ -936,9 +940,9 @@ Future<void> _retryPendingMessage() async {
             child: Container(
               padding: const EdgeInsets.all(7),
               decoration: BoxDecoration(
-                color: _kGold.withValues(alpha: 0.28),
+                color: _kBlueAccent.withValues(alpha: 0.28),
                 borderRadius: BorderRadius.circular(15),
-                border: Border.all(color: _kGoldDark, width: 1),
+                border: Border.all(color: _kBlueAccentDark, width: 1),
               ),
               child: ClipRRect(
                 borderRadius: BorderRadius.circular(10),
@@ -958,7 +962,7 @@ Future<void> _retryPendingMessage() async {
                         height: 22,
                         child: CircularProgressIndicator(
                           strokeWidth: 2,
-                          color: _kGoldDark,
+                          color: _kBlueAccentDark,
                         ),
                       ),
                     );
@@ -971,7 +975,7 @@ Future<void> _retryPendingMessage() async {
                     child: const Icon(
                       Icons.broken_image_rounded,
                       size: 36,
-                      color: _kGoldDark,
+                      color: _kBlueAccentDark,
                     ),
                   ),
                 ),
@@ -1008,7 +1012,7 @@ Future<void> _retryPendingMessage() async {
               : Colors.white.withValues(alpha: 0.72),
           borderRadius: BorderRadius.circular(13),
           border: Border.all(
-            color: isMine ? _kGold : const Color(0xFFD9C99B),
+            color: isMine ? _kBlueAccent : _kLightBlue,
           ),
         ),
         child: Row(
@@ -1019,13 +1023,13 @@ Future<void> _retryPendingMessage() async {
               height: 38,
               decoration: BoxDecoration(
                 color: isMine
-                    ? _kGold.withValues(alpha: 0.20)
-                    : _kGold.withValues(alpha: 0.24),
+                    ? _kBlueAccent.withValues(alpha: 0.20)
+                    : _kBlueAccent.withValues(alpha: 0.24),
                 borderRadius: BorderRadius.circular(11),
               ),
               child: Icon(
                 Icons.insert_drive_file_rounded,
-                color: isMine ? _kGold : _kGoldDark,
+                color: isMine ? _kBlueAccent : _kBlueAccentDark,
               ),
             ),
             const SizedBox(width: 10),
@@ -1087,7 +1091,7 @@ Future<void> _retryPendingMessage() async {
           decoration: BoxDecoration(
             color: _kCream.withValues(alpha: 0.92),
             borderRadius: BorderRadius.circular(999),
-            border: Border.all(color: _kGold, width: 0.8),
+            border: Border.all(color: _kBlueAccent, width: 0.8),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.06),
@@ -1099,7 +1103,7 @@ Future<void> _retryPendingMessage() async {
           child: Text(
             label,
             style: const TextStyle(
-              color: _kGoldDark,
+              color: _kBlueAccentDark,
               fontSize: 10.5,
               fontWeight: FontWeight.w800,
             ),
@@ -1121,7 +1125,7 @@ Future<void> _retryPendingMessage() async {
             end: Alignment.bottomCenter,
           ),
           border: Border(
-            top: BorderSide(color: _kGold, width: 1.2),
+            top: BorderSide(color: _kBlueAccent, width: 1.2),
           ),
         ),
         child: Column(
@@ -1137,7 +1141,7 @@ Future<void> _retryPendingMessage() async {
                       height: 13,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        color: _kGold,
+                        color: _kBlueAccent,
                       ),
                     ),
                     const SizedBox(width: 8),
@@ -1164,7 +1168,7 @@ Future<void> _retryPendingMessage() async {
                           height: 20,
                           child: CircularProgressIndicator(
                             strokeWidth: 2,
-                            color: _kGold,
+                            color: _kBlueAccent,
                           ),
                         )
                       : const Icon(
@@ -1197,7 +1201,7 @@ Future<void> _retryPendingMessage() async {
                         onPressed: () {},
                         icon: const Icon(
                           Icons.emoji_emotions_outlined,
-                          color: _kGoldDark,
+                          color: _kBlueAccentDark,
                         ),
                       ),
                       contentPadding: const EdgeInsets.symmetric(
@@ -1207,21 +1211,21 @@ Future<void> _retryPendingMessage() async {
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(999),
                         borderSide: const BorderSide(
-                          color: _kGold,
+                          color: _kBlueAccent,
                           width: 1,
                         ),
                       ),
                       enabledBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(999),
                         borderSide: const BorderSide(
-                          color: _kGold,
+                          color: _kBlueAccent,
                           width: 1,
                         ),
                       ),
                       focusedBorder: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(999),
                         borderSide: const BorderSide(
-                          color: _kGold,
+                          color: _kBlueAccent,
                           width: 1.5,
                         ),
                       ),
@@ -1230,7 +1234,7 @@ Future<void> _retryPendingMessage() async {
                 ),
                 const SizedBox(width: 8),
                 Material(
-                  color: canSend ? _kGold : const Color(0xFF6D7890),
+                  color: canSend ? _kBlueAccent : _kMuted,
                   shape: const CircleBorder(),
                   elevation: 2,
                   child: InkWell(
@@ -1288,7 +1292,7 @@ Future<void> _retryPendingMessage() async {
           width: width,
           height: 52,
           decoration: BoxDecoration(
-            color: isMine ? const Color(0xFFD9DFF8) : Colors.white,
+            color: isMine ? _kLightBlue : Colors.white,
             borderRadius: BorderRadius.only(
               topLeft: Radius.circular(isMine ? 18 : 4),
               topRight: Radius.circular(isMine ? 4 : 18),
@@ -1363,12 +1367,12 @@ class _MarbleBackgroundPainter extends CustomPainter {
     canvas.drawRect(Offset.zero & size, base);
 
     final vein = Paint()
-      ..color = const Color(0xFFB9C1CF).withValues(alpha: 0.28)
+      ..color = _kLightBlue.withValues(alpha: 0.28)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.0;
 
     final veinSoft = Paint()
-      ..color = const Color(0xFFD2D7DF).withValues(alpha: 0.34)
+      ..color = _kLightBlue.withValues(alpha: 0.34)
       ..style = PaintingStyle.stroke
       ..strokeWidth = 0.7;
 

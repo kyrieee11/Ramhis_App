@@ -1,6 +1,18 @@
 import 'package:flutter/material.dart';
 import 'package:ramhis_app/features/auth/screens/signup_account_security_screen.dart';
 
+// RAMHIS Medical Blue Theme
+const _kPrimary = Color(0xFF10539B);
+const _kPrimaryDark = Color(0xFF0B4380);
+const _kBlue = Color(0xFF1863B5);
+const _kLightBlue = Color(0xFFE3F2FD);
+const _kSoftBlue = Color(0xFFEBF3FA);
+const _kPageBg = Color(0xFFF8FAFC);
+const _kText = Color(0xFF102A43);
+const _kTextSecondary = Color(0xFF526579);
+const _kMuted = Color(0xFF8292A6);
+const _kBorder = Color(0xFFCDE1EC);
+
 class SignupPersonalInformationWidget extends StatefulWidget {
   const SignupPersonalInformationWidget({
     super.key,
@@ -220,7 +232,7 @@ class _SignupPersonalInformationWidgetState
             hintText: 'Enter your full name',
             icon: Icons.person_outline_rounded,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 17),
           _buildLabel('Email'),
           _buildTextField(
             controller: _emailController,
@@ -228,7 +240,7 @@ class _SignupPersonalInformationWidgetState
             icon: Icons.email_outlined,
             keyboardType: TextInputType.emailAddress,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 17),
           _buildLabel('Contact number'),
           _buildTextField(
             controller: _contactController,
@@ -236,7 +248,7 @@ class _SignupPersonalInformationWidgetState
             icon: Icons.phone_outlined,
             keyboardType: TextInputType.phone,
           ),
-          const SizedBox(height: 8),
+          const SizedBox(height: 17),
           _buildLabel('Birthdate'),
           GestureDetector(
             onTap: _pickBirthdate,
@@ -250,34 +262,30 @@ class _SignupPersonalInformationWidgetState
             ),
           ),
           if (_isDoctor) ...[
-            const SizedBox(height: 8),
+            const SizedBox(height: 17),
             _buildLabel('Department'),
             _buildDepartmentField(),
           ],
-          const SizedBox(height: 14),
+          const SizedBox(height: 25),
           SizedBox(
-            height: 49,
+            height: 60,
             child: ElevatedButton.icon(
               onPressed: _goNext,
-              icon: const Icon(Icons.chevron_right_rounded, size: 27),
+              icon: const Icon(Icons.chevron_right_rounded, size: 30),
               label: const Text(
                 'Next',
                 style: TextStyle(
-                  fontSize: 19,
+                  fontSize: 20,
                   fontWeight: FontWeight.w800,
                 ),
               ),
               style: ElevatedButton.styleFrom(
-                backgroundColor: const Color(0xFFB9232B),
-                foregroundColor: const Color(0xFFF8F1DB),
-                elevation: 8,
-                shadowColor: Colors.black45,
+                backgroundColor: _kPrimary,
+                foregroundColor: Colors.white,
+                elevation: 5,
+                shadowColor: _kPrimary.withValues(alpha: 0.24),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(28),
-                  side: const BorderSide(
-                    color: Color(0xFFD9C27A),
-                    width: 1.4,
-                  ),
+                  borderRadius: BorderRadius.circular(30),
                 ),
               ),
             ),
@@ -289,14 +297,14 @@ class _SignupPersonalInformationWidgetState
 
   Widget _buildLabel(String text) {
     return Padding(
-      padding: const EdgeInsets.only(left: 5, bottom: 5),
+      padding: const EdgeInsets.only(left: 2, bottom: 7),
       child: Text(
         text,
         style: const TextStyle(
-          color: Color(0xFF182A52),
-          fontSize: 14,
+          color: _kText,
+          fontSize: 15,
           fontWeight: FontWeight.w800,
-          letterSpacing: 0.15,
+          letterSpacing: 0.05,
         ),
       ),
     );
@@ -313,42 +321,29 @@ class _SignupPersonalInformationWidgetState
       controller: controller,
       keyboardType: keyboardType,
       style: const TextStyle(
-        color: Color(0xFF3D382E),
+        color: _kText,
         fontSize: 15,
         fontWeight: FontWeight.w600,
       ),
       decoration: InputDecoration(
         hintText: hintText,
         hintStyle: const TextStyle(
-          color: Color(0xFF8B806A),
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
+          color: _kMuted,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
         ),
         filled: true,
-        fillColor: const Color(0xFFF7F1E2),
+        fillColor: Colors.white,
         prefixIcon: Container(
           margin: const EdgeInsets.all(3),
-          width: 46,
+          width: 48,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF17479C),
-                Color(0xFF0A2B6B),
-              ],
-              begin: Alignment.topLeft,
-              end: Alignment.bottomRight,
-            ),
+            color: _kSoftBlue,
             borderRadius: BorderRadius.circular(14),
-            border: const Border(
-              right: BorderSide(
-                color: Color(0xFFD9C27A),
-                width: 1,
-              ),
-            ),
           ),
           child: Icon(
             icon,
-            color: const Color(0xFFE9D9A5),
+            color: _kPrimary,
             size: 23,
           ),
         ),
@@ -356,24 +351,24 @@ class _SignupPersonalInformationWidgetState
             ? null
             : const Icon(
                 Icons.calendar_today_outlined,
-                color: Color(0xFF8B806A),
+                color: _kMuted,
                 size: 22,
               ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 13,
+          horizontal: 14,
+          vertical: 17,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(
-            color: Color(0xFFA88B4E),
-            width: 1.7,
+            color: _kBorder,
+            width: 1.6,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(
-            color: Color(0xFF17479C),
+            color: _kPrimary,
             width: 2,
           ),
         ),
@@ -387,54 +382,49 @@ class _SignupPersonalInformationWidgetState
       decoration: InputDecoration(
         hintText: 'Select your department',
         hintStyle: const TextStyle(
-          color: Color(0xFF8B806A),
-          fontSize: 15,
-          fontWeight: FontWeight.w600,
+          color: _kMuted,
+          fontSize: 14,
+          fontWeight: FontWeight.w500,
         ),
         filled: true,
-        fillColor: const Color(0xFFF7F1E2),
+        fillColor: Colors.white,
         prefixIcon: Container(
           margin: const EdgeInsets.all(3),
-          width: 46,
+          width: 48,
           decoration: BoxDecoration(
-            gradient: const LinearGradient(
-              colors: [
-                Color(0xFF17479C),
-                Color(0xFF0A2B6B),
-              ],
-            ),
+            color: _kSoftBlue,
             borderRadius: BorderRadius.circular(14),
           ),
           child: const Icon(
             Icons.medical_services_outlined,
-            color: Color(0xFFE9D9A5),
+            color: _kPrimary,
             size: 23,
           ),
         ),
         contentPadding: const EdgeInsets.symmetric(
-          horizontal: 12,
-          vertical: 10,
+          horizontal: 14,
+          vertical: 15,
         ),
         enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(
-            color: Color(0xFFA88B4E),
-            width: 1.7,
+            color: _kBorder,
+            width: 1.6,
           ),
         ),
         focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(20),
           borderSide: const BorderSide(
-            color: Color(0xFF17479C),
+            color: _kPrimary,
             width: 2,
           ),
         ),
       ),
-      dropdownColor: const Color(0xFFF7F1E2),
+      dropdownColor: Colors.white,
       icon: const Icon(
         Icons.keyboard_arrow_down_rounded,
-        color: Color(0xFF806B3B),
-        size: 26,
+        color: _kTextSecondary,
+        size: 27,
       ),
       items: _departments.map((department) {
         return DropdownMenuItem<String>(
@@ -442,7 +432,7 @@ class _SignupPersonalInformationWidgetState
           child: Text(
             department,
             style: const TextStyle(
-              color: Color(0xFF3D382E),
+              color: _kText,
               fontSize: 15,
               fontWeight: FontWeight.w600,
             ),
@@ -456,6 +446,7 @@ class _SignupPersonalInformationWidgetState
       },
     );
   }
+
 }
 
 class _SignupStepScaffold extends StatelessWidget {
@@ -481,12 +472,13 @@ class _SignupStepScaffold extends StatelessWidget {
 
     return Scaffold(
       resizeToAvoidBottomInset: true,
+      backgroundColor: _kPageBg,
       body: Container(
         decoration: const BoxDecoration(
           gradient: LinearGradient(
             colors: [
-              Color(0xFF123F91),
-              Color(0xFF082B6B),
+              _kPrimary,
+              _kPrimaryDark,
             ],
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
@@ -506,15 +498,35 @@ class _SignupStepScaffold extends StatelessWidget {
                     ),
                     Positioned.fill(
                       child: Container(
-                        color: const Color(0xFFF8F3E5).withValues(alpha: 0.88),
+                        color: _kPageBg.withValues(alpha: 0.97),
                       ),
                     ),
                     SingleChildScrollView(
-                      padding: const EdgeInsets.fromLTRB(24, 18, 24, 28),
+                      padding: const EdgeInsets.fromLTRB(16, 0, 16, 30),
                       child: Center(
                         child: ConstrainedBox(
-                          constraints: const BoxConstraints(maxWidth: 430),
-                          child: child,
+                          constraints: const BoxConstraints(maxWidth: 760),
+                          child: Transform.translate(
+                            offset: const Offset(0, -1),
+                            child: Container(
+                              padding: const EdgeInsets.fromLTRB(26, 26, 26, 28),
+                              decoration: BoxDecoration(
+                                color: Colors.white,
+                                borderRadius: BorderRadius.circular(28),
+                                border: Border.all(
+                                  color: Colors.white.withValues(alpha: 0.9),
+                                ),
+                                boxShadow: [
+                                  BoxShadow(
+                                    color: _kPrimary.withValues(alpha: 0.10),
+                                    blurRadius: 24,
+                                    offset: const Offset(0, 10),
+                                  ),
+                                ],
+                              ),
+                              child: child,
+                            ),
+                          ),
                         ),
                       ),
                     ),
@@ -530,89 +542,160 @@ class _SignupStepScaffold extends StatelessWidget {
 
   Widget _buildHeader(double progress) {
     return Container(
+      padding: const EdgeInsets.only(bottom: 22),
       decoration: const BoxDecoration(
         gradient: LinearGradient(
           colors: [
-            Color(0xFF17479C),
-            Color(0xFF0B2E73),
+            _kPrimary,
+            _kBlue,
           ],
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
         ),
-        border: Border(
-          bottom: BorderSide(
-            color: Color(0xFFD9C27A),
-            width: 1.2,
+      ),
+      child: Stack(
+        children: [
+          Positioned(
+            right: -50,
+            top: -45,
+            child: Container(
+              width: 190,
+              height: 190,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                border: Border.all(
+                  color: _kLightBlue.withValues(alpha: 0.13),
+                  width: 30,
+                ),
+              ),
+            ),
           ),
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black38,
-            blurRadius: 10,
-            offset: Offset(0, 4),
+          Column(
+            children: [
+              SizedBox(
+                height: 58,
+                child: Stack(
+                  alignment: Alignment.center,
+                  children: [
+                    Align(
+                      alignment: Alignment.centerLeft,
+                      child: IconButton(
+                        onPressed: onBack,
+                        icon: const Icon(
+                          Icons.arrow_back_rounded,
+                          color: Colors.white,
+                          size: 30,
+                        ),
+                      ),
+                    ),
+                    const Text(
+                      'Create',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 23,
+                        fontWeight: FontWeight.w400,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Text(
+                accountName,
+                textAlign: TextAlign.center,
+                style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 32,
+                  fontWeight: FontWeight.w800,
+                  letterSpacing: 0.1,
+                ),
+              ),
+              const SizedBox(height: 20),
+              _buildStepIndicator(),
+            ],
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildStepIndicator() {
+    const labels = [
+      'Personal\nInformation',
+      'Account\nSecurity',
+      'Professional\nVerification',
+      'Review',
+    ];
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 24),
       child: Column(
         children: [
-          SizedBox(
-            height: 58,
-            child: Stack(
-              alignment: Alignment.center,
-              children: [
-                Align(
-                  alignment: Alignment.centerLeft,
-                  child: IconButton(
-                    onPressed: onBack,
-                    icon: const Icon(
-                      Icons.arrow_back_rounded,
-                      color: Color(0xFFE7D59D),
-                      size: 28,
+          Row(
+            children: List.generate(4, (index) {
+              final active = index == currentStep - 1;
+              final completed = index < currentStep - 1;
+
+              return Expanded(
+                child: Row(
+                  children: [
+                    Container(
+                      width: 52,
+                      height: 52,
+                      decoration: BoxDecoration(
+                        shape: BoxShape.circle,
+                        color: active ? Colors.white : Colors.transparent,
+                        border: Border.all(
+                          color: active
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.28),
+                          width: active ? 4 : 3,
+                        ),
+                      ),
+                      alignment: Alignment.center,
+                      child: Text(
+                        '${index + 1}',
+                        style: TextStyle(
+                          color: active ? _kPrimary : Colors.white.withValues(alpha: 0.55),
+                          fontSize: 21,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
                     ),
-                  ),
+                    if (index < 3)
+                      Expanded(
+                        child: Container(
+                          height: 3,
+                          color: completed
+                              ? Colors.white
+                              : Colors.white.withValues(alpha: 0.28),
+                        ),
+                      ),
+                  ],
                 ),
-                const Text(
-                  'Create',
+              );
+            }),
+          ),
+          const SizedBox(height: 10),
+          Row(
+            children: labels.map((label) {
+              final index = labels.indexOf(label);
+              final active = index == currentStep - 1;
+
+              return Expanded(
+                child: Text(
+                  label,
+                  textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: Color(0xFFEFE2BB),
-                    fontSize: 24,
-                    fontWeight: FontWeight.w400,
+                    color: active
+                        ? Colors.white
+                        : Colors.white.withValues(alpha: 0.60),
+                    fontSize: 13,
+                    height: 1.18,
+                    fontWeight: active ? FontWeight.w800 : FontWeight.w600,
                   ),
                 ),
-              ],
-            ),
-          ),
-          Text(
-            accountName,
-            style: const TextStyle(
-              color: Color(0xFFF1E2AE),
-              fontSize: 32,
-              fontWeight: FontWeight.w800,
-              letterSpacing: 0.2,
-              shadows: [
-                Shadow(
-                  color: Colors.black54,
-                  blurRadius: 5,
-                  offset: Offset(0, 2),
-                ),
-              ],
-            ),
-          ),
-          const SizedBox(height: 17),
-          SizedBox(
-            height: 8,
-            child: Row(
-              children: [
-                Expanded(
-                  flex: 1,
-                  child: Container(color: const Color(0xFFB9232B)),
-                ),
-                Expanded(
-                  flex: 3,
-                  child: Container(color: const Color(0xFFD9C27A)),
-                ),
-              ],
-            ),
+              );
+            }).toList(),
           ),
         ],
       ),
@@ -626,7 +709,7 @@ class _MarblePainter extends CustomPainter {
     final paint = Paint()
       ..style = PaintingStyle.stroke
       ..strokeWidth = 1.1
-      ..color = const Color(0xFF8DA8C8).withValues(alpha: 0.22);
+      ..color = _kBlue.withValues(alpha: 0.08);
 
     final path1 = Path()
       ..moveTo(-30, 90)

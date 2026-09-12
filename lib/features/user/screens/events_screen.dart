@@ -1,3 +1,7 @@
+// RAMHIS EventsWidget + EventDetailScreen — visual redesign only.
+// Existing API, Socket.IO, filtering, search, join/leave, delete confirmation,
+// maps, navigation, and event-status logic are preserved.
+
 import 'dart:async';
 
 import 'package:flutter/material.dart';
@@ -16,18 +20,44 @@ import 'package:ramhis_app/services/api/event_service.dart';
 // wherever you place event_helpers.dart in your project.
 import 'package:ramhis_app/utils/event_helpers.dart';
 
-const _kPrimary = Color(0xFF24335B);
-const _kAccent = Color(0xFF18233F);
-const _kBg = Color(0xFFEFF3F8);
-const _kTextPrimary = Color(0xFF17213A);
-const _kTextSecondary = Color(0xFF718096);
-const _kGreen = Color(0xFF2E9B67);
-const _kOrange = Color(0xFFC88A2B);
-const _kRed = Color(0xFFB84A4A);
-const _kGray = Color(0xFF6B7280);
-const _kGold = Color(0xFFC7A45A);
-const _kGoldSoft = Color(0xFFE7D5A8);
-const _kNavy = Color(0xFF17233F);
+// RAMHIS medical blue theme.
+const _kPrimary = Color(0xFF10539B);
+const _kPrimaryDark = Color(0xFF1863B5);
+const _kPrimarySoft = Color(0xFFEBF3FA);
+const _kPrimaryLight = Color(0xFFE3F2FD);
+const _kPrimaryTint = Color(0xFFF8FAFC);
+
+const _kAccent = Color(0xFFFFB800);
+const _kAccentBg = Color(0xFFFFF7D6);
+
+const _kSurface = Color(0xFFFFFFFF);
+const _kBg = Color(0xFFF8FAFC);
+const _kCardBorder = Color(0xFFE2E8F0);
+const _kDivider = Color(0xFFE5EAF0);
+
+const _kTextPrimary = Color(0xFF102A43);
+const _kTextSecondary = Color(0xFF526579);
+const _kTextMuted = Color(0xFF8292A6);
+const _kGray = Color(0xFF8292A6);
+
+const _kGreen = Color(0xFF22A06B);
+const _kGreenBg = Color(0xFFE8F7F0);
+const _kOrange = Color(0xFFFFB800);
+const _kOrangeBg = Color(0xFFFFF7D6);
+const _kRed = Color(0xFFD95C5C);
+const _kRedBg = Color(0xFFFFEFEF);
+const _kInfo = Color(0xFF1863B5);
+
+const _kChartBlue = Color(0xFF5D8FC8);
+const _kChartSky = Color(0xFF4A9BD5);
+const _kChartRose = Color(0xFFE58B8B);
+
+const _kBlueAccent = Color(0xFF8EC1DA);
+const _kBlueAccentSoft = Color(0xFFE3F2FD);
+const _kNavy = Color(0xFF10539B);
+const _kCream = Color(0xFFFFFFFF);
+const _kWarmSurface = Color(0xFFFFFFFF);
+
 
 class EventsWidget extends StatefulWidget {
   const EventsWidget({super.key});
@@ -436,11 +466,11 @@ class _EventsWidgetState extends State<EventsWidget> {
   Color _typeColor(String type) {
     switch (type.toLowerCase()) {
       case 'medical mission':
-        return _kRed;
+        return _kInfo;
       case 'training':
         return _kPrimary;
       case 'seminar':
-        return _kAccent;
+        return _kChartSky;
       case 'community outreach':
         return _kGreen;
       default:
@@ -518,31 +548,31 @@ class _EventsWidgetState extends State<EventsWidget> {
             child: isLoading
                 ? _buildSkeletonList()
                 : RefreshIndicator(
-                    color: _kPrimary,
+                    color: _kRed,
+                    backgroundColor: _kCream,
                     onRefresh: _loadEvents,
                     child: ListView(
                       physics: const AlwaysScrollableScrollPhysics(),
-                      padding: const EdgeInsets.fromLTRB(0, 14, 0, 24),
+                      padding: const EdgeInsets.fromLTRB(0, 10, 0, 28),
                       children: [
                         _buildFilterTabs(),
-                        const SizedBox(height: 14),
-                        _buildSearchBar(),
                         const SizedBox(height: 10),
+                        _buildSearchBar(),
+                        const SizedBox(height: 15),
                         if (events.isEmpty)
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
                             child: _buildEmptyState(),
                           )
                         else if (list.isEmpty)
                           Padding(
-                            padding: const EdgeInsets.symmetric(horizontal: 16),
+                            padding: const EdgeInsets.symmetric(horizontal: 18),
                             child: _searchQuery.isNotEmpty
                                 ? _buildSearchEmptyState()
                                 : _buildFilteredEmptyState(),
                           )
                         else
                           Column(
-                            // Wrap each event card with swipe-to-remove.
                             children: list.map(_buildSwipeableEventCard).toList(),
                           ),
                       ],
@@ -558,183 +588,137 @@ class _EventsWidgetState extends State<EventsWidget> {
   Widget _buildTopHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(20, 46, 18, 20),
+      padding: const EdgeInsets.fromLTRB(20, 48, 20, 18),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_kNavy, Color(0xFF26365E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: _kCream,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(30),
           bottomRight: Radius.circular(30),
         ),
       ),
-      child: Stack(
+      child: Column(
         children: [
-          Positioned(
-            right: -35,
-            top: -45,
-            child: Container(
-              width: 135,
-              height: 135,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                border: Border.all(
-                  color: _kGold.withValues(alpha: 0.16),
-                  width: 1.5,
-                ),
-              ),
-            ),
-          ),
-          Positioned(
-            right: 8,
-            bottom: -50,
-            child: Container(
-              width: 100,
-              height: 100,
-              decoration: BoxDecoration(
-                shape: BoxShape.circle,
-                color: _kGold.withValues(alpha: 0.08),
-              ),
-            ),
-          ),
           Row(
             children: [
               Expanded(
                 child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     const Text(
-                      'Events',
+                      'Community',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: _kGoldSoft,
-                        fontSize: 29,
-                        fontWeight: FontWeight.w700,
-                        letterSpacing: 0.3,
+                        color: Color(0xFF2B2523),
+                        fontSize: 28,
+                        fontWeight: FontWeight.w900,
                         height: 1,
-                        fontFamily: 'Georgia',
                       ),
                     ),
                     const SizedBox(height: 7),
                     Text(
-                      'COMMUNITY • HEALTH • IMPACT',
+                      'EVENTS • MEDICAL MISSIONS',
+                      textAlign: TextAlign.center,
                       style: TextStyle(
-                        color: Colors.white.withValues(alpha: 0.70),
-                        fontSize: 9.5,
+                        color: _kTextPrimary,
+                        fontSize: 10,
                         fontWeight: FontWeight.w800,
-                        letterSpacing: 1.15,
+                        letterSpacing: 0.85,
                       ),
                     ),
                   ],
                 ),
               ),
               Material(
-                color: Colors.white.withValues(alpha: 0.08),
+                color: _kBg,
                 borderRadius: BorderRadius.circular(14),
                 child: InkWell(
                   borderRadius: BorderRadius.circular(14),
                   onTap: _loadEvents,
-                  child: Container(
-                    width: 44,
-                    height: 44,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(
-                        color: _kGold.withValues(alpha: 0.42),
-                      ),
-                    ),
-                    child: const Icon(
+                  child: const SizedBox(
+                    width: 42,
+                    height: 42,
+                    child: Icon(
                       Icons.refresh_rounded,
-                      color: _kGoldSoft,
-                      size: 21,
+                      color: _kPrimary,
+                      size: 20,
                     ),
                   ),
                 ),
               ),
             ],
           ),
+          const SizedBox(height: 18),
+          Container(
+            height: 43,
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: _kWarmSurface,
+              borderRadius: BorderRadius.circular(999),
+              border: Border.all(
+                color: _kPrimary.withValues(alpha: 0.22),
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: _kPrimary.withValues(alpha: 0.08),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
+            ),
+            child: Row(
+              children: filters.map((filter) {
+                final selected = selectedFilter == filter;
+
+                return Expanded(
+                  child: GestureDetector(
+                    onTap: () {
+                      setState(() {
+                        selectedFilter = filter;
+                      });
+                    },
+                    child: AnimatedContainer(
+                      duration: const Duration(milliseconds: 180),
+                      curve: Curves.easeOut,
+                      alignment: Alignment.center,
+                      decoration: BoxDecoration(
+                        color: selected ? _kOrange : Colors.transparent,
+                        borderRadius: BorderRadius.circular(999),
+                      ),
+                      child: Text(
+                        filter,
+                        style: TextStyle(
+                          color: selected ? Colors.white : _kPrimary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ),
+                );
+              }).toList(),
+            ),
+          ),
         ],
       ),
     );
   }
-  Widget _buildFilterTabs() {
-    return SingleChildScrollView(
-      scrollDirection: Axis.horizontal,
-      padding: const EdgeInsets.symmetric(horizontal: 16),
-      child: Row(
-        children: filters.map((filter) {
-          final selected = selectedFilter == filter;
 
-          return Padding(
-            padding: const EdgeInsets.only(right: 9),
-            child: InkWell(
-              borderRadius: BorderRadius.circular(999),
-              onTap: () {
-                setState(() {
-                  selectedFilter = filter;
-                });
-              },
-              child: AnimatedContainer(
-                duration: const Duration(milliseconds: 220),
-                curve: Curves.easeOut,
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 17,
-                  vertical: 10,
-                ),
-                decoration: BoxDecoration(
-                  color: selected ? _kNavy : Colors.white,
-                  borderRadius: BorderRadius.circular(999),
-                  border: Border.all(
-                    color: selected ? _kGold : _kGoldSoft,
-                    width: selected ? 1.3 : 1,
-                  ),
-                  boxShadow: [
-                    BoxShadow(
-                      color: selected
-                          ? _kNavy.withValues(alpha: 0.16)
-                          : Colors.black.withValues(alpha: 0.035),
-                      blurRadius: selected ? 13 : 9,
-                      offset: const Offset(0, 4),
-                    ),
-                  ],
-                ),
-                child: Text(
-                  filter,
-                  style: TextStyle(
-                    color: selected ? _kGoldSoft : _kTextSecondary,
-                    fontWeight: FontWeight.w800,
-                    fontSize: 12.5,
-                    letterSpacing: 0.1,
-                  ),
-                ),
-              ),
-            ),
-          );
-        }).toList(),
-      ),
-    );
+  Widget _buildFilterTabs() {
+    return const SizedBox.shrink();
   }
+
   Widget _buildSearchBar() {
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 16),
+      padding: const EdgeInsets.symmetric(horizontal: 18),
       child: Container(
-        height: 52,
+        height: 48,
         decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(18),
+          color: _kWarmSurface,
+          borderRadius: BorderRadius.circular(15),
           border: Border.all(
-            color: _searchQuery.isNotEmpty
-                ? _kGold.withValues(alpha: 0.70)
-                : Colors.black.withValues(alpha: 0.055),
-          ),
-          boxShadow: [
-            BoxShadow(
-              color: _kNavy.withValues(alpha: 0.055),
-              blurRadius: 15,
-              offset: const Offset(0, 6),
+            color: _kTextPrimary.withValues(
+              alpha: _searchQuery.isNotEmpty ? 0.34 : 0.12,
             ),
-          ],
+          ),
         ),
         child: TextField(
           controller: _searchController,
@@ -743,26 +727,32 @@ class _EventsWidgetState extends State<EventsWidget> {
               _searchQuery = value;
             });
           },
+          textInputAction: TextInputAction.search,
+          style: const TextStyle(
+            color: Color(0xFF2B2523),
+            fontSize: 13,
+            fontWeight: FontWeight.w600,
+          ),
           decoration: InputDecoration(
             border: InputBorder.none,
-            contentPadding: const EdgeInsets.symmetric(vertical: 14),
+            contentPadding: const EdgeInsets.symmetric(vertical: 12),
             prefixIcon: const Icon(
               Icons.search_rounded,
-              color: _kNavy,
-              size: 21,
+              color: _kTextPrimary,
+              size: 20,
             ),
-            hintText: 'Search by title, type, date, location...',
+            hintText: 'Search events...',
             hintStyle: const TextStyle(
               color: _kTextSecondary,
-              fontWeight: FontWeight.w500,
               fontSize: 12.5,
+              fontWeight: FontWeight.w500,
             ),
             suffixIcon: _searchQuery.isNotEmpty
                 ? IconButton(
                     icon: const Icon(
                       Icons.close_rounded,
                       color: _kTextSecondary,
-                      size: 19,
+                      size: 18,
                     ),
                     onPressed: () {
                       setState(() {
@@ -777,20 +767,21 @@ class _EventsWidgetState extends State<EventsWidget> {
       ),
     );
   }
+
   Widget _buildSkeletonList() {
     return ListView.builder(
-      itemCount: 6,
-      padding: const EdgeInsets.only(top: 12),
+      itemCount: 5,
+      padding: const EdgeInsets.fromLTRB(18, 18, 18, 20),
       itemBuilder: (_, index) {
         return Container(
-          margin: const EdgeInsets.symmetric(
-            horizontal: 16,
-            vertical: 8,
-          ),
-          height: 110,
+          margin: const EdgeInsets.only(bottom: 12),
+          height: 116,
           decoration: BoxDecoration(
-            color: Colors.white,
-            borderRadius: BorderRadius.circular(18),
+            color: _kWarmSurface,
+            borderRadius: BorderRadius.circular(16),
+            border: Border.all(
+              color: _kPrimary.withValues(alpha: 0.10),
+            ),
           ),
         );
       },
@@ -814,7 +805,7 @@ class _EventsWidgetState extends State<EventsWidget> {
         padding: const EdgeInsets.only(right: 24),
         decoration: BoxDecoration(
           color: _kRed,
-          borderRadius: BorderRadius.circular(18),
+          borderRadius: BorderRadius.circular(16),
         ),
         child: const Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -877,7 +868,7 @@ class _EventsWidgetState extends State<EventsWidget> {
                 Navigator.pop(dialogContext, true);
               },
               style: ElevatedButton.styleFrom(
-                backgroundColor: _kRed,
+                backgroundColor: _kPrimary,
                 foregroundColor: Colors.white,
                 elevation: 0,
               ),
@@ -948,201 +939,163 @@ class _EventsWidgetState extends State<EventsWidget> {
     final isPastDate = isPastEventDate(event);
     final imageUrl = _imageUrl(event).trim();
     final type = _typeText(event);
+    final status = _statusText(event);
+    final statusColor = _statusColor(status);
 
     return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+      margin: const EdgeInsets.symmetric(horizontal: 18, vertical: 6),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
+        color: _kWarmSurface,
+        borderRadius: BorderRadius.circular(15),
         border: Border.all(
-          color: Colors.black.withValues(alpha: 0.045),
+          color: _kPrimary.withValues(alpha: 0.22),
+          width: 1.15,
         ),
         boxShadow: [
           BoxShadow(
-            color: _kNavy.withValues(alpha: 0.09),
-            blurRadius: 22,
-            offset: const Offset(0, 9),
+            color: Colors.black.withValues(alpha: 0.08),
+            blurRadius: 10,
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       clipBehavior: Clip.antiAlias,
       child: InkWell(
         onTap: () => _openEventDetails(event),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            SizedBox(
-              height: 116,
-              width: double.infinity,
-              child: Stack(
-                fit: StackFit.expand,
-                children: [
-                  if (imageUrl.isNotEmpty)
-                    Image.network(
-                      imageUrl,
-                      fit: BoxFit.cover,
-                      errorBuilder: (_, __, ___) => _eventBannerFallback(type),
-                    )
-                  else
-                    _eventBannerFallback(type),
-                  DecoratedBox(
-                    decoration: BoxDecoration(
-                      gradient: LinearGradient(
-                        colors: [
-                          _kNavy.withValues(alpha: 0.82),
-                          _kNavy.withValues(alpha: 0.28),
-                        ],
-                        begin: Alignment.bottomLeft,
-                        end: Alignment.topRight,
-                      ),
-                    ),
-                  ),
-                  Positioned(
-                    left: 16,
-                    bottom: 14,
-                    child: Row(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(9, 9, 10, 10),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Container(
-                          padding: const EdgeInsets.symmetric(
-                            horizontal: 10,
-                            vertical: 6,
-                          ),
-                          decoration: BoxDecoration(
-                            color: _kGold.withValues(alpha: 0.94),
-                            borderRadius: BorderRadius.circular(999),
-                          ),
+                        Expanded(
                           child: Text(
-                            type.toUpperCase(),
+                            titleCaseEventText(
+                              event.title.isNotEmpty
+                                  ? event.title
+                                  : 'Untitled Event',
+                            ),
+                            maxLines: 2,
+                            overflow: TextOverflow.ellipsis,
                             style: const TextStyle(
-                              color: _kNavy,
-                              fontSize: 9.5,
+                              color: Color(0xFF171313),
+                              fontSize: 17,
                               fontWeight: FontWeight.w900,
-                              letterSpacing: 0.8,
+                              height: 1.08,
                             ),
                           ),
                         ),
+                        const SizedBox(width: 7),
+                        _statusPill(status, statusColor),
                       ],
                     ),
-                  ),
-                  Positioned(
-                    right: 14,
-                    top: 14,
-                    child: Container(
-                      width: 36,
-                      height: 36,
-                      decoration: BoxDecoration(
-                        color: _kNavy.withValues(alpha: 0.78),
-                        shape: BoxShape.circle,
-                        border: Border.all(
-                          color: _kGold.withValues(alpha: 0.55),
-                        ),
-                      ),
-                      child: Icon(
-                        _typeIcon(type),
-                        color: _kGoldSoft,
-                        size: 18,
-                      ),
+                    const SizedBox(height: 7),
+                    _eventMetaRow(
+                      Icons.calendar_month_rounded,
+                      _eventDate(event),
                     ),
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(16, 15, 16, 16),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
+                    const SizedBox(height: 5),
+                    _eventMetaRow(
+                      Icons.location_on_rounded,
+                      _eventLocation(event),
+                      maxLines: 2,
+                    ),
+                    if (type.trim().isNotEmpty &&
+                        type.toLowerCase() != 'other') ...[
+                      const SizedBox(height: 6),
+                      Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 8,
+                          vertical: 4,
+                        ),
+                        decoration: BoxDecoration(
+                          color: _typeColor(type).withValues(alpha: 0.10),
+                          borderRadius: BorderRadius.circular(7),
+                        ),
                         child: Text(
-                          titleCaseEventText(
-                            event.title.isNotEmpty ? event.title : 'Untitled Event',
-                          ),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: _kTextPrimary,
-                            fontSize: 18,
+                          type,
+                          style: TextStyle(
+                            color: _typeColor(type),
+                            fontSize: 9.5,
                             fontWeight: FontWeight.w900,
-                            height: 1.2,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 10),
-                      _statusPill(
-                        _statusText(event),
-                        _statusColor(_statusText(event)),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 13),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.calendar_month_rounded,
-                        color: _kGold,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _eventDate(event),
-                          style: const TextStyle(
-                            color: _kTextPrimary,
-                            fontSize: 13,
-                            fontWeight: FontWeight.w700,
                           ),
                         ),
                       ),
                     ],
-                  ),
-                  const SizedBox(height: 9),
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      const Icon(
-                        Icons.location_on_rounded,
-                        color: _kGold,
-                        size: 18,
-                      ),
-                      const SizedBox(width: 8),
-                      Expanded(
-                        child: Text(
-                          _eventLocation(event),
-                          maxLines: 2,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: _kTextSecondary,
-                            fontSize: 12.5,
-                            fontWeight: FontWeight.w600,
-                            height: 1.35,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 8),
-                      const Icon(
-                        Icons.arrow_forward_ios_rounded,
-                        color: _kGold,
-                        size: 13,
-                      ),
+                    if (joinStatus == 'Approved' ||
+                        joinStatus == 'Pending' ||
+                        joinStatus == 'Rejected' ||
+                        (joinStatus == 'None' && isPastDate)) ...[
+                      const SizedBox(height: 7),
+                      _missionBadge(joinStatus, isPastDate),
                     ],
-                  ),
-                  if (joinStatus == 'Approved' ||
-                      joinStatus == 'Pending' ||
-                      joinStatus == 'Rejected' ||
-                      (joinStatus == 'None' && isPastDate)) ...[
-                    const SizedBox(height: 13),
-                    _missionBadge(joinStatus, isPastDate),
                   ],
-                ],
+                ),
               ),
-            ),
-          ],
+            ],
+          ),
         ),
       ),
+    );
+  }
+
+  Widget _eventThumbnail(
+    EventModel event,
+    String imageUrl,
+    String type,
+  ) {
+    return Container(
+      width: 78,
+      height: 78,
+      decoration: BoxDecoration(
+        shape: BoxShape.circle,
+        color: _kBg,
+        border: Border.all(
+          color: _kPrimary.withValues(alpha: 0.28),
+          width: 1.3,
+        ),
+      ),
+      clipBehavior: Clip.antiAlias,
+      child: imageUrl.isNotEmpty
+          ? Image.network(
+              imageUrl,
+              fit: BoxFit.cover,
+              errorBuilder: (_, __, ___) => _eventBannerFallback(type),
+            )
+          : _eventBannerFallback(type),
+    );
+  }
+
+  Widget _eventMetaRow(
+    IconData icon,
+    String text, {
+    int maxLines = 1,
+  }) {
+    return Row(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Icon(icon, color: _kTextPrimary, size: 16),
+        const SizedBox(width: 6),
+        Expanded(
+          child: Text(
+            text,
+            maxLines: maxLines,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(
+              color: Color(0xFF3B302D),
+              fontSize: 12.5,
+              fontWeight: FontWeight.w600,
+              height: 1.15,
+            ),
+          ),
+        ),
+      ],
     );
   }
 
@@ -1150,16 +1103,16 @@ class _EventsWidgetState extends State<EventsWidget> {
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
-          colors: [Color(0xFF111D38), Color(0xFF30436D)],
-          begin: Alignment.bottomLeft,
-          end: Alignment.topRight,
+          colors: [_kPrimarySoft, _kPrimaryLight],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
         ),
       ),
       child: Center(
         child: Icon(
           _typeIcon(type),
-          color: _kGold.withValues(alpha: 0.75),
-          size: 46,
+          color: _kTextPrimary,
+          size: 34,
         ),
       ),
     );
@@ -1169,16 +1122,18 @@ class _EventsWidgetState extends State<EventsWidget> {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 5),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.10),
+        color: color.withValues(alpha: 0.08),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.24)),
+        border: Border.all(
+          color: color.withValues(alpha: 0.65),
+        ),
       ),
       child: Text(
         text,
         style: TextStyle(
           color: color,
-          fontSize: 10,
-          fontWeight: FontWeight.w900,
+          fontSize: 9.5,
+          fontWeight: FontWeight.w800,
         ),
       ),
     );
@@ -1209,22 +1164,21 @@ class _EventsWidgetState extends State<EventsWidget> {
 
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+      padding: const EdgeInsets.symmetric(horizontal: 9, vertical: 7),
       decoration: BoxDecoration(
         color: color.withValues(alpha: 0.08),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: color.withValues(alpha: 0.20)),
+        borderRadius: BorderRadius.circular(9),
       ),
       child: Row(
         children: [
-          Icon(icon, color: color, size: 16),
-          const SizedBox(width: 7),
+          Icon(icon, color: color, size: 14),
+          const SizedBox(width: 6),
           Expanded(
             child: Text(
               text,
               style: TextStyle(
                 color: color,
-                fontSize: 11.5,
+                fontSize: 10.5,
                 fontWeight: FontWeight.w800,
               ),
             ),
@@ -1233,32 +1187,28 @@ class _EventsWidgetState extends State<EventsWidget> {
       ),
     );
   }
+
   Widget _buildEmptyState() {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 28, vertical: 34),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _kGoldSoft.withValues(alpha: 0.65)),
-        boxShadow: [
-          BoxShadow(
-            color: _kNavy.withValues(alpha: 0.06),
-            blurRadius: 18,
-            offset: const Offset(0, 7),
-          ),
-        ],
+        color: _kWarmSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(
+          color: _kPrimary.withValues(alpha: 0.18),
+        ),
       ),
       child: const Column(
         children: [
-          Icon(Icons.event_busy_rounded, size: 54, color: _kGold),
+          Icon(Icons.event_busy_rounded, size: 52, color: _kTextPrimary),
           SizedBox(height: 14),
           Text(
             'No events available',
             style: TextStyle(
-              color: _kTextPrimary,
-              fontSize: 20,
+              color: Color(0xFF2B2523),
+              fontSize: 19,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -1266,44 +1216,36 @@ class _EventsWidgetState extends State<EventsWidget> {
           Text(
             'Please check again later.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: _kTextSecondary,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: _kTextSecondary, fontSize: 13),
           ),
         ],
       ),
     );
   }
+
   Widget _buildFilteredEmptyState() {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          colors: [_kNavy, Color(0xFF30436D)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-        borderRadius: BorderRadius.circular(22),
-        boxShadow: [
-          BoxShadow(
-            color: _kNavy.withValues(alpha: 0.20),
-            blurRadius: 22,
-            offset: const Offset(0, 9),
-          ),
-        ],
+        color: _kWarmSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _kPrimary.withValues(alpha: 0.18)),
       ),
       child: Column(
         children: [
-          const Icon(Icons.filter_alt_off_rounded, size: 50, color: _kGoldSoft),
+          const Icon(
+            Icons.filter_alt_off_rounded,
+            size: 50,
+            color: _kTextPrimary,
+          ),
           const SizedBox(height: 13),
           Text(
             'No $selectedFilter events',
             style: const TextStyle(
-              color: Colors.white,
-              fontSize: 18,
+              color: Color(0xFF2B2523),
+              fontSize: 17,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -1311,53 +1253,44 @@ class _EventsWidgetState extends State<EventsWidget> {
           const Text(
             'Try another filter or pull down to refresh.',
             textAlign: TextAlign.center,
-            style: TextStyle(
-              color: Colors.white70,
-              fontSize: 13,
-            ),
+            style: TextStyle(color: _kTextSecondary, fontSize: 13),
           ),
         ],
       ),
     );
   }
+
   Widget _buildSearchEmptyState() {
     return Container(
       width: double.infinity,
       margin: const EdgeInsets.only(top: 8),
       padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 34),
       decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(22),
-        border: Border.all(color: _kGoldSoft.withValues(alpha: 0.65)),
-        boxShadow: [
-          BoxShadow(
-            color: _kNavy.withValues(alpha: 0.055),
-            blurRadius: 18,
-            offset: const Offset(0, 7),
-          ),
-        ],
+        color: _kWarmSurface,
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _kPrimary.withValues(alpha: 0.18)),
       ),
       child: Column(
         children: [
           Container(
-            width: 64,
-            height: 64,
+            width: 62,
+            height: 62,
             decoration: BoxDecoration(
-              color: _kGold.withValues(alpha: 0.10),
+              color: _kPrimarySoft,
               shape: BoxShape.circle,
             ),
             child: const Icon(
               Icons.search_off_rounded,
-              size: 32,
-              color: _kGold,
+              size: 31,
+              color: _kTextPrimary,
             ),
           ),
-          const SizedBox(height: 15),
+          const SizedBox(height: 14),
           const Text(
             'No results found',
             style: TextStyle(
-              color: _kTextPrimary,
-              fontSize: 18,
+              color: Color(0xFF2B2523),
+              fontSize: 17.5,
               fontWeight: FontWeight.w900,
             ),
           ),
@@ -1380,18 +1313,17 @@ class _EventsWidgetState extends State<EventsWidget> {
               });
             },
             child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 11),
+              padding: const EdgeInsets.symmetric(horizontal: 22, vertical: 10),
               decoration: BoxDecoration(
-                color: _kNavy,
+                color: _kPrimary,
                 borderRadius: BorderRadius.circular(999),
-                border: Border.all(color: _kGold),
               ),
               child: const Text(
                 'Clear search',
                 style: TextStyle(
-                  color: _kGoldSoft,
+                  color: Colors.white,
                   fontWeight: FontWeight.w800,
-                  fontSize: 13,
+                  fontSize: 12.5,
                 ),
               ),
             ),
@@ -1488,12 +1420,12 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       margin: const EdgeInsets.only(bottom: 22),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(16),
         boxShadow: [
           BoxShadow(
             color: Colors.black.withValues(alpha: 0.045),
-            blurRadius: 18,
-            offset: const Offset(0, 8),
+            blurRadius: 20,
+            offset: const Offset(0, 7),
           ),
         ],
       ),
@@ -1627,11 +1559,11 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   static Color _typeColor(String type) {
     switch (type.toLowerCase()) {
       case 'medical mission':
-        return _kRed;
+        return _kInfo;
       case 'training':
         return _kPrimary;
       case 'seminar':
-        return _kAccent;
+        return _kChartSky;
       case 'community outreach':
         return _kGreen;
       default:
@@ -1784,13 +1716,9 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
   Widget _detailHeader() {
     return Container(
       width: double.infinity,
-      padding: const EdgeInsets.fromLTRB(8, 46, 18, 18),
+      padding: const EdgeInsets.fromLTRB(8, 48, 18, 18),
       decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [_kNavy, Color(0xFF26365E)],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
+        color: _kCream,
         borderRadius: BorderRadius.only(
           bottomLeft: Radius.circular(28),
           bottomRight: Radius.circular(28),
@@ -1805,32 +1733,31 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               onPressed: () => Navigator.pop(context),
               icon: const Icon(
                 Icons.arrow_back_ios_new_rounded,
-                color: _kGoldSoft,
+                color: _kTextPrimary,
               ),
             ),
           ),
           const Text(
             'Event Details',
             style: TextStyle(
-              color: _kGoldSoft,
-              fontSize: 23,
-              fontWeight: FontWeight.w700,
-              fontFamily: 'Georgia',
-              letterSpacing: 0.2,
+              color: Color(0xFF2B2523),
+              fontSize: 21,
+              fontWeight: FontWeight.w900,
             ),
           ),
         ],
       ),
     );
   }
+
   Widget _infoCard() {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(16, 17, 16, 7),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(20),
-        border: Border.all(color: _kGoldSoft.withValues(alpha: 0.55)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _kBlueAccentSoft.withValues(alpha: 0.55)),
         boxShadow: [
           BoxShadow(
             color: _kNavy.withValues(alpha: 0.06),
@@ -1845,7 +1772,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             icon: Icons.calendar_month_rounded,
             title: 'Date',
             value: widget.dateText,
-            color: _kGold,
+            color: _kBlueAccent,
           ),
           _infoTile(
             icon: Icons.access_time_rounded,
@@ -2056,8 +1983,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: Colors.white,
-        borderRadius: BorderRadius.circular(18),
-        border: Border.all(color: _kGoldSoft.withValues(alpha: 0.55)),
+        borderRadius: BorderRadius.circular(16),
+        border: Border.all(color: _kBlueAccentSoft.withValues(alpha: 0.55)),
         boxShadow: [
           BoxShadow(
             color: _kNavy.withValues(alpha: 0.055),
@@ -2074,7 +2001,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
             child: Text(
               initial,
               style: const TextStyle(
-                color: _kGoldSoft,
+                color: _kBlueAccentSoft,
                 fontWeight: FontWeight.w900,
               ),
             ),
@@ -2102,7 +2029,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               ],
             ),
           ),
-          const Icon(Icons.verified_rounded, color: _kGold, size: 20),
+          const Icon(Icons.verified_rounded, color: _kBlueAccent, size: 20),
         ],
       ),
     );
@@ -2156,7 +2083,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       decoration: BoxDecoration(
         color: Colors.white,
         border: const Border(
-          top: BorderSide(color: _kGoldSoft, width: 0.55),
+          top: BorderSide(color: _kBlueAccentSoft, width: 0.55),
         ),
         boxShadow: [
           BoxShadow(
@@ -2183,15 +2110,15 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                               height: 18,
                               child: CircularProgressIndicator(
                                 strokeWidth: 2,
-                                color: _kGoldSoft,
+                                color: _kBlueAccentSoft,
                               ),
                             )
-                          : Icon(icon, color: _kGoldSoft),
+                          : Icon(icon, color: _kBlueAccentSoft),
                       label: Text(isSubmitting ? 'Please wait...' : text),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: color,
                         disabledBackgroundColor: color.withValues(alpha: 0.70),
-                        foregroundColor: _kGoldSoft,
+                        foregroundColor: _kBlueAccentSoft,
                         elevation: 0,
                         textStyle: const TextStyle(
                           fontWeight: FontWeight.w900,
@@ -2199,7 +2126,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                         ),
                         shape: RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(17),
-                          side: const BorderSide(color: _kGold, width: 1),
+                          side: const BorderSide(color: _kBlueAccent, width: 1),
                         ),
                       ),
                     )

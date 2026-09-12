@@ -12,6 +12,10 @@ class LogoLoadingOverlay extends StatelessWidget {
   final Widget child;
   final String message;
 
+  static const Color _kPrimary = Color(0xFF10539B);
+  static const Color _kPrimaryDark = Color(0xFF0B4380);
+  static const Color _kBlue = Color(0xFF1863B5);
+
   @override
   Widget build(BuildContext context) {
     return Stack(
@@ -19,52 +23,72 @@ class LogoLoadingOverlay extends StatelessWidget {
         child,
 
         if (isLoading)
-  Positioned.fill(
-    child: Container(
-      decoration: const BoxDecoration(
-        gradient: LinearGradient(
-          colors: [
-            Color(0xFF4169D8),
-            Color(0xFF234AB3),
-          ],
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-        ),
-      ),
-      child: Center(
-        child: Container(
-          padding: const EdgeInsets.symmetric(
-            horizontal: 32,
-            vertical: 36,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Image.asset(
-                'assets/images/ramhis_logo.png',
-                width: 110,
-                height: 110,
-              ),
-              const SizedBox(height: 24),
-              const CircularProgressIndicator(
-                color: Colors.white,
-              ),
-              const SizedBox(height: 18),
-              Text(
-                message,
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 18,
-                  fontWeight: FontWeight.w700,
-                  decoration: TextDecoration.none,
+          Positioned.fill(
+            child: Container(
+              decoration: const BoxDecoration(
+                gradient: LinearGradient(
+                  colors: [
+                    _kPrimary,
+                    _kBlue,
+                    _kPrimaryDark,
+                  ],
+                  begin: Alignment.topLeft,
+                  end: Alignment.bottomRight,
                 ),
               ),
-            ],
+              child: Center(
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Image.asset(
+                      'assets/images/ramhis_logo.png',
+                      width: 110,
+                      height: 110,
+                      fit: BoxFit.contain,
+                    ),
+
+                    const SizedBox(height: 26),
+
+                    const SizedBox(
+                      width: 28,
+                      height: 28,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2.8,
+                        color: Colors.white,
+                      ),
+                    ),
+
+                    const SizedBox(height: 18),
+
+                    Text(
+                      message,
+                      textAlign: TextAlign.center,
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 17,
+                        fontWeight: FontWeight.w700,
+                        height: 1.3,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+
+                    const SizedBox(height: 5),
+
+                    const Text(
+                      'Please wait...',
+                      textAlign: TextAlign.center,
+                      style: TextStyle(
+                        color: Colors.white70,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w500,
+                        decoration: TextDecoration.none,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
           ),
-        ),
-      ),
-    ),
-  ),
       ],
     );
   }

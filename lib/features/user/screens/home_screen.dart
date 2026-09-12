@@ -1,3 +1,6 @@
+// RAMHIS HomeScreen — visual redesign only.
+// Existing API, socket, navigation, search, analytics, and event logic preserved.
+
 import 'dart:math' as math;
 
 import 'package:flutter/material.dart';
@@ -25,46 +28,40 @@ import 'package:shared_preferences/shared_preferences.dart';
 // DESIGN SYSTEM CONSTANTS
 // ─────────────────────────────────────────────────────────────────────────────
 //
-// Premium palette: a deep indigo brand color paired with a warm gold
-// accent, restrained neutrals, and one consistent set of semantic colors
-// used everywhere (chips, charts, icons, buttons) so nothing looks
-// ad-hoc. Every surface in the screen pulls from this single source.
+// RAMHIS palette: blue is the primary brand color, supported by soft
+// blue surfaces and red accents. The same palette is reused across cards,
+// charts, icons, buttons, and notifications for a consistent visual system.
 abstract class AppColors {
-  // Brand
-  static const Color primary = Color(0xFF2948A8);
-  static const Color primaryDark = Color(0xFF1E378A);
-  static const Color primarySoft = Color(0xFF5D78C8);
-  static const Color primaryLight = Color(0xFFE9ECFB);
-  static const Color primaryTint = Color(0xFFF3F4FC);
+  static const Color primary = Color(0xFF10539B);
+  static const Color primaryDark = Color(0xFF0B4380);
+  static const Color primarySoft = Color(0xFFEBF3FA);
+  static const Color primaryLight = Color(0xFFE3F2FD);
+  static const Color primaryTint = Color(0xFFF8FAFC);
 
-  // Premium accent used sparingly for "highlight" moments.
-  static const Color accentGold = Color(0xFFB18A32);
-  static const Color accentGoldBg = Color(0xFFFFF6D9);
+  static const Color accentGold = Color(0xFFFFB800);
+  static const Color accentGoldBg = Color(0xFFFFF7D6);
 
-  // Neutrals
   static const Color surface = Color(0xFFFFFFFF);
-  static const Color surfaceSoft = Color(0xFFF9F9FD);
-  static const Color background = Color(0xFFF1F1FA);
-  static const Color cardBorder = Color(0xFFD9DBE8);
-  static const Color divider = Color(0xFFE4E5EF);
+  static const Color surfaceSoft = Color(0xFFF8FAFC);
+  static const Color background = Color(0xFFF8FAFC);
+  static const Color cardBorder = Color(0xFFCDE1EC);
+  static const Color divider = Color(0xFFE5EAF0);
 
-  static const Color textPrimary = Color(0xFF11152A);
-  static const Color textSecondary = Color(0xFF44485F);
-  static const Color textMuted = Color(0xFF74798F);
+  static const Color textPrimary = Color(0xFF102A43);
+  static const Color textSecondary = Color(0xFF526579);
+  static const Color textMuted = Color(0xFF8292A6);
 
-  // Semantic
-  static const Color success = Color(0xFF087C62);
-  static const Color successBg = Color(0xFFE2F7F0);
-  static const Color warning = Color(0xFFC98A16);
-  static const Color warningBg = Color(0xFFFFF5D8);
-  static const Color danger = Color(0xFFD83B62);
-  static const Color dangerBg = Color(0xFFFCECEF);
-  static const Color info = Color(0xFF3D6ED8);
+  static const Color success = Color(0xFF22A06B);
+  static const Color successBg = Color(0xFFE8F7F0);
+  static const Color warning = Color(0xFFFFB800);
+  static const Color warningBg = Color(0xFFFFF7D6);
+  static const Color danger = Color(0xFFD95C5C);
+  static const Color dangerBg = Color(0xFFFFEFEF);
+  static const Color info = Color(0xFF1863B5);
 
-  // Chart accents used consistently with the reference.
-  static const Color chartViolet = Color(0xFF8068D8);
-  static const Color chartSky = Color(0xFF55BFC8);
-  static const Color chartRose = Color(0xFFE26A9B);
+  static const Color chartViolet = Color(0xFF7A9BC8);
+  static const Color chartSky = Color(0xFF65B5E6);
+  static const Color chartRose = Color(0xFFE58B8B);
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -92,12 +89,29 @@ class _PatientBarChart extends StatelessWidget {
 
     return LayoutBuilder(
       builder: (context, constraints) {
+        final chartHeight = constraints.hasBoundedHeight
+            ? constraints.maxHeight
+            : 190.0;
+
+        final chartWidth = constraints.maxWidth.isFinite
+            ? math.max(0.0, constraints.maxWidth - 46).toDouble()
+            : 0.0;
+
         return Padding(
-          padding: const EdgeInsets.only(left: 42, right: 4, top: 10, bottom: 4),
-          child: _buildChart(
-            safeMax,
-            constraints.maxHeight,
-            constraints.maxWidth - 46, // account for left axis padding
+          padding: const EdgeInsets.only(
+            left: 42,
+            right: 4,
+            top: 10,
+            bottom: 4,
+          ),
+          child: SizedBox(
+            width: double.infinity,
+            height: chartHeight,
+            child: _buildChart(
+              safeMax,
+              chartHeight,
+              chartWidth,
+            ),
           ),
         );
       },
@@ -126,8 +140,9 @@ class _PatientBarChart extends StatelessWidget {
   // IMPORTANT:
   // Always fit every month inside the available screen width.
   // No horizontal scrolling and no minimum column width.
-  final columnWidth =
-      availableWidth / data.length;
+  final columnWidth = data.isEmpty
+      ? 0.0
+      : math.max(0.0, availableWidth / data.length).toDouble();
 
   // Keep bars proportional while making sure
   // they remain visible on smaller screens.
@@ -138,9 +153,12 @@ class _PatientBarChart extends StatelessWidget {
       )
       .toDouble();
 
-  return Stack(
-    clipBehavior: Clip.none,
-    children: [
+  return SizedBox(
+    width: availableWidth,
+    height: chartHeight,
+    child: Stack(
+      clipBehavior: Clip.none,
+      children: [
       Positioned(
         left: 0,
         right: 0,
@@ -363,7 +381,8 @@ class _PatientBarChart extends StatelessWidget {
           ).toList(),
         ),
       ),
-    ],
+      ],
+    ),
   );
 }
 
@@ -1087,208 +1106,175 @@ Future<void> _handleHomeEventCreated(
   }
 
   Widget _buildEventNotificationRow(
-  EventModel event,
-) {
-  return Container(
-    width: double.infinity,
-    padding: const EdgeInsets.all(10),
-    decoration: BoxDecoration(
-      gradient: const LinearGradient(
-        begin: Alignment.topLeft,
-        end: Alignment.bottomRight,
-        colors: [
-          Color(0xFFFFF8E4),
-          Color(0xFFFFF1C9),
-        ],
-      ),
-      borderRadius: BorderRadius.circular(14),
-      border: Border.all(
-        color: const Color(0xFFD9BD72),
-      ),
-      boxShadow: [
-        BoxShadow(
-          color: AppColors.accentGold.withOpacity(0.08),
-          blurRadius: 10,
-          offset: const Offset(0, 4),
+    EventModel event,
+  ) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(11),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primaryLight,
+            AppColors.accentGoldBg,
+          ],
         ),
-      ],
-    ),
-    child: Row(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          width: 38,
-          height: 38,
-          decoration: BoxDecoration(
-            color: AppColors.accentGold.withOpacity(0.16),
-            borderRadius: BorderRadius.circular(13),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: AppColors.primarySoft),
+      ),
+      child: Row(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Container(
+            width: 39,
+            height: 39,
+            decoration: BoxDecoration(
+              color: AppColors.accentGoldBg,
+              borderRadius: BorderRadius.circular(13),
+            ),
+            child: const Icon(
+              Icons.calendar_month_rounded,
+              color: AppColors.accentGold,
+              size: 20,
+            ),
           ),
-          child: const Icon(
-            Icons.event_rounded,
-            color: AppColors.accentGold,
-            size: 21,
-          ),
-        ),
-
-        const SizedBox(width: 9),
-
-        Expanded(
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              // HEADER WITH X BUTTON
-              Row(
-  crossAxisAlignment: CrossAxisAlignment.start,
-  children: [
-    const Expanded(
-      child: Text(
-        'NEW EVENT',
-        style: TextStyle(
-          color: AppColors.accentGold,
-          fontSize: 9,
-          fontWeight: FontWeight.w900,
-          letterSpacing: 0.9,
-        ),
-      ),
-    ),
-
-    // X = explicitly dismiss this notification
-    GestureDetector(
-      behavior: HitTestBehavior.opaque,
-      onTap: () async {
-  if (!mounted) return;
-
-  setState(() {
-    _dismissedHomeEventIds.add(event.id);
-
-    _recentEventNotifications.removeWhere(
-      (item) => item.id == event.id,
-    );
-
-    _persistentDismissedHomeEventIds
-      ..clear()
-      ..addAll(_dismissedHomeEventIds);
-
-    _persistentRecentEventNotifications
-      ..clear()
-      ..addAll(_recentEventNotifications);
-  });
-
-  await _saveHomeEventNotificationState();
-
-  debugPrint(
-    'Home notification dismissed: ${event.id}',
-  );
-},
-      child: const Padding(
-        padding: EdgeInsets.only(
-          left: 8,
-          bottom: 8,
-        ),
-        child: Icon(
-          Icons.close_rounded,
-          color: AppColors.textMuted,
-          size: 18,
-        ),
-      ),
-    ),
-  ],
-),
-
-              const SizedBox(height: 4),
-
-              Text(
-                titleCaseEventText(
-                  event.title.isNotEmpty
-                      ? event.title
-                      : 'Untitled Event',
-                ),
-                maxLines: 2,
-                overflow: TextOverflow.ellipsis,
-                style: const TextStyle(
-                  color: AppColors.textPrimary,
-                  fontSize: 14,
-                  fontWeight: FontWeight.w900,
-                ),
-              ),
-
-              const SizedBox(height: 6),
-
-              Row(
-                children: [
-                  const Icon(
-                    Icons.calendar_today_outlined,
-                    color: AppColors.textMuted,
-                    size: 12,
-                  ),
-                  const SizedBox(width: 5),
-                  Expanded(
-                    child: Text(
-                      formatEventDateDisplay(event),
-                      maxLines: 1,
-                      overflow: TextOverflow.ellipsis,
-                      style: const TextStyle(
-                        color: AppColors.textMuted,
-                        fontSize: 11.5,
-                        fontWeight: FontWeight.w600,
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-
-              const SizedBox(height: 7),
-
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () async {
-  // IMPORTANT:
-  // Opening Event Details does NOT dismiss the notification.
-  await _openHomeEventDetails(event);
-},
-                  style: TextButton.styleFrom(
-                    backgroundColor: AppColors.accentGold,
-                    foregroundColor: Colors.white,
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 13,
-                      vertical: 7,
-                    ),
-                    minimumSize: Size.zero,
-                    shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16),
-                    ),
-                    tapTargetSize:
-                        MaterialTapTargetSize.shrinkWrap,
-                  ),
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: const [
-                      Text(
-                        'Event Details',
+          const SizedBox(width: 10),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  children: [
+                    const Expanded(
+                      child: Text(
+                        'NEW EVENT',
                         style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 11.5,
-                          fontWeight: FontWeight.w800,
+                          color: AppColors.accentGold,
+                          fontSize: 8,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.8,
                         ),
                       ),
-                      SizedBox(width: 4),
-                      Icon(
-                        Icons.arrow_forward_rounded,
-                        color: AppColors.primary,
-                        size: 14,
+                    ),
+                    GestureDetector(
+                      behavior: HitTestBehavior.opaque,
+                      onTap: () async {
+                        if (!mounted) return;
+
+                        setState(() {
+                          _dismissedHomeEventIds.add(event.id);
+
+                          _recentEventNotifications.removeWhere(
+                            (item) => item.id == event.id,
+                          );
+
+                          _persistentDismissedHomeEventIds
+                            ..clear()
+                            ..addAll(_dismissedHomeEventIds);
+
+                          _persistentRecentEventNotifications
+                            ..clear()
+                            ..addAll(_recentEventNotifications);
+                        });
+
+                        await _saveHomeEventNotificationState();
+                      },
+                      child: const Padding(
+                        padding: EdgeInsets.only(left: 8, bottom: 7),
+                        child: Icon(
+                          Icons.close_rounded,
+                          color: AppColors.textMuted,
+                          size: 16,
+                        ),
                       ),
-                    ],
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  titleCaseEventText(
+                    event.title.isNotEmpty ? event.title : 'Untitled Event',
+                  ),
+                  maxLines: 2,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
-              ),
-            ],
+                const SizedBox(height: 5),
+                Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_today_outlined,
+                      color: AppColors.textMuted,
+                      size: 11,
+                    ),
+                    const SizedBox(width: 5),
+                    Expanded(
+                      child: Text(
+                        formatEventDateDisplay(event),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 7),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: TextButton(
+                    onPressed: () async {
+                      await _openHomeEventDetails(event);
+                    },
+                    style: TextButton.styleFrom(
+                      backgroundColor: AppColors.accentGold,
+                      foregroundColor: AppColors.primary,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 12,
+                        vertical: 7,
+                      ),
+                      minimumSize: Size.zero,
+                      shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(22),
+                      ),
+                      tapTargetSize: MaterialTapTargetSize.shrinkWrap,
+                    ),
+                    child: const Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'Event Details',
+                          style: TextStyle(
+                            color: AppColors.primary,
+                            fontSize: 10.5,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                        SizedBox(width: 4),
+                        Icon(
+                          Icons.arrow_forward_rounded,
+                          color: AppColors.primary,
+                          size: 13,
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
-        ),
-      ],
-    ),
-  );
-}
+        ],
+      ),
+    );
+  }
 
   // ─────────────────────────────────────────────
   // EVENT DETAILS NAVIGATION
@@ -2256,7 +2242,7 @@ void dispose() {
                   color:
                       AppColors.surfaceSoft,
                   borderRadius:
-                      BorderRadius.circular(16),
+                      BorderRadius.circular(26),
                   border: Border.all(
                     color: AppColors.divider,
                   ),
@@ -2367,337 +2353,383 @@ void dispose() {
   // ─────────────────────────────────────────────
   // BUILD
   // ─────────────────────────────────────────────
-
   @override
   Widget build(BuildContext context) {
     return LogoLoadingOverlay(
       isLoading: isLoading,
       child: Scaffold(
-        backgroundColor:
-            AppColors.background,
+        backgroundColor: AppColors.background,
         body: SafeArea(
           child: RefreshIndicator(
             color: AppColors.primary,
-            backgroundColor:
-                AppColors.surface,
-            onRefresh:
-                _loadHomeAnalytics,
+            backgroundColor: AppColors.surface,
+            onRefresh: _loadHomeAnalytics,
             child: SingleChildScrollView(
-              physics:
-                  const AlwaysScrollableScrollPhysics(),
-              padding:
-                  const EdgeInsets.fromLTRB(
-                16,
-                12,
-                16,
-                88,
+              physics: const AlwaysScrollableScrollPhysics(
+                parent: BouncingScrollPhysics(),
               ),
+              padding: const EdgeInsets.fromLTRB(14, 12, 14, 94),
               child: Column(
-                crossAxisAlignment:
-                    CrossAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
                   _buildHeader(),
-                  const SizedBox(height: 14),
+                  const SizedBox(height: 12),
                   _buildSearchBar(),
                   const SizedBox(height: 14),
-
                   if (_isSearching) ...[
                     _buildSearchResults(),
-                    const SizedBox(height: 20),
                   ] else ...[
+                    _buildDashboardMetricGrid(),
+                    const SizedBox(height: 14),
+                    _buildClinicDistribution(),
+                    if (_recentEventNotifications.isNotEmpty) ...[
+                      const SizedBox(height: 14),
+                      _buildRecentEventNotifications(),
+                    ],
+                    const SizedBox(height: 14),
                     _buildMainInsightCard(),
                     const SizedBox(height: 14),
-
-                    _buildRecentEventNotifications(),
-
-                    if (_recentEventNotifications
-                        .isNotEmpty)
-                      const SizedBox(height: 14),
-
-                    _buildKeyDrivers(),
-                    const SizedBox(height: 14),
-
-                    _buildClinicDistribution(),
-                    const SizedBox(height: 14),
-
                     _buildMedicineDemand(),
-                    const SizedBox(height: 20),
                   ],
                 ],
               ),
             ),
           ),
         ),
-        bottomNavigationBar:
-            const CustomNavBar(
-          currentIndex: 0,
-        ),
+        bottomNavigationBar: const CustomNavBar(currentIndex: 0),
       ),
     );
   }
 
+  // ─────────────────────────────────────────────────────────────────────────────
+  // DASHBOARD METRIC GRID
   // ─────────────────────────────────────────────
-  // HEADER
-  // ─────────────────────────────────────────────
+  Widget _buildDashboardMetricGrid() {
+    final totalPatients = '${summary?['totalPatients'] ?? 0}';
+    final prescriptionVolume = '${summary?['prescriptionVolume'] ?? 0}';
+    final diagnosisName = '${summary?['topDiagnosis']?['name'] ?? 'No data'}';
+    final diagnosisCount = '${summary?['topDiagnosis']?['count'] ?? 0}';
+    final healthAlert = '${summary?['healthAlert'] ?? 'No major health alert'}';
+    final hasAlert = !healthAlert.toLowerCase().contains('no');
 
-  Widget _buildHeader() {
-    final rawDisplayName =
-        _readString(
-      summary,
-      [
-        'firstName',
-        'first_name',
-        'name',
-        'userName',
-      ],
-    ).trim();
-
-    String displayName =
-        rawDisplayName.isNotEmpty
-            ? rawDisplayName
-            : 'Volunteer';
-
-    if (displayName.length > 22) {
-      final parts = displayName.split(
-        RegExp(r'\s+'),
-      );
-
-      displayName =
-          parts.isNotEmpty &&
-                  parts.first.isNotEmpty
-              ? parts.first
-              : 'Volunteer';
-    }
-
-    return Row(
-      mainAxisAlignment:
-          MainAxisAlignment.spaceBetween,
-      crossAxisAlignment:
-          CrossAxisAlignment.center,
-      children: [
-        Expanded(
-          child: Column(
-            crossAxisAlignment:
-                CrossAxisAlignment.start,
-            children: [
-              ShaderMask(
-                shaderCallback: (bounds) =>
-                    const LinearGradient(
-                  colors: [
-                    AppColors.textPrimary,
-                    AppColors.primary,
-                  ],
-                ).createShader(bounds),
-                child: Text(
-                  'Hello, $displayName 👋',
-                  style: const TextStyle(
-                    fontSize: 24,
-                    fontWeight:
-                        FontWeight.w900,
-                    color: Colors.white,
-                    letterSpacing: -0.7,
-                  ),
-                ),
-              ),
-              const SizedBox(height: 3),
-              Row(
-                children: [
-                  Container(
-                    width: 5,
-                    height: 5,
-                    margin: const EdgeInsets.only(right: 6),
-                    decoration: const BoxDecoration(
-                      color: AppColors.primary,
-                      shape: BoxShape.circle,
-                    ),
-                  ),
-                  const Text(
-                    'Community Health Analytics',
-                    style: TextStyle(
-                      fontSize: 13,
-                      fontWeight:
-                          FontWeight.w600,
-                      color:
-                          AppColors.textMuted,
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
+    final cards = [
+      {
+        'value': totalPatients,
+        'label': 'Total Patients',
+        'detail': 'Registered',
+        'icon': Icons.people_alt_rounded,
+        'accent': AppColors.primary,
+        'background': AppColors.primaryLight,
+        'trend': '↗ Live',
+        'onTap': () => _showInsightModal(
+          title: 'Total Patients',
+          icon: Icons.people_alt_rounded,
+          color: AppColors.primary,
+          value: totalPatients,
+          detail: 'Total registered patients in the system.',
         ),
-        const SizedBox(width: 12),
-        Container(
-          width: 46,
-          height: 46,
-          decoration: BoxDecoration(
-            color: AppColors.surface,
-            borderRadius:
-                BorderRadius.circular(16),
-            border: Border.all(
-              color:
-                  AppColors.cardBorder,
-            ),
-            boxShadow: [
-              BoxShadow(
-                color: AppColors.primary
-                    .withOpacity(0.08),
-                blurRadius: 16,
-                offset:
-                    const Offset(0, 6),
-              ),
-            ],
-          ),
-          child: Stack(
-            clipBehavior: Clip.none,
-            children: [
-              const Center(
-                child: Icon(
-                  Icons
-                      .notifications_none_rounded,
-                  color:
-                      AppColors.textPrimary,
-                  size: 22,
-                ),
-              ),
-              Positioned(
-                top: 11,
-                right: 12,
-                child: Container(
-                  width: 8,
-                  height: 8,
-                  decoration:
-                      BoxDecoration(
-                    color:
-                        AppColors.danger,
-                    shape:
-                        BoxShape.circle,
-                    border: Border.all(
-                      color:
-                          AppColors.surface,
-                      width: 1.5,
-                    ),
-                  ),
-                ),
-              ),
-            ],
-          ),
+      },
+      {
+        'value': prescriptionVolume,
+        'label': 'Prescriptions',
+        'detail': 'Issued',
+        'icon': Icons.receipt_long_rounded,
+        'accent': AppColors.info,
+        'background': const Color(0xFFE7F3FF),
+        'trend': '↗ Live',
+        'onTap': () => _showInsightModal(
+          title: 'Prescription Volume',
+          icon: Icons.receipt_long_rounded,
+          color: AppColors.info,
+          value: prescriptionVolume,
+          detail: 'Total prescriptions issued across all clinics.',
         ),
-      ],
+      },
+      {
+        'value': diagnosisName,
+        'label': 'Top Diagnosis',
+        'detail': '$diagnosisCount cases',
+        'icon': Icons.medical_services_rounded,
+        'accent': AppColors.danger,
+        'background': AppColors.dangerBg,
+        'trend': '• Top',
+        'onTap': () => _showInsightModal(
+          title: 'Most Common Diagnosis',
+          icon: Icons.medical_services_rounded,
+          color: AppColors.danger,
+          value: diagnosisName,
+          detail:
+              'Count: $diagnosisCount\nPercentage: ${summary?['topDiagnosis']?['percentage'] ?? 0}% of all records.',
+        ),
+      },
+      {
+        'value': hasAlert ? 'Alert' : 'Normal',
+        'label': 'Health Status',
+        'detail': hasAlert ? 'Review notice' : 'No major alert',
+        'icon': hasAlert
+            ? Icons.warning_amber_rounded
+            : Icons.check_circle_rounded,
+        'accent': hasAlert ? AppColors.warning : AppColors.success,
+        'background': hasAlert ? AppColors.warningBg : AppColors.successBg,
+        'trend': hasAlert ? '↗ Review' : '✓ Stable',
+        'onTap': () => _showInsightModal(
+          title: 'Health Alert',
+          icon: hasAlert
+              ? Icons.warning_amber_rounded
+              : Icons.check_circle_rounded,
+          color: hasAlert ? AppColors.warning : AppColors.success,
+          value: hasAlert ? 'Alert' : 'Normal',
+          detail: 'Monitor resources and prepare accordingly.',
+        ),
+      },
+    ];
+
+    return LayoutBuilder(
+      builder: (context, constraints) {
+        const gap = 10.0;
+        final width = (constraints.maxWidth - gap) / 2;
+
+        return Wrap(
+          spacing: gap,
+          runSpacing: gap,
+          children: cards.map((card) {
+            return _buildDashboardMetricCard(
+              width: width,
+              value: card['value'] as String,
+              label: card['label'] as String,
+              detail: card['detail'] as String,
+              icon: card['icon'] as IconData,
+              accent: card['accent'] as Color,
+              background: card['background'] as Color,
+              trend: card['trend'] as String,
+              onTap: card['onTap'] as VoidCallback,
+            );
+          }).toList(),
+        );
+      },
     );
   }
 
-  // ─────────────────────────────────────────────
-  // MAIN INSIGHT
-  // ─────────────────────────────────────────────
+  Widget _buildDashboardMetricCard({
+    required double width,
+    required String value,
+    required String label,
+    required String detail,
+    required IconData icon,
+    required Color accent,
+    required Color background,
+    required String trend,
+    required VoidCallback onTap,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: width,
+        constraints: const BoxConstraints(minHeight: 122),
+        padding: const EdgeInsets.fromLTRB(12, 11, 10, 10),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.cardBorder),
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.045),
+              blurRadius: 13,
+              offset: const Offset(0, 5),
+            ),
+          ],
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  width: 31,
+                  height: 31,
+                  decoration: BoxDecoration(
+                    color: background,
+                    shape: BoxShape.circle,
+                  ),
+                  child: Icon(icon, color: accent, size: 16),
+                ),
+                const Spacer(),
+                Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 6,
+                    vertical: 3,
+                  ),
+                  decoration: BoxDecoration(
+                    color: background,
+                    borderRadius: BorderRadius.circular(20),
+                  ),
+                  child: Text(
+                    trend,
+                    style: TextStyle(
+                      color: accent,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 10),
+            Text(
+              value,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 20,
+                height: 1,
+                fontWeight: FontWeight.w900,
+                letterSpacing: -0.6,
+              ),
+            ),
+            const SizedBox(height: 5),
+            Text(
+              label,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textPrimary,
+                fontSize: 10.5,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+            const SizedBox(height: 2),
+            Text(
+              detail,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.textMuted,
+                fontSize: 8.5,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+  // ─────────────────────────────────────────────────────────────────────────────
+  Widget _buildHeader() {
+    String displayName = 'Volunteer';
 
-  Widget _buildMainInsightCard() {
-    final healthAlert =
-        summary?['healthAlert'] ??
-            'No major health alert';
+   final currentUser = AuthSession.currentUser;
 
-    final hasAlert = !healthAlert
-        .toString()
-        .toLowerCase()
-        .contains('no');
+if (currentUser != null) {
+  final candidates = [
+    currentUser['firstName'],
+    currentUser['first_name'],
+    currentUser['name'],
+    currentUser['username'],
+  ];
 
-    final color = hasAlert
-        ? AppColors.warning
-        : AppColors.success;
-
-    final bgColorA = hasAlert
-        ? AppColors.warningBg
-        : AppColors.successBg;
-
-    final bgColorB = hasAlert
-        ? const Color(0xFFFFFCF6)
-        : const Color(0xFFF6FEFB);
-
-    final borderColor = hasAlert
-        ? const Color(0xFFF3DEB0)
-        : const Color(0xFFC0EED9);
+  for (final item in candidates) {
+    final value = item?.toString().trim() ?? '';
+    if (value.isNotEmpty) {
+      displayName = value.split(RegExp(r'\s+')).first;
+      break;
+    }
+  }
+}
 
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.all(11),
-      decoration: BoxDecoration(
-        gradient: LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [bgColorA, bgColorB],
-        ),
-        borderRadius:
-            BorderRadius.circular(16),
-        border: Border.all(
-          color: borderColor,
-        ),
-        boxShadow: [
-          BoxShadow(
-            color: color.withOpacity(0.07),
-            blurRadius: 20,
-            offset: const Offset(0, 8),
-          ),
-        ],
-      ),
+      padding: const EdgeInsets.fromLTRB(2, 4, 2, 0),
       child: Row(
+        crossAxisAlignment: CrossAxisAlignment.center,
         children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Good day,',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  'Hello, $displayName 👋',
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 22,
+                    fontWeight: FontWeight.w900,
+                    letterSpacing: -0.7,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                const Text(
+                  'Together for a healthier community',
+                  style: TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 8),
+                Container(
+                  width: 38,
+                  height: 4,
+                  decoration: BoxDecoration(
+                    color: AppColors.primary,
+                    borderRadius: BorderRadius.circular(100),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(width: 12),
           Container(
             width: 48,
             height: 48,
-            decoration:
-                BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [
-                  color.withOpacity(0.22),
-                  color.withOpacity(0.10),
-                ],
-              ),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
               shape: BoxShape.circle,
+              border: Border.all(
+                color: Colors.white,
+                width: 3,
+              ),
+              boxShadow: [
+                BoxShadow(
+                  color: AppColors.primary.withOpacity(0.12),
+                  blurRadius: 12,
+                  offset: const Offset(0, 5),
+                ),
+              ],
             ),
-            child: Icon(
-              hasAlert
-                  ? Icons
-                      .warning_amber_rounded
-                  : Icons
-                      .check_circle_outline_rounded,
-              color: color,
-              size: 25,
-            ),
-          ),
-          const SizedBox(width: 15),
-          Expanded(
-            child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+            child: Stack(
               children: [
-                Text(
-                  hasAlert
-                      ? 'Health Notice'
-                      : 'System Normal',
-                  style: TextStyle(
-                    color: color,
-                    fontSize: 14.5,
-                    fontWeight:
-                        FontWeight.w800,
-                    letterSpacing: -0.1,
+                const Center(
+                  child: Icon(
+                    Icons.person_rounded,
+                    color: AppColors.primary,
+                    size: 28,
                   ),
                 ),
-                const SizedBox(height: 3),
-                Text(
-                  healthAlert.toString(),
-                  maxLines: 2,
-                  overflow:
-                      TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color:
-                        AppColors.textSecondary,
-                    fontSize: 12.5,
-                    height: 1.4,
-                    fontWeight:
-                        FontWeight.w500,
+                Positioned(
+                  right: 1,
+                  bottom: 2,
+                  child: Container(
+                    width: 11,
+                    height: 11,
+                    decoration: BoxDecoration(
+                      color: AppColors.success,
+                      shape: BoxShape.circle,
+                      border: Border.all(
+                        color: Colors.white,
+                        width: 2,
+                      ),
+                    ),
                   ),
                 ),
               ],
@@ -2707,6 +2739,90 @@ void dispose() {
       ),
     );
   }
+  Widget _buildMainInsightCard() {
+    final healthAlert =
+        '${summary?['healthAlert'] ?? 'No major health alert'}';
+    final hasAlert = !healthAlert.toLowerCase().contains('no');
+    final color = hasAlert ? AppColors.warning : AppColors.success;
+
+    return GestureDetector(
+      onTap: () => _showInsightModal(
+        title: 'Health Alert',
+        icon: hasAlert
+            ? Icons.warning_amber_rounded
+            : Icons.check_circle_rounded,
+        color: color,
+        value: hasAlert ? 'Attention' : 'Normal',
+        detail: healthAlert,
+      ),
+      child: Container(
+        width: double.infinity,
+        padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+        decoration: BoxDecoration(
+          color: AppColors.surface,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(color: AppColors.cardBorder),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: 36,
+              height: 36,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.11),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                hasAlert
+                    ? Icons.warning_amber_rounded
+                    : Icons.check_circle_rounded,
+                color: color,
+                size: 19,
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text(
+                    'HEALTH STATUS',
+                    style: TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 8,
+                      fontWeight: FontWeight.w900,
+                      letterSpacing: 0.7,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    hasAlert
+                        ? 'System needs attention'
+                        : 'All systems look normal',
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 12,
+                      fontWeight: FontWeight.w800,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Icon(
+              Icons.arrow_forward_ios_rounded,
+              color: color,
+              size: 12,
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  // ─────────────────────────────────────────────────────────────────────────────
+  // KEY DRIVERS
 
   // ─────────────────────────────────────────────
   // KEY DRIVERS
@@ -2859,7 +2975,7 @@ void dispose() {
                             icons[
                                 safeIndex],
                             color: accent,
-                            size: 16,
+                            size: 18,
                           ),
                         ),
                         const SizedBox(
@@ -2919,218 +3035,415 @@ void dispose() {
   // ─────────────────────────────────────────────
   // PATIENT TRENDS
   // ─────────────────────────────────────────────
-
   Widget _buildClinicDistribution() {
-  final displayList =
-      _showAllTrends ? patientsPerClinic : patientsPerClinic.take(5).toList();
+    final displayList =
+        _showAllTrends ? patientsPerClinic : patientsPerClinic.take(7).toList();
 
-  return _sectionCard(
-    title: 'Patient Trends',
-    icon: Icons.bar_chart_rounded,
-    child: patientsPerClinic.isEmpty
-        ? Container(
-            width: double.infinity,
-            padding: const EdgeInsets.symmetric(vertical: 26),
-            child: Column(
-              children: [
-                Container(
-                  width: 56,
-                  height: 56,
-                  decoration: BoxDecoration(
-                    color: AppColors.primaryLight,
-                    shape: BoxShape.circle,
-                  ),
-                  child: const Icon(
-                    Icons.bar_chart_rounded,
-                    color: AppColors.primary,
-                    size: 28,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                const Text(
-                  'No trend data available',
-                  style: TextStyle(
-                    color: AppColors.textPrimary,
-                    fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                  ),
-                ),
-              ],
-            ),
-          )
-        : Column(
+    double changePercent = 0;
+    bool hasChange = false;
+
+    if (patientsPerClinic.length >= 2) {
+      final latest = _readNumber(
+        patientsPerClinic[patientsPerClinic.length - 1],
+        ['count', 'patients', 'total', 'value'],
+      ).toDouble();
+      final previous = _readNumber(
+        patientsPerClinic[patientsPerClinic.length - 2],
+        ['count', 'patients', 'total', 'value'],
+      ).toDouble();
+
+      if (previous != 0) {
+        changePercent = ((latest - previous) / previous) * 100;
+        hasChange = true;
+      }
+    }
+
+    final changeText = !hasChange
+        ? 'Current period • live data'
+        : '${changePercent >= 0 ? '+' : ''}${changePercent.toStringAsFixed(1)}% from last period';
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(14, 13, 14, 12),
+      decoration: BoxDecoration(
+        gradient: const LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            AppColors.primary,
+            AppColors.primaryDark,
+          ],
+        ),
+        borderRadius: BorderRadius.circular(20),
+        boxShadow: [
+          BoxShadow(
+            color: AppColors.primary.withOpacity(0.22),
+            blurRadius: 18,
+            offset: const Offset(0, 8),
+          ),
+        ],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
             children: [
-              SizedBox(
-                height: 195,
-                width: double.infinity,
-                child: _PatientBarChart(
-                  data: displayList,
-                  colors: const [
-                    AppColors.primary,
-                    AppColors.chartSky,
-                    AppColors.chartViolet,
-                    AppColors.accentGold,
-                    AppColors.chartRose,
-                  ],
-                  maxValue: displayList.fold<double>(
-                    0,
-                    (max, item) {
-                      final value = _readNumber(
-                        item,
-                        ['count', 'patients', 'total', 'value'],
-                      ).toDouble();
-                      return value > max ? value : max;
-                    },
-                  ),
-                  readNumber: _readNumber,
+              Container(
+                width: 30,
+                height: 30,
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.13),
+                  shape: BoxShape.circle,
+                ),
+                child: const Icon(
+                  Icons.bar_chart_rounded,
+                  color: Colors.white,
+                  size: 16,
                 ),
               ),
-              if (patientsPerClinic.length > 5)
-                GestureDetector(
-                  onTap: () => setState(
-                    () => _showAllTrends = !_showAllTrends,
-                  ),
-                  child: Container(
-                    width: double.infinity,
-                    margin: const EdgeInsets.only(top: 9),
-                    padding: const EdgeInsets.symmetric(vertical: 9),
-                    decoration: BoxDecoration(
-                      gradient: const LinearGradient(
-                        begin: Alignment.topCenter,
-                        end: Alignment.bottomCenter,
-                        colors: [
-                          AppColors.primary,
-                          AppColors.primaryDark,
-                        ],
-                      ),
-                      borderRadius: BorderRadius.circular(13),
-                      boxShadow: [
-                        BoxShadow(
-                          color: AppColors.primary.withOpacity(0.16),
-                          blurRadius: 10,
-                          offset: const Offset(0, 4),
-                        ),
-                      ],
-                    ),
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          _showAllTrends
-                              ? 'Show Less'
-                              : 'View All (${patientsPerClinic.length} months)',
-                          style: const TextStyle(
-                            color: Color.fromARGB(255, 255, 255, 255),
-                            fontWeight: FontWeight.w700,
-                            fontSize: 12,
-                          ),
-                        ),
-                        const SizedBox(width: 4),
-                        Icon(
-                          _showAllTrends
-                              ? Icons.keyboard_arrow_up_rounded
-                              : Icons.keyboard_arrow_down_rounded,
-                          color: AppColors.primary,
-                          size: 18,
-                        ),
-                      ],
-                    ),
+              const SizedBox(width: 8),
+              const Expanded(
+                child: Text(
+                  'Patient Trends',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w900,
                   ),
                 ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 9,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(11),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.12),
+                  ),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Text(
+                      'Current',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                    SizedBox(width: 4),
+                    Icon(
+                      Icons.keyboard_arrow_down_rounded,
+                      color: Colors.white,
+                      size: 14,
+                    ),
+                  ],
+                ),
+              ),
             ],
           ),
-  );
-}
+          const SizedBox(height: 4),
+          Text(
+            changeText,
+            style: TextStyle(
+              color: Colors.white.withOpacity(0.72),
+              fontSize: 9,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 6),
+          if (displayList.isEmpty)
+            SizedBox(
+              height: 160,
+              child: Center(
+                child: Text(
+                  'No trend data available',
+                  style: TextStyle(
+                    color: Colors.white.withOpacity(0.75),
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+              ),
+            )
+          else
+            SizedBox(
+              height: 188,
+              width: double.infinity,
+              child: _PatientBarChart(
+                data: displayList,
+                colors: const [
+                  AppColors.chartSky,
+                  AppColors.primaryLight,
+                  AppColors.accentGold,
+                  AppColors.chartRose,
+                  AppColors.chartViolet,
+                ],
+                maxValue: displayList.fold<double>(
+                  0,
+                  (max, item) {
+                    final value = _readNumber(
+                      item,
+                      ['count', 'patients', 'total', 'value'],
+                    ).toDouble();
+                    return value > max ? value : max;
+                  },
+                ),
+                readNumber: _readNumber,
+              ),
+            ),
+          if (patientsPerClinic.length > 7)
+            GestureDetector(
+              onTap: () => setState(
+                () => _showAllTrends = !_showAllTrends,
+              ),
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 8),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.10),
+                  borderRadius: BorderRadius.circular(13),
+                  border: Border.all(
+                    color: Colors.white.withOpacity(0.12),
+                  ),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Text(
+                      _showAllTrends
+                          ? 'Show Less'
+                          : 'View All (${patientsPerClinic.length} months)',
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontWeight: FontWeight.w800,
+                        fontSize: 10,
+                      ),
+                    ),
+                    const SizedBox(width: 3),
+                    Icon(
+                      _showAllTrends
+                          ? Icons.keyboard_arrow_up_rounded
+                          : Icons.keyboard_arrow_down_rounded,
+                      color: Colors.white,
+                      size: 15,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
 
   // ─────────────────────────────────────────────
   // TOP HEALTH TRENDS
   // ─────────────────────────────────────────────
-
   Widget _buildMedicineDemand() {
     final diagnosisName =
         '${summary?['topDiagnosis']?['name'] ?? 'No data'}';
-
     final diagnosisCount =
-        '${summary?['topDiagnosis']?['count'] ?? 0}';
-
+        _readNumber(summary?['topDiagnosis'], ['count', 'value', 'total'])
+            .toDouble();
     final diagnosisPercentage =
-        '${summary?['topDiagnosis']?['percentage'] ?? 0}';
+        _readNumber(
+          summary?['topDiagnosis'],
+          ['percentage', 'percent'],
+        ).toDouble();
 
-    final medicine =
-        mostUsedMedicines.isNotEmpty
-            ? mostUsedMedicines.first
-            : <String, dynamic>{
-                'name': 'No medicine data',
-                'count': 0,
-                'demand': 'Stable',
-              };
+    final medicine = mostUsedMedicines.isNotEmpty
+        ? mostUsedMedicines.first
+        : <String, dynamic>{
+            'name': 'No medicine data',
+            'count': 0,
+            'demand': 'Stable',
+          };
 
-    final medicineName =
-        '${medicine['name'] ?? 'Unknown medicine'}';
-
+    final medicineName = '${medicine['name'] ?? 'Unknown medicine'}';
     final medicineCount =
-        '${medicine['count'] ?? 0}';
+        _readNumber(medicine, ['count', 'total', 'value', 'quantity'])
+            .toDouble();
+    final medicineDemand = '${medicine['demand'] ?? 'Stable'}';
 
-    final medicineDemand =
-        '${medicine['demand'] ?? 'Stable'}';
+    final maxMedicine = mostUsedMedicines.isEmpty
+        ? 1.0
+        : mostUsedMedicines
+            .map(
+              (item) => _readNumber(
+                item,
+                ['count', 'total', 'value', 'quantity'],
+              ).toDouble(),
+            )
+            .fold<double>(0, (max, value) => value > max ? value : max);
 
-    // One premium container holds both trends.
-    // The individual trends intentionally have no card backgrounds,
-    // reducing visual clutter while preserving all existing data.
+    double progress(double value, double max) {
+      if (max <= 0) return 0;
+      return (value / max).clamp(0.0, 1.0).toDouble();
+    }
+
     return _sectionCard(
-      title: 'Top Health Trends',
-      icon: Icons.trending_up_rounded,
+      title: 'Health Overview',
+      icon: Icons.insights_rounded,
+      accent: AppColors.primary,
       child: Column(
         children: [
-          _buildCompactTrendRow(
+          _buildOverviewProgressRow(
             icon: Icons.medical_services_outlined,
-            iconColor: AppColors.primary,
-            iconBackground: AppColors.primaryLight,
+            color: AppColors.primary,
             label: 'Most Common Diagnosis',
             value: diagnosisName,
-            stat:
-                '$diagnosisCount cases ($diagnosisPercentage%)',
-            sparkColor: AppColors.primary,
-            sparkValues: const [
-              0.25,
-              0.42,
-              0.31,
-              0.55,
-              0.39,
-              0.62,
-              0.48,
-              0.70,
-            ],
+            trailing: diagnosisCount.round().toString(),
+            progressValue: diagnosisPercentage > 0
+                ? (diagnosisPercentage / 100).clamp(0.0, 1.0).toDouble()
+                : 0.62,
           ),
-          const Padding(
-            padding: EdgeInsets.symmetric(vertical: 9),
-            child: Divider(
-              height: 1,
-              color: AppColors.divider,
-            ),
-          ),
-          _buildCompactTrendRow(
+          const SizedBox(height: 15),
+          _buildOverviewProgressRow(
             icon: Icons.medication_outlined,
-            iconColor: AppColors.chartViolet,
-            iconBackground: Color(0xFFF0ECFF),
+            color: AppColors.chartViolet,
             label: 'Most Used Medicine',
             value: medicineName,
-            stat:
-                '$medicineCount prescriptions • $medicineDemand',
-            sparkColor: AppColors.chartViolet,
-            sparkValues: const [
-              0.35,
-              0.52,
-              0.40,
-              0.68,
-              0.48,
-              0.58,
-              0.45,
-              0.76,
-            ],
+            trailing: medicineCount.round().toString(),
+            progressValue: progress(medicineCount, maxMedicine),
+          ),
+          const SizedBox(height: 15),
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              color: AppColors.surfaceSoft,
+              borderRadius: BorderRadius.circular(15),
+              border: Border.all(color: AppColors.divider),
+            ),
+            child: Row(
+              children: [
+                Container(
+                  width: 31,
+                  height: 31,
+                  decoration: BoxDecoration(
+                    color: AppColors.successBg,
+                    shape: BoxShape.circle,
+                  ),
+                  child: const Icon(
+                    Icons.trending_up_rounded,
+                    color: AppColors.success,
+                    size: 16,
+                  ),
+                ),
+                const SizedBox(width: 9),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text(
+                        'MEDICINE DEMAND',
+                        style: TextStyle(
+                          color: AppColors.textMuted,
+                          fontSize: 8.5,
+                          fontWeight: FontWeight.w900,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Text(
+                        medicineDemand,
+                        style: const TextStyle(
+                          color: AppColors.textPrimary,
+                          fontSize: 11.5,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+                const Icon(
+                  Icons.more_horiz_rounded,
+                  color: AppColors.textMuted,
+                  size: 18,
+                ),
+              ],
+            ),
           ),
         ],
       ),
+    );
+  }
+
+  Widget _buildOverviewProgressRow({
+    required IconData icon,
+    required Color color,
+    required String label,
+    required String value,
+    required String trailing,
+    required double progressValue,
+  }) {
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            Container(
+              width: 34,
+              height: 34,
+              decoration: BoxDecoration(
+                color: color.withOpacity(0.10),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(icon, color: color, size: 17),
+            ),
+            const SizedBox(width: 9),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    label,
+                    style: const TextStyle(
+                      color: AppColors.textMuted,
+                      fontSize: 9,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  const SizedBox(height: 2),
+                  Text(
+                    value,
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                    style: const TextStyle(
+                      color: AppColors.textPrimary,
+                      fontSize: 12.5,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            Text(
+              trailing,
+              style: TextStyle(
+                color: color,
+                fontSize: 12,
+                fontWeight: FontWeight.w900,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 8),
+        ClipRRect(
+          borderRadius: BorderRadius.circular(100),
+          child: LinearProgressIndicator(
+            value: progressValue,
+            minHeight: 7,
+            backgroundColor: AppColors.primarySoft,
+            valueColor: AlwaysStoppedAnimation<Color>(color),
+          ),
+        ),
+      ],
     );
   }
 
@@ -3242,105 +3555,68 @@ void dispose() {
   // ─────────────────────────────────────────────
   // SEARCH BAR
   // ─────────────────────────────────────────────
-
   Widget _buildSearchBar() {
     return Container(
       height: 44,
       decoration: BoxDecoration(
-        color: AppColors.surface.withOpacity(0.92),
-        borderRadius:
-            BorderRadius.circular(22),
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(16),
         border: Border.all(
           color: _isSearching
               ? AppColors.primary
               : AppColors.cardBorder,
-          width:
-              _isSearching ? 1.5 : 1,
         ),
         boxShadow: [
           BoxShadow(
-            color: (_isSearching
-                    ? AppColors.primary
-                    : AppColors.textPrimary)
-                .withOpacity(_isSearching ? 0.08 : 0.03),
-            blurRadius: 12,
-            offset:
-                const Offset(0, 4),
+            color: AppColors.primary.withOpacity(0.025),
+            blurRadius: 10,
+            offset: const Offset(0, 3),
           ),
         ],
       ),
       child: TextField(
-        controller:
-            _searchController,
-        onChanged: (value) =>
-            setState(
-          () => _searchQuery =
-              value,
-        ),
+        controller: _searchController,
+        onChanged: (value) => setState(() => _searchQuery = value),
         style: const TextStyle(
-          color:
-              AppColors.textPrimary,
-          fontWeight:
-              FontWeight.w600,
-          fontSize: 13.5,
+          color: AppColors.textPrimary,
+          fontSize: 11,
+          fontWeight: FontWeight.w600,
         ),
-        decoration:
-            InputDecoration(
-          border:
-              InputBorder.none,
-          contentPadding:
-              const EdgeInsets
-                  .symmetric(
-            vertical: 12,
-          ),
-          prefixIcon:
-              Icon(
+        decoration: InputDecoration(
+          border: InputBorder.none,
+          prefixIcon: Icon(
             Icons.search_rounded,
             color: _isSearching
                 ? AppColors.primary
                 : AppColors.textMuted,
-            size: 20,
+            size: 18,
           ),
-          hintText:
-              'Search insights, medicines, trends...',
-          hintStyle:
-              const TextStyle(
-            color:
-                AppColors.textMuted,
-            fontWeight:
-                FontWeight.w500,
-            fontSize: 13,
+          hintText: 'Search insights, trends, or medicines...',
+          hintStyle: const TextStyle(
+            color: AppColors.textMuted,
+            fontSize: 10,
+            fontWeight: FontWeight.w500,
           ),
-          suffixIcon:
-              _isSearching
-                  ? IconButton(
-                      icon:
-                          const Icon(
-                        Icons
-                            .close_rounded,
-                        color:
-                            AppColors
-                                .textMuted,
-                        size: 18,
-                      ),
-                      onPressed:
-                          () =>
-                              setState(
-                        () {
-                          _searchQuery =
-                              '';
-                          _searchController
-                              .clear();
-                        },
-                      ),
-                    )
-                  : null,
+          suffixIcon: _isSearching
+              ? IconButton(
+                  icon: const Icon(
+                    Icons.close_rounded,
+                    color: AppColors.textMuted,
+                    size: 16,
+                  ),
+                  onPressed: () => setState(() {
+                    _searchQuery = '';
+                    _searchController.clear();
+                  }),
+                )
+              : null,
+          contentPadding: const EdgeInsets.symmetric(vertical: 12),
         ),
       ),
     );
   }
 
-  // ─────────────────────────────────────────────
+  // ─────────────────────────────────────────────────────────────────────────────
   // SEARCH RESULTS
   // ─────────────────────────────────────────────
 
@@ -3359,7 +3635,7 @@ void dispose() {
         decoration: BoxDecoration(
           color: AppColors.surface,
           borderRadius:
-              BorderRadius.circular(16),
+              BorderRadius.circular(26),
           border: Border.all(
             color:
                 AppColors.cardBorder,
@@ -3471,7 +3747,6 @@ void dispose() {
   // ─────────────────────────────────────────────
   // SECTION CARD
   // ─────────────────────────────────────────────
-
   Widget _sectionCard({
     required String title,
     required Widget child,
@@ -3482,88 +3757,72 @@ void dispose() {
 
     return Container(
       width: double.infinity,
-      padding:
-          const EdgeInsets.all(11),
+      padding: const EdgeInsets.fromLTRB(13, 12, 13, 13),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius:
-            BorderRadius.circular(16),
-        border: Border.all(
-          color:
-              AppColors.cardBorder,
-        ),
+        borderRadius: BorderRadius.circular(19),
+        border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary
-                .withOpacity(0.035),
+            color: AppColors.primary.withOpacity(0.035),
             blurRadius: 14,
-            offset:
-                const Offset(0, 5),
+            offset: const Offset(0, 5),
           ),
         ],
       ),
       child: Column(
-        crossAxisAlignment:
-            CrossAxisAlignment.start,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
             children: [
               if (icon != null) ...[
                 Container(
-                  width: 30,
-                  height: 30,
-                  decoration:
-                      BoxDecoration(
-                    gradient: LinearGradient(
-                      begin: Alignment.topLeft,
-                      end: Alignment.bottomRight,
-                      colors: [
-                        accentColor.withOpacity(0.16),
-                        accentColor.withOpacity(0.07),
-                      ],
-                    ),
-                    borderRadius:
-                        BorderRadius
-                            .circular(
-                      11,
-                    ),
+                  width: 29,
+                  height: 29,
+                  decoration: BoxDecoration(
+                    color: accentColor.withOpacity(0.10),
+                    shape: BoxShape.circle,
                   ),
                   child: Icon(
                     icon,
-                    size: 16,
+                    size: 15,
                     color: accentColor,
                   ),
                 ),
-                const SizedBox(
-                  width: 11,
-                ),
+                const SizedBox(width: 8),
               ],
-              Text(
-                title,
-                style:
-                    const TextStyle(
-                  color:
-                      AppColors
-                          .textPrimary,
-                  fontSize: 16,
-                  fontWeight:
-                      FontWeight.w900,
-                  letterSpacing:
-                      -0.3,
+              Expanded(
+                child: Text(
+                  title,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontSize: 13,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+              Container(
+                width: 29,
+                height: 29,
+                decoration: BoxDecoration(
+                  color: AppColors.surfaceSoft,
+                  borderRadius: BorderRadius.circular(9),
+                  border: Border.all(color: AppColors.divider),
+                ),
+                child: const Icon(
+                  Icons.more_horiz_rounded,
+                  color: AppColors.textMuted,
+                  size: 17,
                 ),
               ),
             ],
           ),
-          const SizedBox(height: 9),
+          const SizedBox(height: 12),
           child,
         ],
       ),
     );
   }
-
-  // ─────────────────────────────────────────────
-  // LIST TILE
-  // ─────────────────────────────────────────────
 
   Widget _listTile({
     required IconData icon,
@@ -3572,23 +3831,15 @@ void dispose() {
     required String trailing,
   }) {
     return Container(
-      margin:
-          const EdgeInsets.only(
-        bottom: 9,
-      ),
-      padding:
-          const EdgeInsets.all(13),
+      margin: const EdgeInsets.only(bottom: 9),
+      padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.surface,
-        borderRadius:
-            BorderRadius.circular(17),
-        border: Border.all(
-          color:
-              AppColors.cardBorder,
-        ),
+        borderRadius: BorderRadius.circular(17),
+        border: Border.all(color: AppColors.cardBorder),
         boxShadow: [
           BoxShadow(
-            color: AppColors.primary.withOpacity(0.03),
+            color: AppColors.primary.withOpacity(0.025),
             blurRadius: 10,
             offset: const Offset(0, 4),
           ),
@@ -3599,47 +3850,39 @@ void dispose() {
           Container(
             width: 38,
             height: 38,
-            decoration:
-                BoxDecoration(
-              color:
-                  AppColors.primaryLight,
-              borderRadius:
-                  BorderRadius.circular(
-                11,
-              ),
+            decoration: BoxDecoration(
+              color: AppColors.primaryLight,
+              shape: BoxShape.circle,
             ),
             child: Icon(
               icon,
-              color:
-                  AppColors.primary,
+              color: AppColors.primary,
               size: 18,
             ),
           ),
-          const SizedBox(width: 12),
+          const SizedBox(width: 11),
           Expanded(
             child: Column(
-              crossAxisAlignment:
-                  CrossAxisAlignment.start,
+              crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Text(
                   title,
-                  style:
-                      const TextStyle(
-                    color:
-                        AppColors
-                            .textPrimary,
-                    fontWeight:
-                        FontWeight.w800,
-                    fontSize: 13,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textPrimary,
+                    fontWeight: FontWeight.w800,
+                    fontSize: 12.5,
                   ),
                 ),
+                const SizedBox(height: 2),
                 Text(
                   subtitle,
-                  style:
-                      const TextStyle(
-                    color:
-                        AppColors.textMuted,
-                    fontSize: 11,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.textMuted,
+                    fontSize: 10.5,
                   ),
                 ),
               ],
@@ -3647,8 +3890,9 @@ void dispose() {
           ),
           if (trailing.isNotEmpty)
             Container(
+              constraints: const BoxConstraints(maxWidth: 90),
               padding: const EdgeInsets.symmetric(
-                horizontal: 9,
+                horizontal: 8,
                 vertical: 4,
               ),
               decoration: BoxDecoration(
@@ -3657,13 +3901,12 @@ void dispose() {
               ),
               child: Text(
                 trailing,
-                style:
-                    const TextStyle(
-                  color:
-                      AppColors.primary,
-                  fontWeight:
-                      FontWeight.w800,
-                  fontSize: 12.5,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: const TextStyle(
+                  color: AppColors.primary,
+                  fontWeight: FontWeight.w800,
+                  fontSize: 11.5,
                 ),
               ),
             ),
